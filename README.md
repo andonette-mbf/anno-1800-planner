@@ -1,32 +1,44 @@
 # Anno 1800 Production Planner
 
-A single-page, offline-friendly production calculator for **Anno 1800**. Pick your
-target final goods and it works out the exact building counts, shared-resource
-savings, and whole-building (zero-waste) layouts for the entire supply chain.
+A production calculator, strategy playbook and session tracker for **Anno 1800**,
+built with Next.js. Pick target goods (or enter your population per tier) and it
+works out exact building counts, shared-resource savings, zero-waste blueprints
+and optimal whole-building plans for the entire supply chain.
+
+Live at **anno-1800-planner.vercel.app** (the previous single-file build is kept
+at `/legacy.html`).
 
 ## Features
 
-- **58 products** across all four regions — Old World, New World, The Arctic, Enbesa
-- Set targets by **factory count** or **tons/min**
-- **Shared resources** view — see where one intermediate feeds multiple lines and how much rounding you save by pooling
-- **Whole-building layout** — smallest multiplier that makes every building run at 100% with no leftovers
-- **Chain tree** — full ingredient breakdown per product
-- Adjustable **productivity**, coal source, and round-up behaviour
-- **Shareable links** — the whole plan is encoded in the URL
+- **83 products** across all four regions — Old World, New World, The Arctic, Enbesa (all-DLC chains)
+- **Two input modes** — target final goods (factories or tons/min), or enter **residents per tier** and let in-game need thresholds derive demand (lifestyle-needs toggle, consumption-rate slider)
+- **Five result views** — Optimal build (fewest buildings incl. free top-ups), Perfect ratio (smallest all-100% blueprint), exact Buildings table, Shared resources, Chain tree
+- **Electricity, Bright Harvest silos, coal source and productivity** all modelled in one place
+- **Playbook & Session tabs** — the lean-architecture strategy doc and per-session routine, live in the app with saved fields
+- **Shareable links** — the whole plan is encoded in the URL (legacy links keep working)
+- **Optional cross-device sync** — with a Neon Postgres database and a passphrase, Playbook/Session state syncs between devices and calculator plans can be saved by name. Without it, everything still works per-browser via localStorage.
 
-Everything runs client-side in a single `index.html`. No build step, no backend.
-
-## Run locally
-
-Just open `index.html` in a browser, or serve the folder:
+## Develop
 
 ```bash
-npx serve .
+npm install
+npm run dev          # http://localhost:3000
+npm run build        # production build (includes prisma generate)
+npm run test:engine  # golden tests: engine vs the legacy implementation
 ```
+
+## Sync setup (optional)
+
+1. Create a Postgres database on [Neon](https://neon.tech) (or Vercel Marketplace → Neon).
+2. Copy `.env.example` to `.env`, set `DATABASE_URL` (use the **pooled** connection string) and `APP_PASSWORD`.
+3. Push the schema: `npx prisma db push`
+4. Set the same two env vars in the Vercel project settings and redeploy.
+
+No `DATABASE_URL` → the sync UI simply doesn't appear.
 
 ## Deploy
 
-Static site — deploys to Vercel (or any static host) with zero configuration.
+Pushing `main` deploys to Vercel. Verify with the build tag in the page footer.
 
 ---
 

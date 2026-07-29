@@ -1,0 +1,24 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Single-row store for the companion (Playbook/Session) state.
+// The app is single-user; one row (id=1) holds the whole synced blob.
+model CompanionState {
+  id        Int      @id @default(1)
+  data      Json
+  updatedAt DateTime @updatedAt
+}
+
+// Named calculator plans (the full hash-state of the calculator).
+model Plan {
+  id        String   @id @default(cuid())
+  name      String
+  data      Json
+  createdAt DateTime @default(now())
+}

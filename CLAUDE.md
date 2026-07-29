@@ -4,33 +4,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A single-page Anno 1800 production calculator. The entire app — HTML, CSS, and JS — lives in `index.html` as **one minified line** (~38 KB). There is no package.json, no build step, no dependencies, no tests, no linter. This is deliberate (see SPEC.md "Hard constraints"): keep it vanilla JS, framework-free, and runnable by opening the file directly.
+An Anno 1800 production calculator + strategy companion (Playbook/Session tabs), rewritten from a single-file vanilla-JS page into **Next.js 15 (App Router, TypeScript) + Prisma + Neon Postgres**. The old single-file build is preserved verbatim at `public/legacy.html` (served at `/legacy.html`) and doubles as the golden-test reference.
 
 ## Commands
 
-- **Run locally:** open `index.html` in a browser, or `npx serve .`
-- **Deploy:** push to `main` → Vercel auto-deploys to anno-1800-planner.vercel.app. `vercel.json` sets `no-cache` headers so deploys show up immediately.
-- **Verify a deploy:** check the build tag in the page footer (e.g. `build 22 · playbook + session tabs`).
-- **Before starting work: `git fetch` and check you're on top of `origin/main`.** This repo is edited from multiple sessions/machines, and `index.html` is one line — parallel edits cannot be text-merged. If the remote moved, re-apply changes onto the remote version (the insertions are anchored to unique substrings) rather than attempting a merge.
+- `npm run dev` — dev server
+- `npm run build` — production build (runs `prisma generate` first; works without `DATABASE_URL`)
+- `npm run test:engine` — **golden tests**: compiles the engine and compares its numbers against the legacy app (`tests/legacy.html`) in jsdom across goods/pop/electricity/silo scenarios
+- `npx prisma db push` — apply schema to the database in `DATABASE_URL`
+- **Deploy:** push `main` → Vercel. Verify via the build tag in the footer (`src/components/calc/Results.tsx`) — bump it (`build N · slug`) on every user-visible change.
+- **Before starting work: `git fetch`** — this repo is edited from multiple sessions/machines.
 
-## Conventions
+## Environment
 
-- **Bump the build tag on every user-visible change to `index.html`.** It's the `<span style="opacity:.55">build N · short-slug</span>` near the end of the footer. Increment N and describe the change in 2–4 words. This is how stale cached HTML is detected in production.
-- Because the file is one line, `Edit` old_strings must be exact minified substrings. Match on distinctive nearby markup (element IDs, unique strings) — indentation and newlines don't exist here. Keep new code in the same minified style.
-- SPEC.md and the two `anno-1800-*.md` files are the spec and source content for the Playbook + Session tabs (implemented in build 22). SPEC.md's constraints remain binding for changes to those tabs: match existing styling, don't touch calculator logic, degrade safely without localStorage. The markdown docs are the canonical prose — if their text changes, the hand-converted HTML in `index.html` must be updated to match.
+`DATABASE_URL` (Neon, pooled string) and `APP_PASSWORD` enable cross-device sync + saved plans; `AUTH_SECRET` optionally splits cookie signing from the passphrase. All are optional — without them the app runs in localStorage-only mode and the sync UI is hidden. See `.env.example`.
 
-## Architecture of index.html
+## Architecture
 
-Everything is in one `<script>` at the end of the body.
+**The engine is a verbatim port — treat it as canonical.** `src/lib/engine.ts` holds all calculator math as pure functions taking an explicit `CalcState`. Algorithms (epsilons, iteration caps, greedy/optimal search) were ported unchanged from the legacy app, and `tests/golden.test.cjs` enforces numeric equivalence against `tests/legacy.html`. Any change to engine behaviour must either keep the golden tests passing or consciously update the reference. Key pieces:
 
-**Data model.** `_C` is a compact literal: `_C.g` is an array of tuples `[id, name, region, tier, buildingName, productionTimeSeconds, "input1|input2"]`, expanded at load into the `GOODS` map (`rate = 60/time` t/min, `inputs` with qty 1 each — the model assumes 1 t of each input per 1 t of output). `_C.alts` holds alternative buildings (e.g. Coal Mine vs Charcoal Kiln). `_C.POP` drives population mode: per tier — `r` region, `fh` residents per house, `n` a map of good → `[tons/min per resident, category (need/want/lifestyle), unlock tier, unlock threshold]`. Regions: 1 Old World, 2 New World, 4 Arctic, 5 Enbesa. A good with a `tier` (workforce) is a "final" consumer good; tierless goods are intermediates.
+- `effRate` — the single place all rate modifiers live: coal source (30s Charcoal Kiln / 15s Coal Mine), productivity %, electricity (×2, Old World only), silo (×2 for `SILO` animals, which then consume feed at `SILO_FEED`/min per building — `compute`/`chainDemand` add that edge).
+- `targets()` dispatches the two input modes: `state.sel` (goods mode: `{mode:"fac"|"tpm", val}`) vs `popTargets()` (population mode: residents × per-resident need rates from `POP`, gated by `needActive` — unlock thresholds, lifestyle toggle — scaled by the consumption slider).
+- `optimPlan` (Optimal build tab: ceil-per-good baseline, then greedily adds "free" finals that fit in leftover capacity) and `perfectRatio` (smallest all-100% integer blueprint via K-search + brute force). The "Total buildings" summary stat must agree with the active tab (`wholeTotalStat` vs plain sum).
 
-**State & persistence.** A single `state` object (`sel`, `regionFilter`, `prod`, `coalTime`, `round`, `tab`, `mode`, `pop`, `electricity`, `lifestyle`, `silo`, `cons`). The calculator uses **no localStorage** — the whole plan is encoded as base64 JSON in the URL hash (`saveHash`/`loadHash`), which is also the shareable-link mechanism. Two input modes (`#modeTog`): **Final goods** (`state.sel`, entries `{mode: "fac"|"tpm", val}`) and **Population** (`state.pop`, residents per tier → `popTargets()` derives demand from `_C.POP` respecting unlock thresholds, the lifestyle-needs toggle, and the consumption-rate slider `cons`). `targets()` dispatches between them.
+**Data** (`src/lib/data.ts` + `data.json`): `data.json` was extracted programmatically from the legacy `_C` literal — goods tuples, `POP` need tables (`[rate/resident, category need|want|lifestyle, unlockTier, unlockThreshold]`), silo map, presets. Regenerate only from a verified legacy build; don't hand-edit the JSON.
 
-**Companion tabs.** A top-level nav (`#appnav`) switches between three views: `#view-calc` (the calculator grid, default), `#view-playbook`, and `#view-session` — switching toggles inline `style.display` and never touches the URL hash. The two doc views are hand-converted HTML from the `anno-1800-*.md` files, wired by an IIFE at the end of the script (after calculator init, wrapped in try/catch so it can never break the calculator). Their editable fields persist via `anno_`-prefixed localStorage keys (`anno_openq_*` — the Open Questions table, mirrored into gold `.oqm[data-oq]` spans in the prose; `anno_focus_*` — Current Focus; `anno_shutdown_checks`; `anno_parkinglot`). All localStorage access goes through the `LSx` try/catch helper so the pages render read-only when storage is unavailable.
+**URL hash** (`src/lib/hash.ts`): the calculator's full state is base64-JSON in the hash, **same wire format as the legacy app** so old shared links load. This, not the DB, is how plans are shared.
 
-**Calculation pipeline.** `targetTpm(id)` converts a selection to tons/min → `compute()` recursively walks `GOODS[id].inputs` to accumulate total `demand` per good plus per-final-good `contrib` (which powers the Shared-resources view) → `effRate(id)` applies the global productivity % and the coal-source toggle (`state.coalTime`: 30 = Charcoal Kiln, 15 = Coal Mine; the toggle also renames `GOODS.coal.building`).
+**Companion state** (`src/lib/store.tsx`): Playbook/Session fields live in React context, persisted to the **same localStorage keys as the legacy app** (`anno_openq_*`, `anno_focus_*`, `anno_shutdown_checks`, `anno_parkinglot`) so per-browser values survive the rewrite and `/legacy.html` shares them. When signed in with a DB configured, state syncs via `PUT /api/state` (debounced; dirty-local-wins, else newer-server-wins).
 
-**Result tabs** (render functions dispatched from `render()`): `renderWhole` — "Optimal build" (`optimPlan`, fewest whole buildings including free top-ups, default tab); `renderRatio` — "Perfect ratio" (`perfectRatio`, smallest all-at-100% zero-waste blueprint); `renderBuildings` — exact counts per building with surplus; `renderShared` — intermediates feeding multiple lines and buildings saved by pooling; `renderTree` — per-product ingredient tree. The "Total buildings" summary stat must agree with the active tab (`wholeTotalStat` vs the plain sum — this has been a bug before, see commit 9848fdc).
+**Server** (`src/app/api/*` + `src/lib/{db,auth}.ts`): passphrase auth — `POST /api/auth` compares against `APP_PASSWORD` (timing-safe) and sets an HMAC cookie; `getDb()` returns null without `DATABASE_URL` and endpoints then 503, which the client treats as "sync off". Prisma models: `CompanionState` (single row id=1, JSON blob) and `Plan` (named calculator states).
 
-**Rate modifiers all live in `effRate`** — the base rate (coal special-cased by source: Charcoal Kiln 30s vs Coal Mine 15s, with a renamed building), × productivity %, × 2 if electricity is on and the good is `electrifiable` (Old World), × 2 if the Bright Harvest silo toggle is on and the good is in `SILO`. Any feature touching output numbers must go through `effRate`, or ratios silently break.
+**Companion prose** (`src/content/companion.ts`): generated HTML strings from the verified legacy build, rendered via `dangerouslySetInnerHTML` (trusted static content). Interactive cards (Open Questions, Current Focus, Shutdown Check, Parking Lot) are React components; gold `.oqm[data-oq]` blanks inside prose are mirrored from saved values by an effect in `PlaybookView`. The `anno-1800-*.md` docs are the canonical wording — change them and the generated prose together. SPEC.md's original constraints (don't reword the prose, degrade safely without storage) still apply.
+
+**UI** (`src/components/`): `AppShell` owns view switching + calc state + hash sync; `calc/LeftPanel` (mode toggle, good picker, population panel, settings, saved plans) and `calc/Results` (summary, tabs, five panes) intentionally mirror the legacy DOM structure and class names — `globals.css` is the legacy stylesheet ported verbatim, so visual changes belong there, not in new class systems. Number inputs are uncontrolled with a `gen` counter key that remounts them on preset/hash/plan loads.

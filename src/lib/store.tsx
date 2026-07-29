@@ -1,0 +1,272 @@
+"use client";
+// Auth + companion (Playbook/Session) state.
+// localStorage keys are identical to the legacy single-file app, so values saved
+// there carry over. When signed in and a DB is configured, state syncs to the
+// server: dirty local edits win (last-writer-wins), otherwise newer server wins.
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
+export const OQ_KEYS = [
+  "furcoat",
+  "steelworks_tier",
+  "cf_fertilities",
+  "cf_minerals",
+  "cf_size",
+  "mail_income",
+  "tourism_income",
+] as const;
+export const FOCUS_KEYS = ["phase", "working_on", "unfinished", "next", "balance"] as const;
+export const SHUTDOWN_COUNT = 6;
+
+const ls = {
+  get(k: string): string | null {
+    try {
+      return localStorage.getItem(k);
+    } catch {
+      return null;
+    }
+  },
+  set(k: string, v: string) {
+    try {
+      localStorage.setItem(k, v);
+    } catch {}
+  },
+};
+
+export interface CompanionData {
+  openq: Record<string, string>;
+  focus: Record<string, string>;
+  shutdown: boolean[];
+  parkinglot: string[];
+}
+
+function loadLocal(): CompanionData {
+  const openq: Record<string, string> = {};
+  for (const k of OQ_KEYS) openq[k] = ls.get("anno_openq_" + k) || "";
+  const focus: Record<string, string> = {};
+  for (const k of FOCUS_KEYS) focus[k] = ls.get("anno_focus_" + k) || "";
+  let shutdown: boolean[] = [];
+  let parkinglot: string[] = [];
+  try {
+    const s = JSON.parse(ls.get("anno_shutdown_checks") || "[]");
+    if (Array.isArray(s)) shutdown = s.map(Boolean);
+  } catch {}
+  try {
+    const p = JSON.parse(ls.get("anno_parkinglot") || "[]");
+    if (Array.isArray(p)) parkinglot = p.map(String);
+  } catch {}
+  return { openq, focus, shutdown, parkinglot };
+}
+
+function saveLocal(d: CompanionData) {
+  for (const k of OQ_KEYS) ls.set("anno_openq_" + k, d.openq[k] || "");
+  for (const k of FOCUS_KEYS) ls.set("anno_focus_" + k, d.focus[k] || "");
+  ls.set("anno_shutdown_checks", JSON.stringify(d.shutdown));
+  ls.set("anno_parkinglot", JSON.stringify(d.parkinglot));
+}
+
+// ---------- auth ----------
+
+type AuthStatus = "loading" | "off" | "anon" | "authed";
+
+interface AuthCtx {
+  status: AuthStatus;
+  db: boolean;
+  login: (password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthCtx>({
+  status: "loading",
+  db: false,
+  login: async () => false,
+  logout: async () => {},
+});
+
+export function useAuth() {
+  return useContext(AuthContext);
+}
+
+// ---------- companion ----------
+
+interface CompanionCtx {
+  data: CompanionData;
+  sync: "local" | "syncing" | "synced" | "error";
+  setOpenq: (k: string, v: string) => void;
+  setFocus: (k: string, v: string) => void;
+  setShutdown: (i: number, v: boolean) => void;
+  resetShutdown: () => void;
+  addParking: (t: string) => void;
+  removeParking: (i: number) => void;
+}
+
+const CompanionContext = createContext<CompanionCtx | null>(null);
+
+export function useCompanion(): CompanionCtx {
+  const c = useContext(CompanionContext);
+  if (!c) throw new Error("useCompanion outside provider");
+  return c;
+}
+
+export function AppProviders({ children }: { children: React.ReactNode }) {
+  const [status, setStatus] = useState<AuthStatus>("loading");
+  const [db, setDb] = useState(false);
+  const [data, setData] = useState<CompanionData>({
+    openq: {},
+    focus: {},
+    shutdown: [],
+    parkinglot: [],
+  });
+  const [sync, setSync] = useState<CompanionCtx["sync"]>("local");
+  const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const canSync = useRef(false);
+
+  // Initial local load + auth probe.
+  useEffect(() => {
+    setData(loadLocal());
+    (async () => {
+      try {
+        const r = await fetch("/api/auth");
+        const j = await r.json();
+        setDb(!!j.db);
+        if (!j.auth || !j.db) return setStatus("off");
+        setStatus(j.authed ? "authed" : "anon");
+      } catch {
+        setStatus("off");
+      }
+    })();
+  }, []);
+
+  const push = useCallback((d: CompanionData) => {
+    if (!canSync.current) return;
+    if (pushTimer.current) clearTimeout(pushTimer.current);
+    pushTimer.current = setTimeout(async () => {
+      try {
+        setSync("syncing");
+        const r = await fetch("/api/state", {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ data: d }),
+        });
+        if (!r.ok) throw new Error(String(r.status));
+        const j = await r.json();
+        ls.set("anno_sync_ts", String(j.updatedAt));
+        ls.set("anno_dirty", "");
+        setSync("synced");
+      } catch {
+        ls.set("anno_dirty", "1");
+        setSync("error");
+      }
+    }, 1200);
+  }, []);
+
+  // On sign-in: reconcile local vs server.
+  useEffect(() => {
+    if (status !== "authed") {
+      canSync.current = false;
+      return;
+    }
+    (async () => {
+      try {
+        setSync("syncing");
+        const r = await fetch("/api/state");
+        if (!r.ok) throw new Error(String(r.status));
+        const j = await r.json();
+        const localTs = Number(ls.get("anno_sync_ts") || 0);
+        const dirty = ls.get("anno_dirty") === "1";
+        canSync.current = true;
+        if (j.data && !dirty && j.updatedAt > localTs) {
+          const local = loadLocal();
+          const merged: CompanionData = { ...local, ...(j.data as Partial<CompanionData>) };
+          setData(merged);
+          saveLocal(merged);
+          ls.set("anno_sync_ts", String(j.updatedAt));
+          setSync("synced");
+        } else {
+          // Local is authoritative (dirty, newer, or server empty) — push it.
+          push(loadLocal());
+        }
+      } catch {
+        setSync("error");
+      }
+    })();
+  }, [status, push]);
+
+  const update = useCallback(
+    (fn: (d: CompanionData) => CompanionData) => {
+      setData((prev) => {
+        const next = fn(prev);
+        saveLocal(next);
+        if (canSync.current) push(next);
+        else ls.set("anno_dirty", "1");
+        return next;
+      });
+    },
+    [push]
+  );
+
+  const companion = useMemo<CompanionCtx>(
+    () => ({
+      data,
+      sync,
+      setOpenq: (k, v) => update((d) => ({ ...d, openq: { ...d.openq, [k]: v } })),
+      setFocus: (k, v) => update((d) => ({ ...d, focus: { ...d.focus, [k]: v } })),
+      setShutdown: (i, v) =>
+        update((d) => {
+          const s = Array.from({ length: SHUTDOWN_COUNT }, (_, j) => !!d.shutdown[j]);
+          s[i] = v;
+          return { ...d, shutdown: s };
+        }),
+      resetShutdown: () =>
+        update((d) => ({ ...d, shutdown: Array(SHUTDOWN_COUNT).fill(false) })),
+      addParking: (t) =>
+        t.trim() ? update((d) => ({ ...d, parkinglot: [...d.parkinglot, t.trim()] })) : undefined,
+      removeParking: (i) =>
+        update((d) => ({ ...d, parkinglot: d.parkinglot.filter((_, j) => j !== i) })),
+    }),
+    [data, sync, update]
+  );
+
+  const auth = useMemo<AuthCtx>(
+    () => ({
+      status,
+      db,
+      login: async (password: string) => {
+        try {
+          const r = await fetch("/api/auth", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ password }),
+          });
+          if (r.ok) {
+            setStatus("authed");
+            return true;
+          }
+        } catch {}
+        return false;
+      },
+      logout: async () => {
+        try {
+          await fetch("/api/auth", { method: "DELETE" });
+        } catch {}
+        canSync.current = false;
+        setStatus("anon");
+        setSync("local");
+      },
+    }),
+    [status, db]
+  );
+
+  return (
+    <AuthContext.Provider value={auth}>
+      <CompanionContext.Provider value={companion}>{children}</CompanionContext.Provider>
+    </AuthContext.Provider>
+  );
+}
