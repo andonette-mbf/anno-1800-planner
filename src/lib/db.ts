@@ -5,7 +5,10 @@ import { PrismaClient } from "@prisma/client";
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 export function getDb(): PrismaClient | null {
-  if (!process.env.DATABASE_URL) return null;
-  if (!globalForPrisma.prisma) globalForPrisma.prisma = new PrismaClient();
+  // Prefer Neon's Prisma-tuned pooled URL (includes pgbouncer=true) when the
+  // Vercel integration provides it; fall back to plain DATABASE_URL.
+  const url = process.env.POSTGRES_PRISMA_URL || process.env.DATABASE_URL;
+  if (!url) return null;
+  if (!globalForPrisma.prisma) globalForPrisma.prisma = new PrismaClient({ datasourceUrl: url });
   return globalForPrisma.prisma;
 }

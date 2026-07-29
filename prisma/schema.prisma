@@ -3,8 +3,10 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Neon: pooled URL for runtime queries, direct URL for db push / migrations.
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 // Single-row store for the companion (Playbook/Session) state.
