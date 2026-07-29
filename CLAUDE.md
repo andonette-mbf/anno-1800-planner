@@ -19,6 +19,8 @@ An Anno 1800 production calculator + strategy companion (Playbook/Session tabs),
 
 `DATABASE_URL` (Neon, pooled string) and `APP_PASSWORD` enable cross-device sync + saved plans; `AUTH_SECRET` optionally splits cookie signing from the passphrase. All are optional — without them the app runs in localStorage-only mode and the sync UI is hidden. See `.env.example`.
 
+**The Neon Vercel-integration env vars are marked sensitive — `vercel env pull` returns them EMPTY.** You cannot run `prisma db push` from a local machine against this project's DB; the schema is pushed by `scripts/db-push.mjs` inside the Vercel build instead (skips without `DATABASE_URL`, logs-but-continues on failure). Runtime prefers `POSTGRES_PRISMA_URL` (pgbouncer-tuned) over `DATABASE_URL`; migrations use `DATABASE_URL_UNPOOLED` as `directUrl`. The IDE's Prisma extension may flag `url`/`directUrl` as unsupported — that's Prisma 7 syntax guidance; this project is on Prisma 6 and the CLI (`npx prisma validate`) is the source of truth.
+
 ## Architecture
 
 **The engine is a verbatim port — treat it as canonical.** `src/lib/engine.ts` holds all calculator math as pure functions taking an explicit `CalcState`. Algorithms (epsilons, iteration caps, greedy/optimal search) were ported unchanged from the legacy app, and `tests/golden.test.cjs` enforces numeric equivalence against `tests/legacy.html`. Any change to engine behaviour must either keep the golden tests passing or consciously update the reference. Key pieces:
