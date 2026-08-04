@@ -64,8 +64,6 @@ export interface CompanionData {
   sessions: number;
   // The player's island names, for tagging quests with a location.
   islands: string[];
-  // Save-wide ladder of goals; position = number (M1, M2, …).
-  milestones: CheckItem[];
   // Per-island inventory checklists, keyed by island name.
   islandChecks: Record<string, CheckItem[]>;
 }
@@ -99,10 +97,6 @@ function loadLocal(): CompanionData {
     const il = JSON.parse(ls.get("anno_islands") || "[]");
     if (Array.isArray(il)) islands = il.map(String).filter(Boolean);
   } catch {}
-  let milestones: CheckItem[] = [];
-  try {
-    milestones = parseChecks(JSON.parse(ls.get("anno_milestones") || "[]"));
-  } catch {}
   let islandChecks: Record<string, CheckItem[]> = {};
   try {
     const ic = JSON.parse(ls.get("anno_island_checks") || "{}");
@@ -125,7 +119,7 @@ function loadLocal(): CompanionData {
         }))
         .filter((x) => x.t);
   } catch {}
-  return { openq, focus, shutdown, parkinglot, quests, sessions, islands, milestones, islandChecks };
+  return { openq, focus, shutdown, parkinglot, quests, sessions, islands, islandChecks };
 }
 
 function saveLocal(d: CompanionData) {
@@ -136,7 +130,6 @@ function saveLocal(d: CompanionData) {
   ls.set("anno_quests", JSON.stringify(d.quests));
   ls.set("anno_sessions", String(d.sessions || 0));
   ls.set("anno_islands", JSON.stringify(d.islands || []));
-  ls.set("anno_milestones", JSON.stringify(d.milestones || []));
   ls.set("anno_island_checks", JSON.stringify(d.islandChecks || {}));
 }
 
@@ -180,11 +173,6 @@ interface CompanionCtx {
   clearDoneQuests: () => void;
   addIsland: (name: string) => void;
   removeIsland: (name: string) => void;
-  addMilestone: (t: string) => void;
-  toggleMilestone: (i: number, v: boolean) => void;
-  moveMilestone: (i: number, dir: -1 | 1) => void;
-  removeMilestone: (i: number) => void;
-  seedMilestones: (titles: string[]) => void;
   addIslandCheck: (island: string, t: string) => void;
   toggleIslandCheck: (island: string, i: number, v: boolean) => void;
   removeIslandCheck: (island: string, i: number) => void;
@@ -209,7 +197,6 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     quests: [],
     sessions: 0,
     islands: [],
-    milestones: [],
     islandChecks: {},
   });
   const [sync, setSync] = useState<CompanionCtx["sync"]>("local");
@@ -378,37 +365,6 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             islandChecks,
           };
         }),
-      addMilestone: (t) =>
-        t.trim()
-          ? update((d) => ({
-              ...d,
-              milestones: [...(d.milestones || []), { t: t.trim(), done: false }],
-            }))
-          : undefined,
-      toggleMilestone: (i, v) =>
-        update((d) => ({
-          ...d,
-          milestones: (d.milestones || []).map((m, j) => (j === i ? { ...m, done: v } : m)),
-        })),
-      moveMilestone: (i, dir) =>
-        update((d) => {
-          const j = i + dir;
-          const milestones = (d.milestones || []).slice();
-          if (j < 0 || j >= milestones.length) return d;
-          [milestones[i], milestones[j]] = [milestones[j], milestones[i]];
-          return { ...d, milestones };
-        }),
-      removeMilestone: (i) =>
-        update((d) => ({
-          ...d,
-          milestones: (d.milestones || []).filter((_, j) => j !== i),
-        })),
-      seedMilestones: (titles) =>
-        update((d) =>
-          (d.milestones || []).length
-            ? d
-            : { ...d, milestones: titles.map((t) => ({ t, done: false })) }
-        ),
       addIslandCheck: (island, t) => {
         const item = t.trim();
         if (!item) return;

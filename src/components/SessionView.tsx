@@ -258,19 +258,11 @@ export function SessionView() {
     clearDoneQuests,
     addIsland,
     removeIsland,
-    addMilestone,
-    toggleMilestone,
-    moveMilestone,
-    removeMilestone,
-    seedMilestones,
     addIslandCheck,
     toggleIslandCheck,
     removeIslandCheck,
   } = useCompanion();
   const islands = data.islands || [];
-  const milestones = data.milestones || [];
-  const currentMs = milestones.findIndex((m) => !m.done);
-  const [msDraft, setMsDraft] = useState("");
   const [isleDraft, setIsleDraft] = useState("");
   const [itemDrafts, setItemDrafts] = useState<Record<string, string>>({});
   const [draft, setDraft] = useState("");
@@ -333,85 +325,6 @@ export function SessionView() {
               onChange={(e) => setFocus("balance", e.target.value)}
             />
           </div>
-        </div>
-      </div>
-      <div className="card">
-        <div className="hd">
-          <h2>🏁 Milestones</h2>
-          <span className="muted">{savedLabel}</span>
-        </div>
-        <div className="bd doc">
-          <p className="lead">
-            The save&apos;s ladder, M1 onward — tap a row to tick it off. The first open one is
-            what you&apos;re playing toward; numbers follow the order, so ▲▼ re-plans the ladder.
-          </p>
-          <div className="plrow">
-            <input
-              placeholder="Next milestone… (Enter to add)"
-              value={msDraft}
-              onChange={(e) => setMsDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  addMilestone(msDraft);
-                  setMsDraft("");
-                }
-              }}
-            />
-            <button
-              className="linkbtn"
-              onClick={() => {
-                addMilestone(msDraft);
-                setMsDraft("");
-              }}
-            >
-              ＋ Add
-            </button>
-          </div>
-          {milestones.length ? (
-            milestones.map((m, i) => (
-              <div className={"plitem questrow" + (m.done ? " done" : "")} key={`${i}:${m.t}`}>
-                <span className="qage mnum">M{i + 1}</span>
-                <label className="qmain" title="Tap to tick off">
-                  <input
-                    type="checkbox"
-                    checked={m.done}
-                    onChange={(e) => toggleMilestone(i, e.target.checked)}
-                  />
-                  <span style={{ flex: 1 }}>{m.t}</span>
-                </label>
-                {i === currentMs && <span className="qage warn">current</span>}
-                <button
-                  className="plx qmove"
-                  title="Move up"
-                  disabled={i === 0}
-                  onClick={() => moveMilestone(i, -1)}
-                >
-                  ▲
-                </button>
-                <button
-                  className="plx qmove"
-                  title="Move down"
-                  disabled={i === milestones.length - 1}
-                  onClick={() => moveMilestone(i, 1)}
-                >
-                  ▼
-                </button>
-                <button className="plx" title="Remove milestone" onClick={() => removeMilestone(i)}>
-                  ✕
-                </button>
-              </div>
-            ))
-          ) : (
-            <div className="empty">
-              No milestones yet.{" "}
-              <button
-                className="linkbtn"
-                onClick={() => seedMilestones(PHASES.map(([, label]) => label.replace(/^\d+ — /, "")))}
-              >
-                Seed M1–M6 from the playbook phases
-              </button>
-            </div>
-          )}
         </div>
       </div>
       <div className="card">

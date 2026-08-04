@@ -18,7 +18,6 @@ a.plx:hover{color:var(--accent)}
 .questrow input[type=checkbox]{width:18px;height:18px}
 .qnote{display:block;color:var(--muted);font-size:11px;line-height:1.35;margin-top:2px}
 .qisle{width:auto;flex:0 0 auto;max-width:38%}
-.mnum{font-weight:700}
 .isleblk{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:10px 0;background:#0e1a28}
 .islehd{display:flex;align-items:center;gap:8px}
 .islehd h4{margin:0;flex:1}
