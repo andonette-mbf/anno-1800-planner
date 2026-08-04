@@ -38,6 +38,7 @@ a.plx:hover{color:var(--accent)}
 .iledgrow .net.neg{color:var(--red)}
 .iledgfix{color:var(--red);font-weight:600;margin-top:5px}
 .qfilter{margin:0 0 10px}
+.linkbtn:disabled{opacity:.4;cursor:default}
 .schip{font-size:10px;padding:2px 8px;flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
 .schip button{border:0;background:none;color:inherit;cursor:pointer;font-size:12px;line-height:1;padding:0 2px;width:auto}
 .schip button:disabled{opacity:.3;cursor:default}

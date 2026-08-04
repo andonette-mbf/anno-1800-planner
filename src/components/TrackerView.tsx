@@ -295,6 +295,10 @@ function houses(residents: number, fh: number) {
   return Math.ceil(residents / fh);
 }
 
+// Every good display name, for the route-task datalist — shipping moves
+// goods, not buildings. Regions merged: Rum is Rum.
+const GOOD_NAMES = [...new Set(Object.values(GOODS).map((g) => g.name))].sort();
+
 // Region key → data.json region number (for the datalist filter) and the
 // short labels the island-header amend selector uses.
 const REGION_NUM: Record<string, number> = { ow: 1, nw: 2, ar: 4, en: 5 };
@@ -420,6 +424,21 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
   const visDone = effFilter
     ? doneQuests.filter((x) => questIsland(x.q.t, islands) === effFilter)
     : doneQuests;
+  // Route task builder ("from, to, what"), collapsed until asked for.
+  const [routeOpen, setRouteOpen] = useState(false);
+  const [routeFrom, setRouteFrom] = useState("");
+  const [routeTo, setRouteTo] = useState("");
+  const [routeWhat, setRouteWhat] = useState("");
+  const canAddRoute = !!(routeWhat.trim() && routeFrom && routeTo && routeFrom !== routeTo);
+  const addRoute = () => {
+    if (!canAddRoute) return;
+    // Tagged with the destination, so the island filter catches it.
+    addQuest(
+      `${routeTo}: ship ${routeWhat.trim()} from ${routeFrom}`,
+      "Route task — set up the trade route in game, tick when it's shipping."
+    );
+    setRouteWhat(""); // keep from/to: often several goods ride the same route
+  };
   // Landmark quick-add chips, collapsed per island until asked for.
   const [chipsOpen, setChipsOpen] = useState<Record<string, boolean>>({});
   const savedLabel =
@@ -435,8 +454,8 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
         <div className="bd doc">
           <p className="lead">
             Pick a storyline, a growth goal (📈 — real unlock thresholds, with the residence
-            count) or type your own — top of the list = do next. ⤓ sends one to the bottom;
-            ticked quests tuck away below.
+            count), a route task (🚢 from → to → what) or type your own — top of the list =
+            do next. ⤓ sends one to the bottom; ticked quests tuck away below.
           </p>
           <div className="plrow">
             <select
@@ -576,6 +595,77 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
               ＋ Add
             </button>
           </div>
+          {islands.length >= 2 && (
+            <div className="plrow">
+              {!routeOpen ? (
+                <button
+                  className="linkbtn"
+                  title="Task to set up a trade route — from island, to island, what good"
+                  onClick={() => setRouteOpen(true)}
+                >
+                  🚢 New route task…
+                </button>
+              ) : (
+                <>
+                  <select
+                    className="qisle"
+                    aria-label="From island"
+                    value={routeFrom}
+                    onChange={(e) => setRouteFrom(e.target.value)}
+                  >
+                    <option value="">From…</option>
+                    {islands.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="qisle"
+                    aria-label="To island"
+                    value={routeTo}
+                    onChange={(e) => setRouteTo(e.target.value)}
+                  >
+                    <option value="">→ To…</option>
+                    {islands.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    placeholder="What… e.g. Rum (Enter to add)"
+                    list="goodSuggest"
+                    value={routeWhat}
+                    onChange={(e) => setRouteWhat(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") addRoute();
+                    }}
+                  />
+                  <datalist id="goodSuggest">
+                    {GOOD_NAMES.map((g) => (
+                      <option key={g} value={g} />
+                    ))}
+                  </datalist>
+                  <button
+                    className="linkbtn"
+                    disabled={!canAddRoute}
+                    title={
+                      canAddRoute
+                        ? "Add the route task"
+                        : "Pick two different islands and a good"
+                    }
+                    onClick={addRoute}
+                  >
+                    ＋ Add
+                  </button>
+                  <button className="plx" title="Close" onClick={() => setRouteOpen(false)}>
+                    ✕
+                  </button>
+                </>
+              )}
+            </div>
+          )}
           {filterIslands.length > 0 && (
             <div className="chips qfilter">
               <button

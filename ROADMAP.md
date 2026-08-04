@@ -124,6 +124,12 @@ is in CLAUDE.md.
   any figure ("Add 250 Jornaleros" → ≈25 residences). No hand-written
   numbers — all derived from `data.json`.
 
+- **Route tasks** (build 51): 🚢 collapsed row in the quest tracker (shown
+  with ≥2 islands) — From island, To island, What good (datalist of good
+  display names) → adds "To: ship Rum from From", destination-tagged so the
+  island filter catches it. From/to stay filled after add (several goods
+  often ride one route); from = to disables Add.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M8 → M9, M6 slots
 ## anywhere as a low-risk session)
 
