@@ -1,9 +1,9 @@
 // Island production ledger (M3): maps the island inventory's building names
 // back to the goods they produce and sums, per island, what its ticked
 // buildings make and what those buildings' own chains consume — in t/min at
-// base rates (100% productivity, no electricity). Silos are a bolt-on toggle
-// on the item (`CheckItem.s`): a silo'd farm makes ×2 and eats SILO_FEED
-// t/min of feed per building, same as the engine.
+// base rates (100% productivity, no electricity). Silos are a bolt-on counter
+// on the item (`CheckItem.s` = how many of the line's farms have one): each
+// silo'd farm makes ×2 and eats SILO_FEED t/min of feed, same as the engine.
 //
 // Building names repeat across regions (Lumberjack's Hut exists in three).
 // Where the rate is identical the entries are merged — the goods share a
@@ -92,16 +92,18 @@ export function islandLedger(items: CheckItem[]): LedgerRow[] {
     if (!v) continue;
     const n = Math.max(1, c.n || 1);
     const g = GOODS[v.good];
-    const siloOn = (v.silo || c.s) && !!SILO[v.good];
-    const out = n * v.rate * (siloOn ? 2 : 1);
+    // sc of the line's n farms have a silo (make ×2, eat feed) — a line can
+    // be part-silo'd. Legacy "(silo)" names mean all of them.
+    const sc = SILO[v.good] ? (v.silo ? n : Math.min(Math.max(0, c.s || 0), n)) : 0;
+    const out = (n + sc) * v.rate;
     produced[g.name] = (produced[g.name] || 0) + out;
     for (const inp of g.inputs) {
       const nm = GOODS[inp.good].name;
       used[nm] = (used[nm] || 0) + out * inp.qty;
     }
-    if (siloOn) {
+    if (sc > 0) {
       const nm = GOODS[SILO[v.good]].name;
-      used[nm] = (used[nm] || 0) + n * SILO_FEED;
+      used[nm] = (used[nm] || 0) + sc * SILO_FEED;
     }
   }
   return [...new Set([...Object.keys(produced), ...Object.keys(used)])]

@@ -416,8 +416,9 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
         <div className="bd doc">
           <p className="lead">
             What each island already runs, in the game&apos;s own words — type a building name,
-            re-add or ＋ for counts like ×2. Animal farms get a <b>silo</b> toggle on their row:
-            silos are a bolt-on module, so tap it when you fit them (output ×2, eats feed).
+            re-add or ＋ for counts like ×2. Animal farms get a <b>silo</b> counter on their row —
+            silos are bolt-on modules, so tap as you fit them; a line can be part-silo&apos;d
+            (&quot;silos 3/5&quot;). Silo&apos;d farms make ×2 and eat feed.
             Buildings the calculator knows feed a per-island <b>ledger</b>: what the island makes
             and what its own chains use, in tons per minute — red net means the island
             doesn&apos;t cover its own consumption. 🎯 links a calculator plan to the island: the
@@ -540,19 +541,26 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                           {(c.n || 1) > 1 && <b> ×{c.n}</b>}
                         </span>
                       </label>
-                      {siloCapable(c.t) && (
-                        <button
-                          className={"chip schip" + (c.s ? " on" : "")}
-                          title={
-                            c.s
-                              ? "Silo fitted — output doubled, eats feed. Tap to remove."
-                              : "No silo yet — tap when you bolt one on (output ×2, eats feed)."
-                          }
-                          onClick={() => setIslandSilo(name, i, !c.s)}
-                        >
-                          silo
-                        </button>
-                      )}
+                      {siloCapable(c.t) &&
+                        (() => {
+                          const nb = c.n || 1;
+                          const sc = Math.min(c.s || 0, nb);
+                          return (
+                            <button
+                              className={"chip schip" + (sc > 0 ? " on" : "")}
+                              title={
+                                nb > 1
+                                  ? `${sc} of the ${nb} farms have a silo — tap to fit one more (past all ${nb} wraps back to none). Silo'd farms make ×2 and eat feed.`
+                                  : sc > 0
+                                    ? "Silo fitted — output doubled, eats feed. Tap to remove."
+                                    : "No silo yet — tap when you bolt one on (output ×2, eats feed)."
+                              }
+                              onClick={() => setIslandSilo(name, i, (sc + 1) % (nb + 1))}
+                            >
+                              {nb > 1 ? `silos ${sc}/${nb}` : "silo"}
+                            </button>
+                          );
+                        })()}
                       <button
                         className="plx qmove"
                         title="One fewer"

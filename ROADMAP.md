@@ -53,6 +53,11 @@ is in CLAUDE.md.
   red "to finish the plan — build N×…" for shortfalls, and buildings above or
   outside the plan listed as "beyond the plan" — overproduction now means
   "beyond the plan". Snapshots don't track later plan edits; re-link.
+- **Per-farm silos** (build 41): `CheckItem.s` became a count — a line can be
+  part-silo'd ("Pig Farm ×5, silos 3/5"), since in game each farm gets its own
+  module. Chip is a tap-to-increment counter (wraps past full); build-39
+  boolean `s:true` parses as all-silo'd, ledger feed/output scale with the
+  silo count.
 
 ## Next (tentative order — confirm with the user before starting each)
 

@@ -48,7 +48,9 @@ export interface CheckItem {
   t: string;
   done: boolean;
   n?: number; // count, for building items ("Sheep Farm ×2"); absent = 1
-  s?: boolean; // silo module fitted (animal farms only) — a bolt-on, not a separate building
+  // How many of the line's n farms have a silo module fitted (bolt-on, animal
+  // farms only) — a line can be part-silo'd, e.g. 3 of 5. Absent = none.
+  s?: number;
 }
 
 // A calculator plan linked to an island (M4) — a snapshot taken at link time
@@ -89,22 +91,25 @@ function parseChecks(raw: unknown): CheckItem[] {
   return raw
     .map((x) => {
       const o = x as { t?: unknown; done?: unknown; n?: unknown; s?: unknown };
-      const n = Math.floor(Number(o?.n));
+      const n = Math.max(1, Math.floor(Number(o?.n)) || 1);
       let t = String(o?.t ?? "");
-      let s = !!o?.s;
-      // Migrate pre-build-39 "(silo)" name variants to the bolt-on flag:
+      // Silo count; build-39 data stored a boolean (all-or-nothing) — true
+      // meant every farm in the line.
+      let s = o?.s === true ? n : Math.max(0, Math.floor(Number(o?.s)) || 0);
+      // Migrate pre-build-39 "(silo)" name variants to the silo count:
       // "Sheep Farm (silo)" → "Sheep Farm", "Cattle Farm (New World, silo)"
       // → "Cattle Farm (New World)".
       const stripped = t.replace(/ \(silo\)$/i, "").replace(/, silo\)$/i, ")");
       if (stripped !== t) {
         t = stripped;
-        s = true;
+        s = n;
       }
+      s = Math.min(s, n);
       return {
         t,
         done: !!o?.done,
         ...(n > 1 ? { n } : {}),
-        ...(s ? { s: true } : {}),
+        ...(s > 0 ? { s } : {}),
       };
     })
     .filter((x) => x.t);
@@ -234,7 +239,7 @@ interface CompanionCtx {
   toggleIslandCheck: (island: string, i: number, v: boolean) => void;
   removeIslandCheck: (island: string, i: number) => void;
   bumpIslandCheck: (island: string, i: number, delta: 1 | -1) => void;
-  setIslandSilo: (island: string, i: number, v: boolean) => void;
+  setIslandSilo: (island: string, i: number, count: number) => void;
   setIslandPlan: (island: string, plan: IslandPlan | null) => void;
 }
 
@@ -480,20 +485,26 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             [island]: ((d.islandChecks || {})[island] || []).map((c, j) => {
               if (j !== i) return c;
               const n = Math.max(1, (c.n || 1) + delta);
-              const { n: _n, ...rest } = c;
-              return n > 1 ? { ...c, n } : rest;
+              const s = Math.min(c.s || 0, n); // fewer farms can't keep more silos
+              const { n: _n, s: _s, ...rest } = c;
+              return {
+                ...rest,
+                ...(n > 1 ? { n } : {}),
+                ...(s > 0 ? { s } : {}),
+              };
             }),
           },
         })),
-      setIslandSilo: (island, i, v) =>
+      setIslandSilo: (island, i, count) =>
         update((d) => ({
           ...d,
           islandChecks: {
             ...(d.islandChecks || {}),
             [island]: ((d.islandChecks || {})[island] || []).map((c, j) => {
               if (j !== i) return c;
+              const s = Math.max(0, Math.min(Math.floor(count), c.n || 1));
               const { s: _s, ...rest } = c;
-              return v ? { ...rest, s: true } : rest;
+              return s > 0 ? { ...rest, s } : rest;
             }),
           },
         })),
