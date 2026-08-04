@@ -16,6 +16,9 @@ import React, {
   useState,
 } from "react";
 import type { CalcState } from "./engine";
+import { isGame, type Game } from "./games";
+
+export { GAMES, isGame, type Game } from "./games";
 
 export const OQ_KEYS = [
   "furcoat",
@@ -43,6 +46,17 @@ const ls = {
     } catch {}
   },
 };
+
+// M10: one app, two games. Each keeps its own quests/islands/inventory — a
+// Rome playthrough and an 1800 one are separate worlds, not a shared list.
+export const GAME_KEY = "anno_game";
+
+// 1800 keeps the bare legacy key names so values saved by the old single-file
+// app (and /legacy.html, which still reads them) carry over untouched; 117 gets
+// its own namespace. Never change the 1800 side of this.
+function gkey(game: Game, base: string): string {
+  return game === "anno117" ? base.replace(/^anno_/, "anno117_") : base;
+}
 
 export interface CheckItem {
   t: string;
@@ -124,31 +138,32 @@ function parseChecks(raw: unknown): CheckItem[] {
     .filter((x) => x.t);
 }
 
-function loadLocal(): CompanionData {
+function loadLocal(game: Game = "anno1800"): CompanionData {
+  const k = (base: string) => gkey(game, base);
   const openq: Record<string, string> = {};
-  for (const k of OQ_KEYS) openq[k] = ls.get("anno_openq_" + k) || "";
+  for (const key of OQ_KEYS) openq[key] = ls.get(k("anno_openq_" + key)) || "";
   const focus: Record<string, string> = {};
-  for (const k of FOCUS_KEYS) focus[k] = ls.get("anno_focus_" + k) || "";
+  for (const key of FOCUS_KEYS) focus[key] = ls.get(k("anno_focus_" + key)) || "";
   let shutdown: boolean[] = [];
   let parkinglot: string[] = [];
   let quests: QuestItem[] = [];
   try {
-    const s = JSON.parse(ls.get("anno_shutdown_checks") || "[]");
+    const s = JSON.parse(ls.get(k("anno_shutdown_checks")) || "[]");
     if (Array.isArray(s)) shutdown = s.map(Boolean);
   } catch {}
   try {
-    const p = JSON.parse(ls.get("anno_parkinglot") || "[]");
+    const p = JSON.parse(ls.get(k("anno_parkinglot")) || "[]");
     if (Array.isArray(p)) parkinglot = p.map(String);
   } catch {}
-  const sessions = Math.max(0, Math.floor(Number(ls.get("anno_sessions")) || 0));
+  const sessions = Math.max(0, Math.floor(Number(ls.get(k("anno_sessions"))) || 0));
   let islands: string[] = [];
   try {
-    const il = JSON.parse(ls.get("anno_islands") || "[]");
+    const il = JSON.parse(ls.get(k("anno_islands")) || "[]");
     if (Array.isArray(il)) islands = il.map(String).filter(Boolean);
   } catch {}
   let islandChecks: Record<string, CheckItem[]> = {};
   try {
-    const ic = JSON.parse(ls.get("anno_island_checks") || "{}");
+    const ic = JSON.parse(ls.get(k("anno_island_checks")) || "{}");
     if (ic && typeof ic === "object" && !Array.isArray(ic))
       islandChecks = Object.fromEntries(
         Object.entries(ic).map(([k, v]) => [k, parseChecks(v)])
@@ -156,7 +171,7 @@ function loadLocal(): CompanionData {
   } catch {}
   let islandPlans: Record<string, IslandPlan> = {};
   try {
-    const ip = JSON.parse(ls.get("anno_island_plans") || "{}");
+    const ip = JSON.parse(ls.get(k("anno_island_plans")) || "{}");
     if (ip && typeof ip === "object" && !Array.isArray(ip))
       islandPlans = Object.fromEntries(
         Object.entries(ip).filter(([, v]) => {
@@ -167,14 +182,14 @@ function loadLocal(): CompanionData {
   } catch {}
   let islandRegions: Record<string, string> = {};
   try {
-    const ir = JSON.parse(ls.get("anno_island_regions") || "{}");
+    const ir = JSON.parse(ls.get(k("anno_island_regions")) || "{}");
     if (ir && typeof ir === "object" && !Array.isArray(ir))
       islandRegions = Object.fromEntries(
         Object.entries(ir).filter(([, v]) => typeof v === "string" && v)
       ) as Record<string, string>;
   } catch {}
   try {
-    const q = JSON.parse(ls.get("anno_quests") || "[]");
+    const q = JSON.parse(ls.get(k("anno_quests")) || "[]");
     if (Array.isArray(q))
       quests = q
         .map((x) => ({
@@ -201,17 +216,55 @@ function loadLocal(): CompanionData {
   };
 }
 
-function saveLocal(d: CompanionData) {
-  for (const k of OQ_KEYS) ls.set("anno_openq_" + k, d.openq[k] || "");
-  for (const k of FOCUS_KEYS) ls.set("anno_focus_" + k, d.focus[k] || "");
-  ls.set("anno_shutdown_checks", JSON.stringify(d.shutdown));
-  ls.set("anno_parkinglot", JSON.stringify(d.parkinglot));
-  ls.set("anno_quests", JSON.stringify(d.quests));
-  ls.set("anno_sessions", String(d.sessions || 0));
-  ls.set("anno_islands", JSON.stringify(d.islands || []));
-  ls.set("anno_island_checks", JSON.stringify(d.islandChecks || {}));
-  ls.set("anno_island_plans", JSON.stringify(d.islandPlans || {}));
-  ls.set("anno_island_regions", JSON.stringify(d.islandRegions || {}));
+function saveLocal(d: CompanionData, game: Game = "anno1800") {
+  const k = (base: string) => gkey(game, base);
+  for (const key of OQ_KEYS) ls.set(k("anno_openq_" + key), d.openq[key] || "");
+  for (const key of FOCUS_KEYS) ls.set(k("anno_focus_" + key), d.focus[key] || "");
+  ls.set(k("anno_shutdown_checks"), JSON.stringify(d.shutdown));
+  ls.set(k("anno_parkinglot"), JSON.stringify(d.parkinglot));
+  ls.set(k("anno_quests"), JSON.stringify(d.quests));
+  ls.set(k("anno_sessions"), String(d.sessions || 0));
+  ls.set(k("anno_islands"), JSON.stringify(d.islands || []));
+  ls.set(k("anno_island_checks"), JSON.stringify(d.islandChecks || {}));
+  ls.set(k("anno_island_plans"), JSON.stringify(d.islandPlans || {}));
+  ls.set(k("anno_island_regions"), JSON.stringify(d.islandRegions || {}));
+}
+
+const EMPTY_DATA: CompanionData = {
+  openq: {},
+  focus: {},
+  shutdown: [],
+  parkinglot: [],
+  quests: [],
+  sessions: 0,
+  islands: [],
+  islandChecks: {},
+  islandPlans: {},
+  islandRegions: {},
+};
+
+// The synced blob stays 1800-shaped at the top level — an older client (or an
+// older blob) round-trips unchanged — with 117 hanging off `g117`.
+interface SyncBlob extends CompanionData {
+  g117?: CompanionData;
+}
+function toBlob(all: Record<Game, CompanionData>): SyncBlob {
+  return { ...all.anno1800, g117: all.anno117 };
+}
+function fromBlob(blob: SyncBlob, local: Record<Game, CompanionData>): Record<Game, CompanionData> {
+  const { g117, ...rest } = blob;
+  const norm = (d: CompanionData) => ({
+    ...d,
+    // Server blobs bypass loadLocal, so re-run item normalization (e.g. the
+    // legacy "(silo)" name → silo-flag migration).
+    islandChecks: Object.fromEntries(
+      Object.entries(d.islandChecks || {}).map(([k, v]) => [k, parseChecks(v)])
+    ),
+  });
+  return {
+    anno1800: norm({ ...local.anno1800, ...(rest as CompanionData) }),
+    anno117: g117 ? norm({ ...local.anno117, ...g117 }) : local.anno117,
+  };
 }
 
 // ---------- auth ----------
@@ -240,6 +293,9 @@ export function useAuth() {
 
 interface CompanionCtx {
   data: CompanionData;
+  /** Which game the Tracker is showing. Everything in `data` belongs to it. */
+  game: Game;
+  setGame: (g: Game) => void;
   sync: "local" | "syncing" | "synced" | "error";
   setOpenq: (k: string, v: string) => void;
   setFocus: (k: string, v: string) => void;
@@ -277,25 +333,23 @@ export function useCompanion(): CompanionCtx {
 export function AppProviders({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [db, setDb] = useState(false);
-  const [data, setData] = useState<CompanionData>({
-    openq: {},
-    focus: {},
-    shutdown: [],
-    parkinglot: [],
-    quests: [],
-    sessions: 0,
-    islands: [],
-    islandChecks: {},
-    islandPlans: {},
-    islandRegions: {},
+  // Both games are held at once: the Tracker shows one, but a sync push has to
+  // carry both or switching games would clobber the other's server copy.
+  const [all, setAll] = useState<Record<Game, CompanionData>>({
+    anno1800: EMPTY_DATA,
+    anno117: EMPTY_DATA,
   });
+  const [game, setGameState] = useState<Game>("anno1800");
+  const data = all[game];
   const [sync, setSync] = useState<CompanionCtx["sync"]>("local");
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const canSync = useRef(false);
 
   // Initial local load + auth probe.
   useEffect(() => {
-    setData(loadLocal());
+    setAll({ anno1800: loadLocal("anno1800"), anno117: loadLocal("anno117") });
+    const g = ls.get(GAME_KEY);
+    if (isGame(g)) setGameState(g);
     (async () => {
       try {
         const r = await fetch("/api/auth");
@@ -309,7 +363,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
-  const push = useCallback((d: CompanionData) => {
+  const push = useCallback((next: Record<Game, CompanionData>) => {
     if (!canSync.current) return;
     if (pushTimer.current) clearTimeout(pushTimer.current);
     pushTimer.current = setTimeout(async () => {
@@ -318,7 +372,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         const r = await fetch("/api/state", {
           method: "PUT",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ data: d }),
+          body: JSON.stringify({ data: toBlob(next) }),
         });
         if (!r.ok) throw new Error(String(r.status));
         const j = await r.json();
@@ -347,21 +401,20 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         const localTs = Number(ls.get("anno_sync_ts") || 0);
         const dirty = ls.get("anno_dirty") === "1";
         canSync.current = true;
+        const local = {
+          anno1800: loadLocal("anno1800"),
+          anno117: loadLocal("anno117"),
+        };
         if (j.data && !dirty && j.updatedAt > localTs) {
-          const local = loadLocal();
-          const merged: CompanionData = { ...local, ...(j.data as Partial<CompanionData>) };
-          // Server blobs bypass loadLocal, so re-run item normalization
-          // (e.g. the legacy "(silo)" name → silo-flag migration).
-          merged.islandChecks = Object.fromEntries(
-            Object.entries(merged.islandChecks || {}).map(([k, v]) => [k, parseChecks(v)])
-          );
-          setData(merged);
-          saveLocal(merged);
+          const merged = fromBlob(j.data as SyncBlob, local);
+          setAll(merged);
+          saveLocal(merged.anno1800, "anno1800");
+          saveLocal(merged.anno117, "anno117");
           ls.set("anno_sync_ts", String(j.updatedAt));
           setSync("synced");
         } else {
           // Local is authoritative (dirty, newer, or server empty) — push it.
-          push(loadLocal());
+          push(local);
         }
       } catch {
         setSync("error");
@@ -371,20 +424,27 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 
   const update = useCallback(
     (fn: (d: CompanionData) => CompanionData) => {
-      setData((prev) => {
-        const next = fn(prev);
-        saveLocal(next);
+      setAll((prev) => {
+        const next = { ...prev, [game]: fn(prev[game]) } as Record<Game, CompanionData>;
+        saveLocal(next[game], game);
         if (canSync.current) push(next);
         else ls.set("anno_dirty", "1");
         return next;
       });
     },
-    [push]
+    [push, game]
   );
+
+  const setGame = useCallback((g: Game) => {
+    setGameState(g);
+    ls.set(GAME_KEY, g);
+  }, []);
 
   const companion = useMemo<CompanionCtx>(
     () => ({
       data,
+      game,
+      setGame,
       sync,
       setOpenq: (k, v) => update((d) => ({ ...d, openq: { ...d.openq, [k]: v } })),
       setFocus: (k, v) => update((d) => ({ ...d, focus: { ...d.focus, [k]: v } })),
@@ -619,7 +679,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           return { ...d, islandPlans };
         }),
     }),
-    [data, sync, update]
+    [data, game, setGame, sync, update]
   );
 
   const auth = useMemo<AuthCtx>(

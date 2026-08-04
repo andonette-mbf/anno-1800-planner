@@ -1,7 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { GOODS, POP, REGIONS, TIER_ORDER, fmt } from "@/lib/data";
+import { GOODS_117 } from "@/lib/data117";
 import { CalcState, DEFAULT_STATE } from "@/lib/engine";
+import { GAME_CONTENT, type Game } from "@/lib/games";
 import { buildingOptionsFor, elecCapable, islandLedger, siloCapable } from "@/lib/ledger";
 import { planCheck, planSeed } from "@/lib/plancheck";
 import { useAuth, useCompanion } from "@/lib/store";
@@ -165,101 +167,6 @@ const STORYLINES: [string, StoryEntry[]][] = [
   ],
 ];
 
-// One-tap chips for the island inventory — real, countable buildings (＋ to
-// bump like any item), filtered to the island's region when one is set.
-// A chip disappears once the island has the item. Blob entries ("Silos on
-// animal farms", "Fire · police · hospital coverage") were dropped as too
-// coarse — silos/electricity are per-line counters, services are their own
-// buildings. `regions` omitted = shown everywhere.
-const ISLAND_SUGGESTIONS: { t: string; regions?: string[] }[] = [
-  { t: "Fire Station", regions: ["ow", "nw"] },
-  { t: "Police Station", regions: ["ow", "nw"] },
-  { t: "Hospital", regions: ["ow", "nw"] },
-  { t: "Oil Power Plant", regions: ["ow"] },
-  { t: "Fuel Station", regions: ["ow"] },
-  { t: "Oil harbour", regions: ["ow", "nw"] },
-  { t: "Docklands harbour" },
-  { t: "Commuter pier", regions: ["ow"] },
-  { t: "Zoo", regions: ["ow"] },
-  { t: "Museum", regions: ["ow"] },
-  { t: "Botanical Garden", regions: ["ow"] },
-  { t: "Palace", regions: ["ow"] },
-  { t: "Airship platform" },
-  { t: "Research Institute", regions: ["en"] },
-  { t: "Hacienda", regions: ["nw"] },
-];
-
-// Starter tasks for a fresh island, by region — seeded UNTICKED on add, so
-// they read as red "still to do" gaps and become inventory once ticked.
-// Production buildings use the exact names from the calculator data (first
-// resident tier's need chains + the construction-material chain), so they
-// feed the ledger; plain entries (Marketplace, heaters…) are checklist-only.
-const ISLAND_STARTERS: { key: string; label: string; items: string[] }[] = [
-  {
-    key: "ow",
-    label: "Old World / Cape Trelawney",
-    items: [
-      "Marketplace",
-      "Lumberjack's Hut",
-      "Sawmill",
-      "Fishery",
-      "Potato Farm",
-      "Schnapps Distillery",
-      "Sheep Farm",
-      "Framework Knitters",
-      "Fire Station",
-    ],
-  },
-  {
-    key: "nw",
-    label: "New World",
-    items: [
-      "Marketplace",
-      "Lumberjack's Hut",
-      "Sawmill",
-      "Fish Oil Factory",
-      "Plantain Plantation",
-      "Fried Plantain Kitchen",
-      "Alpaca Farm",
-      "Poncho Darner",
-      "Sugar Cane Plantation",
-      "Rum Distillery",
-      "Fire Station",
-    ],
-  },
-  {
-    key: "ar",
-    label: "The Arctic",
-    items: [
-      "Heaters + coal supply",
-      "Lumberjack's Hut",
-      "Sawmill",
-      "Whaling Station",
-      "Caribou Hunting Cabin",
-      "Pemmican Cookhouse",
-      "Seal Hunting Docks",
-      "Goose Farm",
-      "Sleeping Bag Factory",
-    ],
-  },
-  {
-    key: "en",
-    label: "Enbesa",
-    items: [
-      "Marketplace",
-      "Water wells / irrigation",
-      "Wanza Woodcutter",
-      "Goat Farm",
-      "Sanga Farm",
-      "Salt Works",
-      "Dry-House",
-      "Hibiscus Farm",
-      "Tea Spicer",
-    ],
-  },
-  { key: "none", label: "Blank island", items: [] },
-];
-
 // Growth goals, generated from the calculator's own POP data: each resident
 // tier's need-unlock thresholds are the real "you can grow when…" milestones
 // ("Bread unlocks at 150 Workers"). fh = residents per fully-upgraded house,
@@ -272,7 +179,7 @@ interface GrowthTier {
   marks: [number, string[]][]; // threshold → goods it unlocks
 }
 
-const GROWTH_TIERS: GrowthTier[] = Object.keys(POP)
+const GROWTH_TIERS_1800: GrowthTier[] = Object.keys(POP)
   .sort((a, b) => POP[a].r - POP[b].r || (TIER_ORDER[a] ?? 99) - (TIER_ORDER[b] ?? 99))
   .map((tid) => {
     const t = POP[tid];
@@ -295,29 +202,28 @@ function houses(residents: number, fh: number) {
   return Math.ceil(residents / fh);
 }
 
-// Every good display name, for the route-task datalist — shipping moves
-// goods, not buildings. Regions merged: Rum is Rum.
-const GOOD_NAMES = [...new Set(Object.values(GOODS).map((g) => g.name))].sort();
-
-// Region key → data.json region number (for the datalist filter) and the
-// short labels the island-header amend selector uses.
-const REGION_NUM: Record<string, number> = { ow: 1, nw: 2, ar: 4, en: 5 };
-const REGION_LABELS: Record<string, string> = {
-  ow: "Old World",
-  nw: "New World",
-  ar: "Arctic",
-  en: "Enbesa",
+// Growth goals need residents-per-house (`fh`) to turn a target into a
+// residence count, and the 117 pack has no such number upstream — 117 plans
+// are driven by resident counts. So the 📈 goals panel is 1800-only for now.
+const GROWTH_TIERS_BY_GAME: Record<Game, GrowthTier[]> = {
+  anno1800: GROWTH_TIERS_1800,
+  anno117: [],
 };
 
-const WIKI_SEARCH = "https://anno1800.fandom.com/wiki/Special:Search?query=";
+// Every good display name, for the route-task datalist — shipping moves
+// goods, not buildings. Regions merged: Rum is Rum.
+const GOOD_NAMES_BY_GAME: Record<Game, string[]> = {
+  anno1800: [...new Set(Object.values(GOODS).map((g) => g.name))].sort(),
+  anno117: [...new Set(Object.values(GOODS_117).map((g) => g.name))].sort(),
+};
 
-function wikiUrl(t: string) {
+function wikiUrl(t: string, game: Game) {
   const q =
     t
       .replace(/https?:\/\/\S+/g, "")
       .replace(/\([^)]*\)/g, "")
       .trim() || t;
-  return WIKI_SEARCH + encodeURIComponent(q);
+  return GAME_CONTENT[game].wikiSearch + encodeURIComponent(q);
 }
 
 // Island tag = an "Island: …" prefix on the quest text (the 🏝 dropdown
@@ -396,6 +302,7 @@ interface SavedPlanRow {
 export function TrackerView({ calcState }: { calcState: CalcState }) {
   const {
     data,
+    game,
     sync,
     addQuest,
     toggleQuest,
@@ -416,9 +323,23 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
     setIslandRegion,
   } = useCompanion();
   const { status } = useAuth();
+  // Per-game content: region tags, starter kits, inventory chips, wiki base.
+  const {
+    starters: ISLAND_STARTERS,
+    suggestions: ISLAND_SUGGESTIONS,
+    regionNum: REGION_NUM,
+    regionLabels: REGION_LABELS,
+  } = GAME_CONTENT[game];
+  const GROWTH_TIERS = GROWTH_TIERS_BY_GAME[game];
+  const GOOD_NAMES = GOOD_NAMES_BY_GAME[game];
   const islands = data.islands || [];
   const [isleDraft, setIsleDraft] = useState("");
-  const [isleRegion, setIsleRegion] = useState("ow");
+  const [isleRegion, setIsleRegion] = useState(ISLAND_STARTERS[0].key);
+  // Switching game switches the region vocabulary — "ow" is meaningless in
+  // Rome, so fall back to that game's first starter.
+  useEffect(() => {
+    setIsleRegion(GAME_CONTENT[game].starters[0].key);
+  }, [game]);
   const addIslandSeeded = () => {
     if (!isleDraft.trim()) return;
     addIsland(
@@ -856,7 +777,7 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                   </button>
                   <a
                     className="plx"
-                    href={wikiUrl(q.t)}
+                    href={wikiUrl(q.t, game)}
                     target="_blank"
                     rel="noreferrer"
                     title="Look up on the Anno 1800 wiki"
@@ -957,12 +878,12 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                   (!s.regions || !region || s.regions.includes(region)) &&
                   !items.some((c) => c.t.toLowerCase() === s.t.toLowerCase())
               ).map((s) => s.t);
-              const ledger = islandLedger(items);
+              const ledger = islandLedger(items, game);
               const plan = (data.islandPlans || {})[name];
               return (
                 <div className="isleblk" key={name}>
                   <datalist id={`bldgSuggest${idx}`}>
-                    {buildingOptionsFor(REGION_NUM[region]).map((b) => (
+                    {buildingOptionsFor(REGION_NUM[region], game).map((b) => (
                       <option key={b} value={b} />
                     ))}
                   </datalist>
@@ -1057,7 +978,7 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                           {(c.n || 1) > 1 && <b> ×{c.n}</b>}
                         </span>
                       </label>
-                      {siloCapable(c.t) &&
+                      {siloCapable(c.t, game) &&
                         (() => {
                           const nb = c.n || 1;
                           const sc = Math.min(c.s || 0, nb);
@@ -1082,7 +1003,7 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                       {/* Electricity is Old World only; an island with no
                           region set still gets the chip (names merge across
                           worlds, so we can't tell which one it is). */}
-                      {elecCapable(c.t) &&
+                      {elecCapable(c.t, game) &&
                         (!region || region === "ow") &&
                         (() => {
                           const nb = c.n || 1;

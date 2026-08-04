@@ -181,10 +181,18 @@ is in CLAUDE.md.
   being generalised later). One app, game switcher at the top, per-game
   everything (dataset, storage keys, share-link marker, tracker content) —
   not a fork. Phased:
-  1. Switcher + 117 tracker only (quests/islands/free-text inventory;
-     regions = Latium/Albion). Tracker barely touches game data — short.
-     NEXT UP — the data phase below landed first, out of order, because a
-     concurrent session held store/TrackerView while M7 was in flight.
+  1. **SWITCHER + 117 TRACKER — DONE** (build 56). Game chips in the header;
+     each game keeps its own quests, islands, inventory and plans. 1800 keeps
+     the bare legacy localStorage keys (so /legacy.html still reads them) and
+     117 lives under `anno117_`; the synced blob stays 1800-shaped with 117
+     hanging off `g117`, so old blobs and the API are unchanged.
+     `npm run test:games` drives the real provider in jsdom and asserts the
+     invariant that matters: building a Rome list never touches the 1800 save.
+     Per-game content (region tags, starter kits, inventory chips, wiki base)
+     lives in `src/lib/games.ts`; the ledger keeps one index per game.
+     Deliberately deferred: 📈 growth goals are 1800-only (the 117 pack has no
+     residents-per-house), and a 117 line is counted at base rate because the
+     Silo/fuel multipliers need the phase-3 modifier layer.
   2. **DATA PACK — DONE** (`src/lib/data-117.json`, pack 1). Extracted by
      `npm run extract:117` from anno-mods/anno-117-calculator @ c6a6e75
      (v2.1, MIT tooling; values © Ubisoft, same provenance as data.json).

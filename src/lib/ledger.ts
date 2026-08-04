@@ -11,101 +11,209 @@
 // display name too, so the ledger can't tell them apart and doesn't need to.
 // Where the rate differs (Cattle Farm: Old World 0.5, New World 1.0) the
 // non-Old-World building gets its own region-suffixed entry.
+//
+// M10: one index per game. 1800's is built exactly as before; 117's comes from
+// data-117.json, where a producer carries its OWN inputs — Leather, Amphorae
+// and Tiles take different ingredients in Latium and Albion, so inputs cannot
+// be read off the good the way 1800 allows.
 import { GOODS, SILO, SILO_FEED } from "./data";
+import { GOODS_117, REGIONS_117 } from "./data117";
+import type { Game } from "./games";
 import type { CheckItem } from "./store";
 
 interface Variant {
   good: string; // produced good id
   rate: number; // t/min per building at base productivity, WITHOUT silo
+  inputs: { good: string; qty: number }[]; // this producer's own chain
   silo?: boolean; // legacy "(silo)" name — implies the silo is fitted
 }
 
-const VARIANTS = new Map<string, Variant>(); // key: lowercased building name
-const NAMES: string[] = []; // display-form names, for the datalist
-const primaryName: Record<string, string> = {}; // good id -> its building's entry name
-// good display name -> the building that makes it (first = Old World preferred),
-// so a deficit can be phrased as "build N× Grain Farm".
-const PRODUCER: Record<string, { building: string; rate: number }> = {};
-// Entry name -> every region that building exists in. Merged names collect
-// all their regions (Lumberjack's Hut = OW+NW+Arctic), so a region-filtered
-// datalist still offers them everywhere they're real.
-const NAME_REGIONS = new Map<string, Set<number>>();
-
-function noteRegion(name: string, region: number) {
-  const k = name.toLowerCase();
-  let s = NAME_REGIONS.get(k);
-  if (!s) NAME_REGIONS.set(k, (s = new Set()));
-  s.add(region);
+interface Index {
+  variants: Map<string, Variant>; // key: lowercased building name
+  names: string[]; // display-form names, for the datalist
+  primaryName: Record<string, string>; // good id -> its building's entry name
+  // good display name -> the building that makes it (first = Old World
+  // preferred), so a deficit can be phrased as "build N× Grain Farm".
+  producer: Record<string, { building: string; rate: number }>;
+  // Entry name -> every region that building exists in. Merged names collect
+  // all their regions (Lumberjack's Hut = OW+NW+Arctic), so a region-filtered
+  // datalist still offers them everywhere they're real.
+  nameRegions: Map<string, Set<number>>;
+  goodName: (goodId: string) => string;
+  /** Feed good for a silo'd line, or null where the game/good has no silo. */
+  siloFeed: (goodId: string) => string | null;
+  siloFeedRate: number;
+  /** Region whose buildings can be electrified, or null (117 has no power). */
+  elecRegion: number | null;
+  options: string[];
 }
 
-function register(name: string, v: Variant, hidden = false): boolean {
-  const k = name.toLowerCase();
-  if (VARIANTS.has(k)) return false;
-  VARIANTS.set(k, v);
-  if (!hidden) NAMES.push(name);
-  return true;
+function emptyIndex(): Omit<Index, "goodName" | "siloFeed" | "siloFeedRate" | "elecRegion" | "options"> {
+  return {
+    variants: new Map(),
+    names: [],
+    primaryName: {},
+    producer: {},
+    nameRegions: new Map(),
+  };
 }
 
-// Old World first so it owns contested plain names.
-for (const g of Object.values(GOODS).sort(
-  (a, b) => a.region - b.region || a.name.localeCompare(b.name)
-)) {
-  const clash = VARIANTS.get(g.building.toLowerCase());
-  const name =
-    clash && clash.rate !== g.rate ? `${g.building} (${g.regionName})` : g.building;
-  if (register(name, { good: g.id, rate: g.rate })) primaryName[g.id] = name;
-  noteRegion(name, g.region);
-  if (!PRODUCER[g.name]) PRODUCER[g.name] = { building: name, rate: g.rate };
-  for (const a of g.alts) {
-    register(a.building, { good: g.id, rate: a.rate });
-    noteRegion(a.building, g.region);
+function build1800(): Index {
+  const ix = emptyIndex();
+  const noteRegion = (name: string, region: number) => {
+    const k = name.toLowerCase();
+    let s = ix.nameRegions.get(k);
+    if (!s) ix.nameRegions.set(k, (s = new Set()));
+    s.add(region);
+  };
+  const register = (name: string, v: Variant, hidden = false): boolean => {
+    const k = name.toLowerCase();
+    if (ix.variants.has(k)) return false;
+    ix.variants.set(k, v);
+    if (!hidden) ix.names.push(name);
+    return true;
+  };
+
+  // Old World first so it owns contested plain names.
+  for (const g of Object.values(GOODS).sort(
+    (a, b) => a.region - b.region || a.name.localeCompare(b.name)
+  )) {
+    const clash = ix.variants.get(g.building.toLowerCase());
+    const name = clash && clash.rate !== g.rate ? `${g.building} (${g.regionName})` : g.building;
+    if (register(name, { good: g.id, rate: g.rate, inputs: g.inputs })) ix.primaryName[g.id] = name;
+    noteRegion(name, g.region);
+    if (!ix.producer[g.name]) ix.producer[g.name] = { building: name, rate: g.rate };
+    for (const a of g.alts) {
+      register(a.building, { good: g.id, rate: a.rate, inputs: g.inputs });
+      noteRegion(a.building, g.region);
+    }
   }
+  // Legacy "(silo)" names — silos are a bolt-on toggle on the row now, so these
+  // are hidden from the datalist but still parsed for items saved before the
+  // change (and un-migrated sync blobs).
+  for (const gid in SILO) {
+    const base = ix.primaryName[gid];
+    if (!base || !GOODS[SILO[gid]]) continue;
+    const bv = ix.variants.get(base.toLowerCase())!;
+    const name = base.endsWith(")") ? base.replace(/\)$/, ", silo)") : `${base} (silo)`;
+    register(name, { good: gid, rate: bv.rate, inputs: bv.inputs, silo: true }, true);
+  }
+
+  return {
+    ...ix,
+    goodName: (id) => GOODS[id]?.name ?? id,
+    siloFeed: (id) => SILO[id] ?? null,
+    siloFeedRate: SILO_FEED,
+    elecRegion: 1,
+    options: [...ix.names].sort(),
+  };
 }
-// Legacy "(silo)" names — silos are a bolt-on toggle on the row now, so these
-// are hidden from the datalist but still parsed for items saved before the
-// change (and un-migrated sync blobs).
-for (const gid in SILO) {
-  const base = primaryName[gid];
-  if (!base || !GOODS[SILO[gid]]) continue;
-  const bv = VARIANTS.get(base.toLowerCase())!;
-  const name = base.endsWith(")") ? base.replace(/\)$/, ", silo)") : `${base} (silo)`;
-  register(name, { good: gid, rate: bv.rate, silo: true }, true);
+
+function build117(): Index {
+  const ix = emptyIndex();
+  const noteRegion = (name: string, mask: number) => {
+    const k = name.toLowerCase();
+    let s = ix.nameRegions.get(k);
+    if (!s) ix.nameRegions.set(k, (s = new Set()));
+    // The pack stores a bitmask; the datalist filters on single region ids.
+    for (const r of [1, 2]) if (mask & r) s.add(r);
+  };
+  const register = (name: string, v: Variant): boolean => {
+    const k = name.toLowerCase();
+    if (ix.variants.has(k)) return false;
+    ix.variants.set(k, v);
+    ix.names.push(name);
+    return true;
+  };
+
+  // Latium first so it owns contested plain names, mirroring 1800's Old World
+  // preference. A good's producers each become their own entry; where two share
+  // a name but differ in rate or chain, the later one is region-suffixed.
+  for (const g of Object.values(GOODS_117).sort(
+    (a, b) => a.region - b.region || a.name.localeCompare(b.name)
+  )) {
+    for (const p of g.producers) {
+      const rate = p.time ? Math.round((60 / p.time) * 1e6) / 1e6 : 0;
+      const inputs = p.inputs
+        ? p.inputs.split("|").map((good) => ({ good, qty: 1 }))
+        : [];
+      const clash = ix.variants.get(p.building.toLowerCase());
+      const sameChain =
+        clash &&
+        clash.rate === rate &&
+        clash.inputs.map((i) => i.good).join("|") === p.inputs;
+      const region = REGIONS_117[p.region & 1 ? 1 : 2];
+      const name = clash && !sameChain ? `${p.building} (${region})` : p.building;
+      if (register(name, { good: g.id, rate, inputs }) && !ix.primaryName[g.id])
+        ix.primaryName[g.id] = name;
+      noteRegion(name, p.region);
+      if (!ix.producer[g.name]) ix.producer[g.name] = { building: name, rate };
+    }
+  }
+
+  return {
+    ...ix,
+    goodName: (id) => GOODS_117[id]?.name ?? id,
+    // 117 has a Silo module and a Coal fuel input, but their multipliers need
+    // the calculator's modifier layer (M10 phase 3) before the ledger can be
+    // honest about them. Until then a 117 line is counted at its base rate.
+    siloFeed: () => null,
+    siloFeedRate: 0,
+    elecRegion: null,
+    options: [...ix.names].sort(),
+  };
 }
+
+const INDEX: Record<Game, Index> = {
+  anno1800: build1800(),
+  anno117: build117(),
+};
+
+const ix = (game: Game = "anno1800") => INDEX[game];
 
 /** Every building name the inventory understands, for the datalist. */
-export const BUILDING_OPTIONS = [...NAMES].sort();
+export function buildingOptions(game: Game = "anno1800"): string[] {
+  return ix(game).options;
+}
 
-/** Datalist names for one region (1 OW, 2 NW, 4 Arctic, 5 Enbesa) — an
- *  island with no region set gets the full list. */
-export function buildingOptionsFor(region?: number): string[] {
-  if (!region) return BUILDING_OPTIONS;
-  return BUILDING_OPTIONS.filter((n) => NAME_REGIONS.get(n.toLowerCase())?.has(region));
+/** Datalist names for one region — 1800: 1 OW, 2 NW, 4 Arctic, 5 Enbesa;
+ *  117: 1 Latium, 2 Albion. An island with no region set gets the full list. */
+export function buildingOptionsFor(region?: number, game: Game = "anno1800"): string[] {
+  const I = ix(game);
+  if (!region) return I.options;
+  return I.options.filter((n) => I.nameRegions.get(n.toLowerCase())?.has(region));
 }
 
 /** Can this inventory item take a silo module? (animal farms only) */
-export function siloCapable(itemName: string): boolean {
-  const v = VARIANTS.get(itemName.trim().toLowerCase());
-  return !!v && !v.silo && !!SILO[v.good];
+export function siloCapable(itemName: string, game: Game = "anno1800"): boolean {
+  const I = ix(game);
+  const v = I.variants.get(itemName.trim().toLowerCase());
+  return !!v && !v.silo && !!I.siloFeed(v.good);
 }
 
 /** Can this inventory item be electrified? Same rule as the calculator
- *  (`electrifiable`): Old World production buildings, ×2 when powered. */
-export function elecCapable(itemName: string): boolean {
-  const v = VARIANTS.get(itemName.trim().toLowerCase());
-  return !!v && GOODS[v.good].region === 1;
+ *  (`electrifiable`): Old World production buildings, ×2 when powered.
+ *  117 has no electricity, so this is always false there. */
+export function elecCapable(itemName: string, game: Game = "anno1800"): boolean {
+  const I = ix(game);
+  if (I.elecRegion == null) return false;
+  const v = I.variants.get(itemName.trim().toLowerCase());
+  if (!v) return false;
+  const good = game === "anno117" ? GOODS_117[v.good] : GOODS[v.good];
+  return !!good && good.region === I.elecRegion;
 }
 
 /** The inventory item name for a produced good — the ledger's own entry, so a
  *  seeded line parses straight back into the ledger (region-suffixed where the
  *  rates differ, e.g. "Cattle Farm (New World)"). */
-export function itemNameForGood(goodId: string): string | null {
-  return primaryName[goodId] ?? null;
+export function itemNameForGood(goodId: string, game: Game = "anno1800"): string | null {
+  return ix(game).primaryName[goodId] ?? null;
 }
 
 /** Good id an inventory item name produces, or null if it's not a building
  *  the calculator knows (landmark chips, free-text items). */
-export function itemGood(itemName: string): string | null {
-  return VARIANTS.get(itemName.trim().toLowerCase())?.good ?? null;
+export function itemGood(itemName: string, game: Game = "anno1800"): string | null {
+  return ix(game).variants.get(itemName.trim().toLowerCase())?.good ?? null;
 }
 
 export interface LedgerRow {
@@ -120,32 +228,34 @@ export interface LedgerRow {
 
 /** Sum one island's checklist into per-good makes/uses/net rows.
  *  Unticked (broken) buildings and non-building items are skipped. */
-export function islandLedger(items: CheckItem[]): LedgerRow[] {
+export function islandLedger(items: CheckItem[], game: Game = "anno1800"): LedgerRow[] {
+  const I = ix(game);
   const produced: Record<string, number> = {};
   const used: Record<string, number> = {};
   for (const c of items) {
     if (!c.done) continue;
-    const v = VARIANTS.get(c.t.trim().toLowerCase());
+    const v = I.variants.get(c.t.trim().toLowerCase());
     if (!v) continue;
     const n = Math.max(1, c.n || 1);
-    const g = GOODS[v.good];
+    const feedGood = I.siloFeed(v.good);
     // sc of the line's n farms have a silo (make ×2, eat feed) — a line can
     // be part-silo'd. Legacy "(silo)" names mean all of them.
-    const sc = SILO[v.good] ? (v.silo ? n : Math.min(Math.max(0, c.s || 0), n)) : 0;
+    const sc = feedGood ? (v.silo ? n : Math.min(Math.max(0, c.s || 0), n)) : 0;
     // ec of them are powered (×2, Old World only, no feed edge — same rule as
     // the engine's `electrifiable`). Where a building has both, the two
     // multipliers stack to ×4, as in `effRate`; with both counters partial the
     // powered ones are taken to be the silo'd ones first.
-    const ec = g.region === 1 ? Math.min(Math.max(0, c.e || 0), n) : 0;
+    const ec = elecCapable(c.t, game) ? Math.min(Math.max(0, c.e || 0), n) : 0;
     const out = (n + sc + ec + Math.min(sc, ec)) * v.rate;
-    produced[g.name] = (produced[g.name] || 0) + out;
-    for (const inp of g.inputs) {
-      const nm = GOODS[inp.good].name;
+    const gname = I.goodName(v.good);
+    produced[gname] = (produced[gname] || 0) + out;
+    for (const inp of v.inputs) {
+      const nm = I.goodName(inp.good);
       used[nm] = (used[nm] || 0) + out * inp.qty;
     }
-    if (sc > 0) {
-      const nm = GOODS[SILO[v.good]].name;
-      used[nm] = (used[nm] || 0) + sc * SILO_FEED;
+    if (sc > 0 && feedGood) {
+      const nm = I.goodName(feedGood);
+      used[nm] = (used[nm] || 0) + sc * I.siloFeedRate;
     }
   }
   return [...new Set([...Object.keys(produced), ...Object.keys(used)])]
@@ -154,7 +264,7 @@ export function islandLedger(items: CheckItem[]): LedgerRow[] {
       const p = produced[name] || 0;
       const u = used[name] || 0;
       const row: LedgerRow = { name, produced: p, used: u, net: p - u };
-      const pr = PRODUCER[name];
+      const pr = I.producer[name];
       if (row.net < -1e-9 && pr)
         row.fix = { building: pr.building, count: Math.ceil((u - p) / pr.rate - 1e-9) };
       return row;

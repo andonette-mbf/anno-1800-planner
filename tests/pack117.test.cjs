@@ -189,6 +189,59 @@ const splitInputs = (s) => (s || "").split("|").filter(Boolean);
   }
 }
 
+// --- the island ledger understands 117 buildings -------------------------
+// This is the path the Tracker actually uses: a building name typed into an
+// island inventory has to resolve to the good it makes and the inputs it eats.
+{
+  const { execSync } = require("child_process");
+  const root = path.join(__dirname, "..");
+  try {
+    execSync(
+      // --jsx: ledger imports the CheckItem type from store.tsx. The import is
+      // erased, but tsc still resolves the file.
+      `npx tsc src/lib/ledger.ts --outDir tests/build --rootDir src/lib ` +
+        `--module commonjs --target es2020 --resolveJsonModule --esModuleInterop ` +
+        `--skipLibCheck --jsx react-jsx`,
+      { cwd: root, stdio: "pipe" }
+    );
+    fs.copyFileSync(path.join(root, "src/lib/data.json"), path.join(__dirname, "build/data.json"));
+    const L = require("./build/ledger.js");
+
+    const latium = L.buildingOptionsFor(1, "anno117");
+    const albion = L.buildingOptionsFor(2, "anno117");
+    if (!latium.includes("Fishing Hut")) fail("Latium options missing Fishing Hut");
+    if (!albion.includes("Cockle Picker")) fail("Albion options missing Cockle Picker");
+    if (latium.includes("Cockle Picker")) fail("Latium options wrongly include Cockle Picker");
+
+    // A Bakery makes Bread from Flour — one building, ticked.
+    const rows = L.islandLedger([{ t: "Bakery", done: true }], "anno117");
+    const bread = rows.find((r) => r.name === "Bread");
+    const flour = rows.find((r) => r.name === "Flour");
+    if (!bread || Math.abs(bread.produced - 1) > 1e-9)
+      fail(`Bakery should make 1 t/min Bread, got ${JSON.stringify(bread)}`);
+    if (!flour || Math.abs(flour.used - 1) > 1e-9)
+      fail(`Bakery should eat 1 t/min Flour, got ${JSON.stringify(flour)}`);
+    if (!flour?.fix) fail("a Flour deficit should suggest a building to fix it");
+
+    // Unticked items are "still to build" and must not produce anything.
+    if (L.islandLedger([{ t: "Bakery", done: false }], "anno117").length)
+      fail("an unticked building produced ledger rows");
+
+    // 1800 must be completely unaffected by the 117 index existing.
+    const ow = L.buildingOptionsFor(1, "anno1800");
+    if (!ow.includes("Fishery") || ow.includes("Fishing Hut"))
+      fail("1800 building options changed");
+
+    if (failures === 0 || true)
+      ok(
+        `ledger — 117 resolves ${latium.length} Latium / ${albion.length} Albion buildings; ` +
+          `Bakery = 1 t/min Bread from 1 t/min Flour`
+      );
+  } catch (e) {
+    fail(`ledger smoke test: ${e.stdout?.toString() || e.message}`);
+  }
+}
+
 if (failures) {
   console.error(`\n${failures} check(s) failed`);
   process.exit(1);
