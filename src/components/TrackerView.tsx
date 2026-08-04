@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { fmt } from "@/lib/data";
-import { BUILDING_OPTIONS, islandLedger } from "@/lib/ledger";
+import { BUILDING_OPTIONS, islandLedger, siloCapable } from "@/lib/ledger";
 import { useCompanion } from "@/lib/store";
 
 // Anno 1800 quests are mostly procedurally generated, so a complete built-in
@@ -221,6 +221,7 @@ export function TrackerView() {
     toggleIslandCheck,
     removeIslandCheck,
     bumpIslandCheck,
+    setIslandSilo,
   } = useCompanion();
   const islands = data.islands || [];
   const [isleDraft, setIsleDraft] = useState("");
@@ -390,13 +391,13 @@ export function TrackerView() {
         </div>
         <div className="bd doc">
           <p className="lead">
-            What each island already runs, in the game&apos;s own words — type a building name
-            (silo variants included, e.g. &quot;Sheep Farm (silo)&quot;), re-add or ＋ for counts
-            like ×2, so you can see existing capacity before building more. Buildings the
-            calculator knows feed a per-island <b>ledger</b>: what the island makes and what its
-            own chains use, in tons per minute — red net means the island doesn&apos;t cover its
-            own consumption. Chips below cover landmarks; untick anything broken so gaps stay
-            red (and drop out of the ledger).
+            What each island already runs, in the game&apos;s own words — type a building name,
+            re-add or ＋ for counts like ×2. Animal farms get a <b>silo</b> toggle on their row:
+            silos are a bolt-on module, so tap it when you fit them (output ×2, eats feed).
+            Buildings the calculator knows feed a per-island <b>ledger</b>: what the island makes
+            and what its own chains use, in tons per minute — red net means the island
+            doesn&apos;t cover its own consumption. Chips below cover landmarks; untick anything
+            broken so gaps stay red (and drop out of the ledger).
           </p>
           <datalist id="bldgSuggest">
             {BUILDING_OPTIONS.map((b) => (
@@ -464,6 +465,19 @@ export function TrackerView() {
                           {(c.n || 1) > 1 && <b> ×{c.n}</b>}
                         </span>
                       </label>
+                      {siloCapable(c.t) && (
+                        <button
+                          className={"chip schip" + (c.s ? " on" : "")}
+                          title={
+                            c.s
+                              ? "Silo fitted — output doubled, eats feed. Tap to remove."
+                              : "No silo yet — tap when you bolt one on (output ×2, eats feed)."
+                          }
+                          onClick={() => setIslandSilo(name, i, !c.s)}
+                        >
+                          silo
+                        </button>
+                      )}
                       <button
                         className="plx qmove"
                         title="One fewer"
@@ -491,7 +505,7 @@ export function TrackerView() {
                   {ledger.length > 0 && (
                     <div
                       className="iledger"
-                      title="Ticked buildings only, at 100% productivity — no electricity boost. Silo variants make double and use feed. What residents eat isn't counted; use the calculator for that."
+                      title="Ticked buildings only, at 100% productivity — no electricity boost. Farms with the silo toggle on make double and use feed. What residents eat isn't counted; use the calculator for that."
                     >
                       <div className="iledgrow iledghead">
                         <span>Ledger — t/min at base rates</span>
@@ -528,7 +542,7 @@ export function TrackerView() {
                   )}
                   <div className="plrow">
                     <input
-                      placeholder="Add building… e.g. Sheep Farm (silo) — Enter to add"
+                      placeholder="Add building… e.g. Sheep Farm — Enter to add"
                       list="bldgSuggest"
                       value={itemDrafts[name] || ""}
                       onChange={(e) => setItemDrafts((s) => ({ ...s, [name]: e.target.value }))}

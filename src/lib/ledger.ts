@@ -1,8 +1,9 @@
 // Island production ledger (M3): maps the island inventory's building names
 // back to the goods they produce and sums, per island, what its ticked
 // buildings make and what those buildings' own chains consume — in t/min at
-// base rates (100% productivity, no electricity; silo variants make ×2 and
-// eat SILO_FEED t/min of feed per building, same as the engine).
+// base rates (100% productivity, no electricity). Silos are a bolt-on toggle
+// on the item (`CheckItem.s`): a silo'd farm makes ×2 and eats SILO_FEED
+// t/min of feed per building, same as the engine.
 //
 // Building names repeat across regions (Lumberjack's Hut exists in three).
 // Where the rate is identical the entries are merged — the goods share a
@@ -14,8 +15,8 @@ import type { CheckItem } from "./store";
 
 interface Variant {
   good: string; // produced good id
-  rate: number; // t/min per building at base productivity
-  silo?: boolean; // silo module fitted: rate already doubled, feed applies
+  rate: number; // t/min per building at base productivity, WITHOUT silo
+  silo?: boolean; // legacy "(silo)" name — implies the silo is fitted
 }
 
 const VARIANTS = new Map<string, Variant>(); // key: lowercased building name
@@ -25,11 +26,11 @@ const primaryName: Record<string, string> = {}; // good id -> its building's ent
 // so a deficit can be phrased as "build N× Grain Farm".
 const PRODUCER: Record<string, { building: string; rate: number }> = {};
 
-function register(name: string, v: Variant): boolean {
+function register(name: string, v: Variant, hidden = false): boolean {
   const k = name.toLowerCase();
   if (VARIANTS.has(k)) return false;
   VARIANTS.set(k, v);
-  NAMES.push(name);
+  if (!hidden) NAMES.push(name);
   return true;
 }
 
@@ -44,16 +45,25 @@ for (const g of Object.values(GOODS).sort(
   if (!PRODUCER[g.name]) PRODUCER[g.name] = { building: name, rate: g.rate };
   for (const a of g.alts) register(a.building, { good: g.id, rate: a.rate });
 }
+// Legacy "(silo)" names — silos are a bolt-on toggle on the row now, so these
+// are hidden from the datalist but still parsed for items saved before the
+// change (and un-migrated sync blobs).
 for (const gid in SILO) {
   const base = primaryName[gid];
   if (!base || !GOODS[SILO[gid]]) continue;
   const bv = VARIANTS.get(base.toLowerCase())!;
   const name = base.endsWith(")") ? base.replace(/\)$/, ", silo)") : `${base} (silo)`;
-  register(name, { good: gid, rate: bv.rate * 2, silo: true });
+  register(name, { good: gid, rate: bv.rate, silo: true }, true);
 }
 
 /** Every building name the inventory understands, for the datalist. */
 export const BUILDING_OPTIONS = [...NAMES].sort();
+
+/** Can this inventory item take a silo module? (animal farms only) */
+export function siloCapable(itemName: string): boolean {
+  const v = VARIANTS.get(itemName.trim().toLowerCase());
+  return !!v && !v.silo && !!SILO[v.good];
+}
 
 export interface LedgerRow {
   name: string; // good display name (regions merged: Wood is Wood)
@@ -76,13 +86,14 @@ export function islandLedger(items: CheckItem[]): LedgerRow[] {
     if (!v) continue;
     const n = Math.max(1, c.n || 1);
     const g = GOODS[v.good];
-    const out = n * v.rate;
+    const siloOn = (v.silo || c.s) && !!SILO[v.good];
+    const out = n * v.rate * (siloOn ? 2 : 1);
     produced[g.name] = (produced[g.name] || 0) + out;
     for (const inp of g.inputs) {
       const nm = GOODS[inp.good].name;
       used[nm] = (used[nm] || 0) + out * inp.qty;
     }
-    if (v.silo) {
+    if (siloOn) {
       const nm = GOODS[SILO[v.good]].name;
       used[nm] = (used[nm] || 0) + n * SILO_FEED;
     }

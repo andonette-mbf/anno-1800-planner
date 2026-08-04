@@ -40,6 +40,11 @@ is in CLAUDE.md.
   Shutdown Check) were removed. `SessionView` → `TrackerView`, tab renamed
   Tracker (stored `session` view id maps over), `src/content/companion.ts`
   deleted. Retired state fields stay in the store schema for sync round-trip.
+- **Silo as bolt-on** (build 39): "(silo)" picker variants replaced by a silo
+  toggle chip on silo-capable farm rows (`CheckItem.s`) — silos are modules
+  you add later, not separate buildings. Legacy "(silo)" item names migrate
+  to the flag in `parseChecks` (also applied to server blobs on sync); the
+  old names still parse in the ledger as a fallback.
 
 ## Next (tentative order — confirm with the user before starting each)
 

@@ -47,6 +47,7 @@ export interface CheckItem {
   t: string;
   done: boolean;
   n?: number; // count, for building items ("Sheep Farm ×2"); absent = 1
+  s?: boolean; // silo module fitted (animal farms only) — a bolt-on, not a separate building
 }
 
 export interface QuestItem {
@@ -76,12 +77,23 @@ function parseChecks(raw: unknown): CheckItem[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .map((x) => {
-      const o = x as { t?: unknown; done?: unknown; n?: unknown };
+      const o = x as { t?: unknown; done?: unknown; n?: unknown; s?: unknown };
       const n = Math.floor(Number(o?.n));
+      let t = String(o?.t ?? "");
+      let s = !!o?.s;
+      // Migrate pre-build-39 "(silo)" name variants to the bolt-on flag:
+      // "Sheep Farm (silo)" → "Sheep Farm", "Cattle Farm (New World, silo)"
+      // → "Cattle Farm (New World)".
+      const stripped = t.replace(/ \(silo\)$/i, "").replace(/, silo\)$/i, ")");
+      if (stripped !== t) {
+        t = stripped;
+        s = true;
+      }
       return {
-        t: String(o?.t ?? ""),
+        t,
         done: !!o?.done,
         ...(n > 1 ? { n } : {}),
+        ...(s ? { s: true } : {}),
       };
     })
     .filter((x) => x.t);
@@ -189,6 +201,7 @@ interface CompanionCtx {
   toggleIslandCheck: (island: string, i: number, v: boolean) => void;
   removeIslandCheck: (island: string, i: number) => void;
   bumpIslandCheck: (island: string, i: number, delta: 1 | -1) => void;
+  setIslandSilo: (island: string, i: number, v: boolean) => void;
 }
 
 const CompanionContext = createContext<CompanionCtx | null>(null);
@@ -273,6 +286,11 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         if (j.data && !dirty && j.updatedAt > localTs) {
           const local = loadLocal();
           const merged: CompanionData = { ...local, ...(j.data as Partial<CompanionData>) };
+          // Server blobs bypass loadLocal, so re-run item normalization
+          // (e.g. the legacy "(silo)" name → silo-flag migration).
+          merged.islandChecks = Object.fromEntries(
+            Object.entries(merged.islandChecks || {}).map(([k, v]) => [k, parseChecks(v)])
+          );
           setData(merged);
           saveLocal(merged);
           ls.set("anno_sync_ts", String(j.updatedAt));
@@ -423,7 +441,20 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             [island]: ((d.islandChecks || {})[island] || []).map((c, j) => {
               if (j !== i) return c;
               const n = Math.max(1, (c.n || 1) + delta);
-              return n > 1 ? { ...c, n } : { t: c.t, done: c.done };
+              const { n: _n, ...rest } = c;
+              return n > 1 ? { ...c, n } : rest;
+            }),
+          },
+        })),
+      setIslandSilo: (island, i, v) =>
+        update((d) => ({
+          ...d,
+          islandChecks: {
+            ...(d.islandChecks || {}),
+            [island]: ((d.islandChecks || {})[island] || []).map((c, j) => {
+              if (j !== i) return c;
+              const { s: _s, ...rest } = c;
+              return v ? { ...rest, s: true } : rest;
             }),
           },
         })),
