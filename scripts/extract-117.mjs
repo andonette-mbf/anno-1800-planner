@@ -235,7 +235,9 @@ for (const p of P.products) {
       inputs,
       region: bit,
       ...(f.needsFuelInput ? { fuel: true } : {}),
-      ...(f.modulesLimit > 0 ? { modules: f.modulesLimit } : {}),
+      // Max module SLOTS, not silos: a farm's fields are modules too, which is
+      // why these run to 80/140/180. A Silo occupies slots like anything else.
+      ...(f.modulesLimit > 0 ? { modulesLimit: f.modulesLimit } : {}),
       ...(f.neededFertility ? { fertility: fertNames.get(f.neededFertility) ?? true } : {}),
     });
   }
@@ -318,6 +320,6 @@ console.log(
     `  producers ${all.length} across ${P.factories.length} factories\n` +
     `  tiers     ${Object.keys(POP).length} (${Object.keys(POP).join(", ")})\n` +
     `  fuel      ${count("fuel")} buildings burn ${en(fuelProduct)}\n` +
-    `  silo      ${count("modules")} buildings take a module\n` +
+    `  modules   ${count("modulesLimit")} buildings take modules (fields/silo)\n` +
     `  fertility ${count("fertility")} buildings need one`
 );

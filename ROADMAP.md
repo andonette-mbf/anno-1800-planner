@@ -180,7 +180,12 @@ is in CLAUDE.md.
   before M8/M9, so residents/trade-routes are built per-game once instead of
   being generalised later). One app, game switcher at the top, per-game
   everything (dataset, storage keys, share-link marker, tracker content) —
-  not a fork. Phased:
+  not a fork. **The remaining work has session prompts** — each carries the
+  context and gotchas so a fresh session doesn't re-derive them:
+  `/rome-modifiers` (Silo + Coal fuel, smallest), `/rome-calculator`
+  (phase 3, biggest — confirm approach first), `/rome-growth` (blocked on a
+  residents-per-house source; decide the data question before any UI).
+  Phased:
   1. **SWITCHER + 117 TRACKER — DONE** (build 56). Game chips in the header;
      each game keeps its own quests, islands, inventory and plans. 1800 keeps
      the bare legacy localStorage keys (so /legacy.html still reads them) and

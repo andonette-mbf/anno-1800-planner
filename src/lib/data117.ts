@@ -23,8 +23,10 @@ export interface Producer117 {
   region: number;
   /** Burns FUEL117.good on top of its inputs. */
   fuel?: boolean;
-  /** Accepts this many Silo modules. */
-  modules?: number;
+  /** Max module SLOTS this building takes — a farm's fields are modules too,
+   *  which is why these run to 80/140/180. A Silo occupies slots like any
+   *  other module; this is NOT a count of silos. */
+  modulesLimit?: number;
   /** Needs this island fertility/deposit to be placeable. */
   fertility?: string | boolean;
 }

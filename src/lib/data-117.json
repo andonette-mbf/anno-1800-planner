@@ -1925,7 +1925,7 @@
     "time": 60,
     "inputs": "",
     "region": 1,
-    "modules": 80
+    "modulesLimit": 80
    }
   ],
   "hemp": [
@@ -1934,7 +1934,7 @@
     "time": 60,
     "inputs": "",
     "region": 3,
-    "modules": 60
+    "modulesLimit": 60
    }
   ],
   "wheat": [
@@ -1943,7 +1943,7 @@
     "time": 60,
     "inputs": "",
     "region": 3,
-    "modules": 140
+    "modulesLimit": 140
    }
   ],
   "lavender": [
@@ -1952,7 +1952,7 @@
     "time": 120,
     "inputs": "",
     "region": 1,
-    "modules": 180,
+    "modulesLimit": 180,
     "fertility": "Lavender Fertility"
    }
   ],
@@ -1962,7 +1962,7 @@
     "time": 120,
     "inputs": "",
     "region": 1,
-    "modules": 160,
+    "modulesLimit": 160,
     "fertility": "Olive Fertility"
    }
   ],
@@ -1972,7 +1972,7 @@
     "time": 90,
     "inputs": "",
     "region": 3,
-    "modules": 100,
+    "modulesLimit": 100,
     "fertility": "Grape Fertility"
    }
   ],
@@ -1982,7 +1982,7 @@
     "time": 90,
     "inputs": "",
     "region": 3,
-    "modules": 140,
+    "modulesLimit": 140,
     "fertility": "Flax Fertility"
    }
   ],
@@ -1992,7 +1992,7 @@
     "time": 90,
     "inputs": "",
     "region": 1,
-    "modules": 120,
+    "modulesLimit": 120,
     "fertility": "Sandarac Fertility"
    }
   ],
@@ -2076,7 +2076,7 @@
     "time": 30,
     "inputs": "",
     "region": 3,
-    "modules": 3
+    "modulesLimit": 3
    }
   ],
   "pigs": [
@@ -2085,7 +2085,7 @@
     "time": 30,
     "inputs": "",
     "region": 3,
-    "modules": 5
+    "modulesLimit": 5
    }
   ],
   "horses": [
@@ -2094,7 +2094,7 @@
     "time": 120,
     "inputs": "",
     "region": 3,
-    "modules": 5
+    "modulesLimit": 5
    }
   ],
   "clay": [
@@ -2521,7 +2521,7 @@
     "time": 90,
     "inputs": "",
     "region": 2,
-    "modules": 60,
+    "modulesLimit": 60,
     "fertility": "Herbs Fertility"
    }
   ],
@@ -2608,7 +2608,7 @@
     "time": 60,
     "inputs": "",
     "region": 2,
-    "modules": 120,
+    "modulesLimit": 120,
     "fertility": "Barley Fertility"
    }
   ],
@@ -2618,7 +2618,7 @@
     "time": 60,
     "inputs": "",
     "region": 2,
-    "modules": 100,
+    "modulesLimit": 100,
     "fertility": "Dye Plant Fertility"
    }
   ],
@@ -2628,7 +2628,7 @@
     "time": 60,
     "inputs": "",
     "region": 2,
-    "modules": 140
+    "modulesLimit": 140
    }
   ],
   "mud": [
@@ -2645,7 +2645,7 @@
     "time": 60,
     "inputs": "",
     "region": 2,
-    "modules": 5
+    "modulesLimit": 5
    }
   ],
   "eels": [
