@@ -6,6 +6,7 @@ import {
   SESSION_THE_POINT,
   SESSION_TYPES,
 } from "@/content/companion";
+import { GOODS, SILO } from "@/lib/data";
 import { useCompanion } from "@/lib/store";
 
 const PHASES: [string, string][] = [
@@ -204,6 +205,23 @@ const ISLAND_SUGGESTIONS = [
   "Hacienda",
 ];
 
+// Every production building the calculator knows, for the island inventory —
+// the same vocabulary as the game. Silo-capable animal farms get a "(silo)"
+// variant so "Sheep Farm (silo)" is one pick.
+const BUILDING_OPTIONS = (() => {
+  const names = new Set<string>();
+  for (const g of Object.values(GOODS)) {
+    names.add(g.building);
+    for (const a of g.alts) names.add(a.building);
+  }
+  const siloBuildings = new Set(
+    Object.keys(SILO).map((gid) => GOODS[gid]?.building).filter(Boolean)
+  );
+  return [...names]
+    .sort()
+    .flatMap((b) => (siloBuildings.has(b) ? [b, `${b} (silo)`] : [b]));
+})();
+
 const WIKI_SEARCH = "https://anno1800.fandom.com/wiki/Special:Search?query=";
 
 function wikiUrl(t: string) {
@@ -261,6 +279,7 @@ export function SessionView() {
     addIslandCheck,
     toggleIslandCheck,
     removeIslandCheck,
+    bumpIslandCheck,
   } = useCompanion();
   const islands = data.islands || [];
   const [isleDraft, setIsleDraft] = useState("");
@@ -496,10 +515,16 @@ export function SessionView() {
         </div>
         <div className="bd doc">
           <p className="lead">
-            What each island already has. Tap a chip to record it in one go (it lands ticked);
-            untick anything that&apos;s missing or broken so gaps stay visible. Same island list
-            as the quest 🏝 dropdown.
+            What each island already runs, in the game&apos;s own words — type a building name
+            (silo variants included, e.g. &quot;Sheep Farm (silo)&quot;), re-add or ＋ for counts
+            like ×2, so you can see existing capacity before building more. Chips below cover
+            landmarks; untick anything broken so gaps stay red.
           </p>
+          <datalist id="bldgSuggest">
+            {BUILDING_OPTIONS.map((b) => (
+              <option key={b} value={b} />
+            ))}
+          </datalist>
           <div className="plrow">
             <input
               placeholder="Add island… (Enter to add)"
@@ -555,8 +580,26 @@ export function SessionView() {
                           checked={c.done}
                           onChange={(e) => toggleIslandCheck(name, i, e.target.checked)}
                         />
-                        <span style={{ flex: 1 }}>{c.t}</span>
+                        <span style={{ flex: 1 }}>
+                          {c.t}
+                          {(c.n || 1) > 1 && <b> ×{c.n}</b>}
+                        </span>
                       </label>
+                      <button
+                        className="plx qmove"
+                        title="One fewer"
+                        disabled={(c.n || 1) <= 1}
+                        onClick={() => bumpIslandCheck(name, i, -1)}
+                      >
+                        −
+                      </button>
+                      <button
+                        className="plx qmove"
+                        title="One more"
+                        onClick={() => bumpIslandCheck(name, i, 1)}
+                      >
+                        ＋
+                      </button>
                       <button
                         className="plx"
                         title="Remove item"
@@ -568,7 +611,8 @@ export function SessionView() {
                   ))}
                   <div className="plrow">
                     <input
-                      placeholder="It has… (Enter to add)"
+                      placeholder="Add building… e.g. Sheep Farm (silo) — Enter to add"
+                      list="bldgSuggest"
                       value={itemDrafts[name] || ""}
                       onChange={(e) => setItemDrafts((s) => ({ ...s, [name]: e.target.value }))}
                       onKeyDown={(e) => {

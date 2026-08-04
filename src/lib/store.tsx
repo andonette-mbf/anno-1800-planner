@@ -43,6 +43,7 @@ const ls = {
 export interface CheckItem {
   t: string;
   done: boolean;
+  n?: number; // count, for building items ("Sheep Farm ×2"); absent = 1
 }
 
 export interface QuestItem {
@@ -71,7 +72,15 @@ export interface CompanionData {
 function parseChecks(raw: unknown): CheckItem[] {
   if (!Array.isArray(raw)) return [];
   return raw
-    .map((x) => ({ t: String((x as { t?: unknown })?.t ?? ""), done: !!(x as { done?: unknown })?.done }))
+    .map((x) => {
+      const o = x as { t?: unknown; done?: unknown; n?: unknown };
+      const n = Math.floor(Number(o?.n));
+      return {
+        t: String(o?.t ?? ""),
+        done: !!o?.done,
+        ...(n > 1 ? { n } : {}),
+      };
+    })
     .filter((x) => x.t);
 }
 
@@ -176,6 +185,7 @@ interface CompanionCtx {
   addIslandCheck: (island: string, t: string) => void;
   toggleIslandCheck: (island: string, i: number, v: boolean) => void;
   removeIslandCheck: (island: string, i: number) => void;
+  bumpIslandCheck: (island: string, i: number, delta: 1 | -1) => void;
 }
 
 const CompanionContext = createContext<CompanionCtx | null>(null);
@@ -370,13 +380,17 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         if (!item) return;
         update((d) => {
           const cur = (d.islandChecks || {})[island] || [];
-          if (cur.some((c) => c.t.toLowerCase() === item.toLowerCase())) return d;
+          const at = cur.findIndex((c) => c.t.toLowerCase() === item.toLowerCase());
+          // Re-adding an existing item bumps its count ("Sheep Farm ×2").
+          const next =
+            at >= 0
+              ? cur.map((c, j) =>
+                  j === at ? { ...c, done: true, n: (c.n || 1) + 1 } : c
+                )
+              : [...cur, { t: item, done: true }];
           return {
             ...d,
-            islandChecks: {
-              ...(d.islandChecks || {}),
-              [island]: [...cur, { t: item, done: true }],
-            },
+            islandChecks: { ...(d.islandChecks || {}), [island]: next },
           };
         });
       },
@@ -396,6 +410,18 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           islandChecks: {
             ...(d.islandChecks || {}),
             [island]: ((d.islandChecks || {})[island] || []).filter((_, j) => j !== i),
+          },
+        })),
+      bumpIslandCheck: (island, i, delta) =>
+        update((d) => ({
+          ...d,
+          islandChecks: {
+            ...(d.islandChecks || {}),
+            [island]: ((d.islandChecks || {})[island] || []).map((c, j) => {
+              if (j !== i) return c;
+              const n = Math.max(1, (c.n || 1) + delta);
+              return n > 1 ? { ...c, n } : { t: c.t, done: c.done };
+            }),
           },
         })),
     }),

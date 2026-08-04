@@ -14,6 +14,7 @@ An Anno 1800 production calculator + strategy companion (Playbook/Session tabs),
 - `npx prisma db push` — apply schema to the database in `DATABASE_URL`
 - **Deploy:** push `main` → Vercel. Verify via the build tag in the footer (`src/components/calc/Results.tsx`) — bump it (`build N · slug`) on every user-visible change.
 - **Before starting work: `git fetch`** — this repo is edited from multiple sessions/machines.
+- **Dev roadmap: `ROADMAP.md`** — M-numbered milestones; pick up the next open one, and confirm direction with the user before starting a milestone marked tentative.
 
 ## Environment
 
