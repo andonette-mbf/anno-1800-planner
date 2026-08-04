@@ -4,3 +4,5 @@
 /* Next-app additions */
 button{font:inherit}
 .linkbtn:disabled{opacity:.5;cursor:default}
+.questrow input[type=checkbox]{width:17px;height:17px;flex:0 0 auto;margin:0;padding:0;accent-color:var(--gold2);cursor:pointer}
+.questrow.done span{opacity:.55;text-decoration:line-through}

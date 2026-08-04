@@ -40,11 +40,17 @@ const ls = {
   },
 };
 
+export interface QuestItem {
+  t: string;
+  done: boolean;
+}
+
 export interface CompanionData {
   openq: Record<string, string>;
   focus: Record<string, string>;
   shutdown: boolean[];
   parkinglot: string[];
+  quests: QuestItem[];
 }
 
 function loadLocal(): CompanionData {
@@ -54,6 +60,7 @@ function loadLocal(): CompanionData {
   for (const k of FOCUS_KEYS) focus[k] = ls.get("anno_focus_" + k) || "";
   let shutdown: boolean[] = [];
   let parkinglot: string[] = [];
+  let quests: QuestItem[] = [];
   try {
     const s = JSON.parse(ls.get("anno_shutdown_checks") || "[]");
     if (Array.isArray(s)) shutdown = s.map(Boolean);
@@ -62,7 +69,14 @@ function loadLocal(): CompanionData {
     const p = JSON.parse(ls.get("anno_parkinglot") || "[]");
     if (Array.isArray(p)) parkinglot = p.map(String);
   } catch {}
-  return { openq, focus, shutdown, parkinglot };
+  try {
+    const q = JSON.parse(ls.get("anno_quests") || "[]");
+    if (Array.isArray(q))
+      quests = q
+        .map((x) => ({ t: String(x?.t ?? ""), done: !!x?.done }))
+        .filter((x) => x.t);
+  } catch {}
+  return { openq, focus, shutdown, parkinglot, quests };
 }
 
 function saveLocal(d: CompanionData) {
@@ -70,6 +84,7 @@ function saveLocal(d: CompanionData) {
   for (const k of FOCUS_KEYS) ls.set("anno_focus_" + k, d.focus[k] || "");
   ls.set("anno_shutdown_checks", JSON.stringify(d.shutdown));
   ls.set("anno_parkinglot", JSON.stringify(d.parkinglot));
+  ls.set("anno_quests", JSON.stringify(d.quests));
 }
 
 // ---------- auth ----------
@@ -105,6 +120,10 @@ interface CompanionCtx {
   resetShutdown: () => void;
   addParking: (t: string) => void;
   removeParking: (i: number) => void;
+  addQuest: (t: string) => void;
+  toggleQuest: (i: number, done: boolean) => void;
+  removeQuest: (i: number) => void;
+  clearDoneQuests: () => void;
 }
 
 const CompanionContext = createContext<CompanionCtx | null>(null);
@@ -123,6 +142,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     focus: {},
     shutdown: [],
     parkinglot: [],
+    quests: [],
   });
   const [sync, setSync] = useState<CompanionCtx["sync"]>("local");
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -230,6 +250,19 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         t.trim() ? update((d) => ({ ...d, parkinglot: [...d.parkinglot, t.trim()] })) : undefined,
       removeParking: (i) =>
         update((d) => ({ ...d, parkinglot: d.parkinglot.filter((_, j) => j !== i) })),
+      addQuest: (t) =>
+        t.trim()
+          ? update((d) => ({ ...d, quests: [...d.quests, { t: t.trim(), done: false }] }))
+          : undefined,
+      toggleQuest: (i, done) =>
+        update((d) => ({
+          ...d,
+          quests: d.quests.map((q, j) => (j === i ? { ...q, done } : q)),
+        })),
+      removeQuest: (i) =>
+        update((d) => ({ ...d, quests: d.quests.filter((_, j) => j !== i) })),
+      clearDoneQuests: () =>
+        update((d) => ({ ...d, quests: d.quests.filter((q) => !q.done) })),
     }),
     [data, sync, update]
   );

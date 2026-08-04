@@ -31,9 +31,23 @@ function Prose({ html }: { html: string }) {
 }
 
 export function SessionView() {
-  const { data, sync, setFocus, setShutdown, resetShutdown, addParking, removeParking } =
-    useCompanion();
+  const {
+    data,
+    sync,
+    setFocus,
+    setShutdown,
+    resetShutdown,
+    addParking,
+    removeParking,
+    addQuest,
+    toggleQuest,
+    removeQuest,
+    clearDoneQuests,
+  } = useCompanion();
   const [draft, setDraft] = useState("");
+  const [questDraft, setQuestDraft] = useState("");
+  const quests = data.quests || [];
+  const doneCount = quests.filter((q) => q.done).length;
   const savedLabel =
     sync === "synced" ? "synced" : sync === "syncing" ? "syncing…" : "saves automatically";
 
@@ -89,6 +103,65 @@ export function SessionView() {
               value={data.focus.balance || ""}
               onChange={(e) => setFocus("balance", e.target.value)}
             />
+          </div>
+        </div>
+      </div>
+      <div className="card">
+        <div className="hd">
+          <h2>📜 Quest Tracker</h2>
+          {doneCount ? (
+            <button className="linkbtn" onClick={clearDoneQuests}>
+              ✓ Clear {doneCount} completed
+            </button>
+          ) : (
+            <span className="muted">{savedLabel}</span>
+          )}
+        </div>
+        <div className="bd doc">
+          <p className="lead">
+            Accepted quests, expeditions and self-set goals. Tick them off as they finish so
+            nothing quietly expires between sessions.
+          </p>
+          <div className="plrow">
+            <input
+              placeholder="Quest or goal… (Enter to add)"
+              value={questDraft}
+              onChange={(e) => setQuestDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  addQuest(questDraft);
+                  setQuestDraft("");
+                }
+              }}
+            />
+            <button
+              className="linkbtn"
+              onClick={() => {
+                addQuest(questDraft);
+                setQuestDraft("");
+              }}
+            >
+              ＋ Add
+            </button>
+          </div>
+          <div id="questList">
+            {quests.length ? (
+              quests.map((q, i) => (
+                <div className={"plitem questrow" + (q.done ? " done" : "")} key={`${i}:${q.t}`}>
+                  <input
+                    type="checkbox"
+                    checked={q.done}
+                    onChange={(e) => toggleQuest(i, e.target.checked)}
+                  />
+                  <span style={{ flex: 1 }}>{q.t}</span>
+                  <button className="plx" title="Remove quest" onClick={() => removeQuest(i)}>
+                    ✕
+                  </button>
+                </div>
+              ))
+            ) : (
+              <div className="empty">No quests tracked — add one above.</div>
+            )}
           </div>
         </div>
       </div>
