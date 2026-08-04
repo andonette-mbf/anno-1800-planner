@@ -90,7 +90,24 @@ is in CLAUDE.md.
   (Marketplace, Fire Station, heaters, wells) the ledger ignores. The quest
   tab's "＋ Add island…" prompt stays blank on purpose.
 
-## Next (tentative order — confirm with the user before starting each)
+## Next (order confirmed with the user Aug 2026 — M7 → M8 → M9, M6 slots
+## anywhere as a low-risk session)
 
+- **M7 — ⚡ bolt-on + seed-from-plan** (one short session, two small jobs):
+  (a) electricity as a per-line counter like silos ("⚡ 2/5") on electrifiable
+  buildings (`electrifiable()` = region 1; powered buildings make ×2 in the
+  ledger; no feed edge). (b) One-tap "seed inventory from linked plan" on an
+  island with a 🎯 plan: adds the plan's whole-building counts as UNTICKED
+  items (same red-gap pattern as starter kits), skipping names already
+  present. Quick fries if time allows: island reorder, editable quest notes.
+- **M8 — residents per island**: per-tier population counts on each island
+  block; the ledger adds resident consumption from `POP` need rates (gated
+  by unlock thresholds like `popTargets`) so net = production − chains −
+  residents. This makes deficits real for final goods. Decide in-session:
+  lifestyle toggle and consumption slider per island, or global.
+- **M9 — trade routes**: cross-island view matching surpluses to deficits
+  ("ship 2 t/min Rum: New World → Crown Falls") once M8 makes final-goods
+  demand honest. Start read-only (suggested flows from the ledgers); manual
+  route records only if the suggestions aren't enough.
 - **M6** — backup & restore: one-button JSON export/import of all companion
   state; phone polish (touch targets, PWA install).
