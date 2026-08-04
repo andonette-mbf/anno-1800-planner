@@ -34,6 +34,12 @@ is in CLAUDE.md.
   Anno-flavoured one — parchment/cream surfaces, sepia ink, brass gold,
   sea-teal, terracotta. Colours only (CSS vars + the hardcoded hexes);
   selectors and layout untouched. `/legacy.html` keeps the dark original.
+- **Session ritual removed → Tracker tab** (build 38): the user only uses the
+  quest tracker and island inventory, so Current Focus, Shutdown Check,
+  Parking Lot, all session prose and the quest age pills (their clock was the
+  Shutdown Check) were removed. `SessionView` → `TrackerView`, tab renamed
+  Tracker (stored `session` view id maps over), `src/content/companion.ts`
+  deleted. Retired state fields stay in the store schema for sync round-trip.
 
 ## Next (tentative order — confirm with the user before starting each)
 

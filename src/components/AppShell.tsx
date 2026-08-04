@@ -6,15 +6,17 @@ import { decodeHash, encodeHash } from "@/lib/hash";
 import { useAuth } from "@/lib/store";
 import { LeftPanel } from "./calc/LeftPanel";
 import { Results } from "./calc/Results";
-import { SessionView } from "./SessionView";
+import { TrackerView } from "./TrackerView";
 
-type View = "calc" | "session";
+type View = "calc" | "tracker";
 
 const VIEW_KEY = "anno_view";
 
-// A stored "playbook" (removed tab) falls through to the default view.
-function isView(v: string | null): v is View {
-  return v === "calc" || v === "session";
+// Stored ids from removed tabs fall through to the default view; the old
+// "session" id maps onto its successor.
+function normalizeView(v: string | null): View | null {
+  if (v === "session") return "tracker";
+  return v === "calc" || v === "tracker" ? v : null;
 }
 
 const LEGACY_DEFAULT: Partial<CalcState> = {
@@ -37,8 +39,8 @@ export function AppShell() {
       setGen((g) => g + 1);
     }
     try {
-      const v = localStorage.getItem(VIEW_KEY);
-      if (isView(v)) setView(v);
+      const v = normalizeView(localStorage.getItem(VIEW_KEY));
+      if (v) setView(v);
     } catch {}
     hydrated.current = true;
   }, []);
@@ -90,7 +92,7 @@ export function AppShell() {
         {(
           [
             ["calc", "🧮 Calculator"],
-            ["session", "⏱️ Session"],
+            ["tracker", "📜 Tracker"],
           ] as [View, string][]
         ).map(([v, label]) => (
           <button
@@ -109,8 +111,8 @@ export function AppShell() {
         <LeftPanel st={st} patch={patch} gen={gen} bumpGen={bumpGen} loadState={loadState} />
         <Results st={st} patch={patch} />
       </div>
-      <div style={{ display: view === "session" ? "block" : "none" }}>
-        <SessionView />
+      <div style={{ display: view === "tracker" ? "block" : "none" }}>
+        <TrackerView />
       </div>
     </div>
   );

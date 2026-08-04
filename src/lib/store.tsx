@@ -1,6 +1,8 @@
 "use client";
-// Auth + companion (Session) state. openq survives from the removed Playbook
-// tab so old localStorage/sync blobs stay round-trippable.
+// Auth + companion (Tracker) state. Only quests/islands/islandChecks have UI
+// now — the retired Playbook/Session fields (openq, focus, shutdown,
+// parkinglot, sessions) are still loaded/saved so old localStorage and sync
+// blobs round-trip.
 // localStorage keys are identical to the legacy single-file app, so values saved
 // there carry over. When signed in and a DB is configured, state syncs to the
 // server: dirty local edits win (last-writer-wins), otherwise newer server wins.
