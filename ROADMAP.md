@@ -207,8 +207,8 @@ is in CLAUDE.md.
      Per-game content (region tags, starter kits, inventory chips, wiki base)
      lives in `src/lib/games.ts`; the ledger keeps one index per game.
      Deliberately deferred: 📈 growth goals are 1800-only (the 117 pack has no
-     residents-per-house), and a 117 line is counted at base rate because the
-     Silo/fuel multipliers need the phase-3 modifier layer.
+     residents-per-house). The Silo/fuel gap is now closed for the ledger in
+     build 58; the calculator still needs its own pass in phase 3.
   2. **DATA PACK — DONE** (`src/lib/data-117.json`, pack 1). Extracted by
      `npm run extract:117` from anno-mods/anno-117-calculator @ c6a6e75
      (v2.1, MIT tooling; values © Ubisoft, same provenance as data.json).
@@ -235,9 +235,15 @@ is in CLAUDE.md.
        region can't make (Latium imports Beer/Cheese/Brooches, Albion imports
        Garum/Soap/Olive Oil). `importsFor117()` already returns these — a
        ready-made seed for M9.
-     - **Modifiers map over well**: Silo exists in 117 too (16 buildings,
-       eats Wheat); fuel/Coal is the direct analogue of 1800's coal source
-       (23 buildings burn 1 per 120s); fertility gates 27 buildings; no
+     - **Modifiers map over well** — and the ledger half is DONE (build 58,
+       `/rome-modifiers`): Silo exists in 117 too, on exactly 3 buildings
+       (Sheep Farm, Pig Farm, Horse Breeder — from the factory's
+       `additionalModule`, NOT modulesLimit, which counts a farm's field
+       slots and runs to 180), ×2 output for 0.2 t/min of Wheat each;
+       fuel/Coal is the direct analogue of 1800's coal source
+       (23 buildings burn 1 per 120s), but as an input EDGE, not a rate
+       modifier — it scales with building count, not output; fertility gates
+       27 buildings (still unmodelled); no
        electricity. So `effRate` becomes per-game plug-ins as planned.
      - Obsidian is *gathered* from a deposit, not built — a raw leaf you
        supply, like a trade-only import.

@@ -104,7 +104,7 @@ export function Results({ st, patch }: Props) {
         Wiki (game art © Ubisoft). Late-game / DLC recipes may vary by patch — every rate is
         editable in the model. Not affiliated with Ubisoft.
         <br />
-        <span style={{ opacity: 0.55 }}>build 57 · square corners + goods pictures</span>
+        <span style={{ opacity: 0.55 }}>build 58 · Rome silos + coal</span>
       </div>
     </section>
   );

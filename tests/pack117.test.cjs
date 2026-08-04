@@ -128,8 +128,31 @@ const splitInputs = (s) => (s || "").split("|").filter(Boolean);
   if (!(D.fuel.time > 0)) fail(`fuel time ${D.fuel.time}`), bad++;
   if (D.silo.feedGood && !ids.has(D.silo.feedGood))
     fail(`silo feed "${D.silo.feedGood}" not in pack`), bad++;
+  if (!(D.silo.feedPerMin > 0)) fail(`silo feedPerMin ${D.silo.feedPerMin}`), bad++;
+  // The ledger applies the silo as a flat ×2, exactly like 1800's. That is only
+  // right while the upstream buff is +100%; if a re-extraction changes it, the
+  // multiplier has to become a real number instead of a shared assumption.
+  if (D.silo.productivityUpgrade !== 100)
+    fail(`silo productivityUpgrade is ${D.silo.productivityUpgrade}, not 100 — the ledger's ×2 is now wrong`),
+      bad++;
   for (const id of gathered) if (!ids.has(id)) fail(`gathered "${id}" not in pack`), bad++;
   if (!bad) ok(`modifiers — fuel (${D.fuel.good}) and silo feed (${D.silo.feedGood}) resolve`);
+}
+
+// --- silo flags sit on the right buildings -------------------------------
+// modulesLimit counts module SLOTS (a crop farm's fields run to 180), so it is
+// NOT the silo test: the Ochs Farm has 5 pasture slots and takes no silo. The
+// pack's `silo` flag comes from the factory's `additionalModule` instead.
+{
+  const siloed = Object.values(D.producers)
+    .flat()
+    .filter((v) => v.silo)
+    .map((v) => v.building)
+    .sort();
+  const want = ["Horse Breeder", "Pig Farm", "Sheep Farm"];
+  if (JSON.stringify(siloed) !== JSON.stringify(want))
+    fail(`silo buildings are ${JSON.stringify(siloed)}, expected ${JSON.stringify(want)}`);
+  else ok(`silo — ${want.join(", ")} take one; no crop farm does`);
 }
 
 // --- provenance is recorded, so the pack can be re-cut reproducibly ------
@@ -226,6 +249,61 @@ const splitInputs = (s) => (s || "").split("|").filter(Boolean);
     // Unticked items are "still to build" and must not produce anything.
     if (L.islandLedger([{ t: "Bakery", done: false }], "anno117").length)
       fail("an unticked building produced ledger rows");
+
+    // --- silo: ×2 output, feed eaten, part-silo'd lines --------------------
+    // Only the three animal farms take one. The Ochs Farm is the trap: 5 module
+    // slots, no silo. Crop farms have the most slots of all and take none.
+    for (const [name, want] of [
+      ["Sheep Farm", true],
+      ["Pig Farm", true],
+      ["Horse Breeder", true],
+      ["Ochs Farm", false],
+      ["Wheat Farm", false],
+      ["Bakery", false],
+    ])
+      if (L.siloCapable(name, "anno117") !== want)
+        fail(`siloCapable("${name}") should be ${want}`);
+
+    // 3 Sheep Farms (2 t/min each), 2 of them silo'd: the silo'd pair makes ×2,
+    // so (3 + 2) x 2 = 10 t/min, and eats 2 x 0.2 = 0.4 t/min of Wheat.
+    {
+      const rows = L.islandLedger([{ t: "Sheep Farm", n: 3, s: 2, done: true }], "anno117");
+      const sheep = rows.find((r) => r.name === "Sheep");
+      const wheat = rows.find((r) => r.name === "Wheat");
+      if (!sheep || Math.abs(sheep.produced - 10) > 1e-9)
+        fail(`3 Sheep Farms, 2 silo'd should make 10 t/min, got ${JSON.stringify(sheep)}`);
+      if (!wheat || Math.abs(wheat.used - 0.4) > 1e-9)
+        fail(`2 silos should eat 0.4 t/min Wheat, got ${JSON.stringify(wheat)}`);
+      // The red gap has to name a building to fix it, same as 1800's ledger.
+      if (wheat?.fix?.building !== "Wheat Farm" || wheat.fix.count !== 1)
+        fail(`a Wheat gap should suggest 1x Wheat Farm, got ${JSON.stringify(wheat?.fix)}`);
+      // No silo ticked = base rate, no feed edge at all.
+      const plain = L.islandLedger([{ t: "Sheep Farm", n: 3, done: true }], "anno117");
+      if (Math.abs(plain.find((r) => r.name === "Sheep").produced - 6) > 1e-9)
+        fail("3 un-silo'd Sheep Farms should make 6 t/min");
+      if (plain.some((r) => r.name === "Wheat"))
+        fail("an un-silo'd line should not eat feed");
+    }
+
+    // --- fuel: Coal per minute of run time --------------------------------
+    // A Bakery burns one Coal per 120s, so 4 of them eat 4 x 0.5 = 2 t/min on
+    // top of their Flour. Buildings that don't burn fuel must not touch Coal.
+    {
+      const rows = L.islandLedger([{ t: "Bakery", n: 4, done: true }], "anno117");
+      const coal = rows.find((r) => r.name === "Coal");
+      if (!coal || Math.abs(coal.used - 2) > 1e-9)
+        fail(`4 Bakeries should burn 2 t/min Coal, got ${JSON.stringify(coal)}`);
+      if (coal?.fix?.building !== "Charcoal Burner")
+        fail(`a Coal gap should suggest a Charcoal Burner, got ${JSON.stringify(coal?.fix)}`);
+      if (Math.abs(rows.find((r) => r.name === "Flour").used - 4) > 1e-9)
+        fail("4 Bakeries should still eat 4 t/min Flour");
+      if (L.islandLedger([{ t: "Wheat Farm", n: 4, done: true }], "anno117").some((r) => r.name === "Coal"))
+        fail("a Wheat Farm burnt Coal — the fuel edge is on the wrong buildings");
+    }
+
+    // 117 has no electricity: the power chip must never appear there.
+    if (["Bakery", "Sheep Farm", "Furnace"].some((n) => L.elecCapable(n, "anno117")))
+      fail("elecCapable is true for a 117 building — 117 has no power");
 
     // 1800 must be completely unaffected by the 117 index existing.
     const ow = L.buildingOptionsFor(1, "anno1800");

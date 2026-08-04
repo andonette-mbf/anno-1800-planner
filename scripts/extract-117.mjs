@@ -192,6 +192,14 @@ const inputsOf = (f) =>
     .filter(Boolean)
     .join("|");
 
+// Which buildings accept a Silo. NOT derivable from modulesLimit — that counts
+// module SLOTS, so every crop farm's fields qualify and the Ochs Farm (5 pasture
+// slots, no silo) would too. The real link is `additionalModule`, the one bolt-on
+// a factory can take: it points at the Silo for the Sheep Farm, Pig Farm and
+// Horse Breeder, in both regions, and at nothing for everything else.
+const siloModuleGuids = new Set(P.modules.filter((m) => /silo/i.test(en(m) || "")).map((m) => m.guid));
+const takesSilo = (f) => siloModuleGuids.has(f.additionalModule);
+
 const g = [];
 const producers = {};
 
@@ -227,6 +235,10 @@ for (const p of P.products) {
     const prev = merged.get(key);
     if (prev) {
       prev.region |= bit;
+      // Flags are outside the merge key, so OR them in rather than letting the
+      // first region's variant speak for both.
+      if (f.needsFuelInput) prev.fuel = true;
+      if (takesSilo(f)) prev.silo = true;
       continue;
     }
     merged.set(key, {
@@ -235,6 +247,9 @@ for (const p of P.products) {
       inputs,
       region: bit,
       ...(f.needsFuelInput ? { fuel: true } : {}),
+      // Takes a Silo module: ×2 output for SILO.feedPerMin of feed. Three
+      // buildings only — see `takesSilo`, and do not confuse with modulesLimit.
+      ...(takesSilo(f) ? { silo: true } : {}),
       // Max module SLOTS, not silos: a farm's fields are modules too, which is
       // why these run to 80/140/180. A Silo occupies slots like anything else.
       ...(f.modulesLimit > 0 ? { modulesLimit: f.modulesLimit } : {}),
@@ -291,8 +306,8 @@ const out = {
     time: P.constants.fuelProductionTime,
   },
   // Silo module: a bolt-on that eats Wheat and raises productivity, the direct
-  // counterpart of 1800's silo. Which buildings accept one is on the variant
-  // (`modules`), since that is a per-building fact.
+  // counterpart of 1800's silo. Which buildings accept one is a per-building
+  // fact, so it rides on the variant as `silo: true` (see `takesSilo`).
   silo: {
     feedGood: siloModule ? idFor.get((siloModule.inputs || [])[0]?.product) : null,
     feedPerMin: siloModule ? 60 / siloModule.cycleTime : null,
@@ -320,6 +335,7 @@ console.log(
     `  producers ${all.length} across ${P.factories.length} factories\n` +
     `  tiers     ${Object.keys(POP).length} (${Object.keys(POP).join(", ")})\n` +
     `  fuel      ${count("fuel")} buildings burn ${en(fuelProduct)}\n` +
+    `  silo      ${count("silo")} buildings take a Silo\n` +
     `  modules   ${count("modulesLimit")} buildings take modules (fields/silo)\n` +
     `  fertility ${count("fertility")} buildings need one`
 );

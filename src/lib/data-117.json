@@ -2076,6 +2076,7 @@
     "time": 30,
     "inputs": "",
     "region": 3,
+    "silo": true,
     "modulesLimit": 3
    }
   ],
@@ -2085,6 +2086,7 @@
     "time": 30,
     "inputs": "",
     "region": 3,
+    "silo": true,
     "modulesLimit": 5
    }
   ],
@@ -2094,6 +2096,7 @@
     "time": 120,
     "inputs": "",
     "region": 3,
+    "silo": true,
     "modulesLimit": 5
    }
   ],

@@ -16,8 +16,14 @@
 // data-117.json, where a producer carries its OWN inputs — Leather, Amphorae
 // and Tiles take different ingredients in Latium and Albion, so inputs cannot
 // be read off the good the way 1800 allows.
+//
+// 117's modifiers land on the variant, not the good. Its Silo is the same deal
+// as 1800's (×2 output, feed per silo per minute) but only three buildings take
+// one, and that is a fact about the building. Its Coal fuel has no 1800
+// counterpart: a fuel-burning building eats Coal per minute of RUN time whatever
+// it makes, so it is a consumption edge of its own rather than a rate modifier.
 import { GOODS, SILO, SILO_FEED } from "./data";
-import { GOODS_117, REGIONS_117 } from "./data117";
+import { FUEL_117, GOODS_117, REGIONS_117, SILO_117 } from "./data117";
 import type { Game } from "./games";
 import type { CheckItem } from "./store";
 
@@ -26,6 +32,10 @@ interface Variant {
   rate: number; // t/min per building at base productivity, WITHOUT silo
   inputs: { good: string; qty: number }[]; // this producer's own chain
   silo?: boolean; // legacy "(silo)" name — implies the silo is fitted
+  /** Feed good id when this building can take a silo, else undefined. */
+  siloFeed?: string;
+  /** Burns the game's fuel good while running (117's Coal). */
+  fuel?: boolean;
 }
 
 interface Index {
@@ -40,15 +50,24 @@ interface Index {
   // datalist still offers them everywhere they're real.
   nameRegions: Map<string, Set<number>>;
   goodName: (goodId: string) => string;
-  /** Feed good for a silo'd line, or null where the game/good has no silo. */
-  siloFeed: (goodId: string) => string | null;
+  /** t/min of feed one fitted silo eats. */
   siloFeedRate: number;
+  /** Good every fuel-burning building consumes, or null (1800 has none — its
+   *  coal source is a rate modifier on the good, not an input edge). */
+  fuelGood: string | null;
+  /** t/min of fuel one burning building eats while it runs. */
+  fuelPerMin: number;
   /** Region whose buildings can be electrified, or null (117 has no power). */
   elecRegion: number | null;
   options: string[];
 }
 
-function emptyIndex(): Omit<Index, "goodName" | "siloFeed" | "siloFeedRate" | "elecRegion" | "options"> {
+type IndexCore = Omit<
+  Index,
+  "goodName" | "siloFeedRate" | "fuelGood" | "fuelPerMin" | "elecRegion" | "options"
+>;
+
+function emptyIndex(): IndexCore {
   return {
     variants: new Map(),
     names: [],
@@ -80,11 +99,15 @@ function build1800(): Index {
   )) {
     const clash = ix.variants.get(g.building.toLowerCase());
     const name = clash && clash.rate !== g.rate ? `${g.building} (${g.regionName})` : g.building;
-    if (register(name, { good: g.id, rate: g.rate, inputs: g.inputs })) ix.primaryName[g.id] = name;
+    // 1800's silo is a fact about the GOOD (SILO's animals), so every building
+    // that makes one — primary or alt — can take a silo.
+    const siloFeed = SILO[g.id] || undefined;
+    if (register(name, { good: g.id, rate: g.rate, inputs: g.inputs, siloFeed }))
+      ix.primaryName[g.id] = name;
     noteRegion(name, g.region);
     if (!ix.producer[g.name]) ix.producer[g.name] = { building: name, rate: g.rate };
     for (const a of g.alts) {
-      register(a.building, { good: g.id, rate: a.rate, inputs: g.inputs });
+      register(a.building, { good: g.id, rate: a.rate, inputs: g.inputs, siloFeed });
       noteRegion(a.building, g.region);
     }
   }
@@ -96,14 +119,19 @@ function build1800(): Index {
     if (!base || !GOODS[SILO[gid]]) continue;
     const bv = ix.variants.get(base.toLowerCase())!;
     const name = base.endsWith(")") ? base.replace(/\)$/, ", silo)") : `${base} (silo)`;
-    register(name, { good: gid, rate: bv.rate, inputs: bv.inputs, silo: true }, true);
+    register(
+      name,
+      { good: gid, rate: bv.rate, inputs: bv.inputs, silo: true, siloFeed: SILO[gid] },
+      true
+    );
   }
 
   return {
     ...ix,
     goodName: (id) => GOODS[id]?.name ?? id,
-    siloFeed: (id) => SILO[id] ?? null,
     siloFeedRate: SILO_FEED,
+    fuelGood: null,
+    fuelPerMin: 0,
     elecRegion: 1,
     options: [...ix.names].sort(),
   };
@@ -144,8 +172,11 @@ function build117(): Index {
         clash.inputs.map((i) => i.good).join("|") === p.inputs;
       const region = REGIONS_117[p.region & 1 ? 1 : 2];
       const name = clash && !sameChain ? `${p.building} (${region})` : p.building;
-      if (register(name, { good: g.id, rate, inputs }) && !ix.primaryName[g.id])
-        ix.primaryName[g.id] = name;
+      // Both modifiers are per-building here: only the three farms flagged
+      // `silo` in the pack take one, and only the 23 flagged `fuel` burn Coal.
+      const siloFeed = p.silo ? SILO_117.feedGood || undefined : undefined;
+      const v: Variant = { good: g.id, rate, inputs, siloFeed, fuel: p.fuel };
+      if (register(name, v) && !ix.primaryName[g.id]) ix.primaryName[g.id] = name;
       noteRegion(name, p.region);
       if (!ix.producer[g.name]) ix.producer[g.name] = { building: name, rate };
     }
@@ -154,11 +185,14 @@ function build117(): Index {
   return {
     ...ix,
     goodName: (id) => GOODS_117[id]?.name ?? id,
-    // 117 has a Silo module and a Coal fuel input, but their multipliers need
-    // the calculator's modifier layer (M10 phase 3) before the ledger can be
-    // honest about them. Until then a 117 line is counted at its base rate.
-    siloFeed: () => null,
-    siloFeedRate: 0,
+    // The Silo's +100% productivity is the same ×2 the 1800 silo gives, so the
+    // output formula below is shared; only the feed rate differs (0.2 t/min of
+    // Wheat). tests/pack117 pins the +100% so a re-extraction that changes it
+    // fails rather than quietly halving every silo'd farm.
+    siloFeedRate: SILO_117.feedPerMin ?? 0,
+    // One Coal per FUEL_117.time seconds of run time, per burning building.
+    fuelGood: FUEL_117.good,
+    fuelPerMin: FUEL_117.time ? 60 / FUEL_117.time : 0,
     elecRegion: null,
     options: [...ix.names].sort(),
   };
@@ -184,11 +218,11 @@ export function buildingOptionsFor(region?: number, game: Game = "anno1800"): st
   return I.options.filter((n) => I.nameRegions.get(n.toLowerCase())?.has(region));
 }
 
-/** Can this inventory item take a silo module? (animal farms only) */
+/** Can this inventory item take a silo module? Animal farms in both games —
+ *  1800's SILO goods, and 117's Sheep Farm / Pig Farm / Horse Breeder. */
 export function siloCapable(itemName: string, game: Game = "anno1800"): boolean {
-  const I = ix(game);
-  const v = I.variants.get(itemName.trim().toLowerCase());
-  return !!v && !v.silo && !!I.siloFeed(v.good);
+  const v = ix(game).variants.get(itemName.trim().toLowerCase());
+  return !!v && !v.silo && !!v.siloFeed;
 }
 
 /** Can this inventory item be electrified? Same rule as the calculator
@@ -237,7 +271,7 @@ export function islandLedger(items: CheckItem[], game: Game = "anno1800"): Ledge
     const v = I.variants.get(c.t.trim().toLowerCase());
     if (!v) continue;
     const n = Math.max(1, c.n || 1);
-    const feedGood = I.siloFeed(v.good);
+    const feedGood = v.siloFeed ?? null;
     // sc of the line's n farms have a silo (make ×2, eat feed) — a line can
     // be part-silo'd. Legacy "(silo)" names mean all of them.
     const sc = feedGood ? (v.silo ? n : Math.min(Math.max(0, c.s || 0), n)) : 0;
@@ -256,6 +290,13 @@ export function islandLedger(items: CheckItem[], game: Game = "anno1800"): Ledge
     if (sc > 0 && feedGood) {
       const nm = I.goodName(feedGood);
       used[nm] = (used[nm] || 0) + sc * I.siloFeedRate;
+    }
+    // Fuel (117's Coal) is burnt per minute of RUN time, not per ton made, so
+    // it scales with the building count and NOT with the silo/power multipliers
+    // — unlike the chain inputs above, which scale with output.
+    if (v.fuel && I.fuelGood) {
+      const nm = I.goodName(I.fuelGood);
+      used[nm] = (used[nm] || 0) + n * I.fuelPerMin;
     }
   }
   return [...new Set([...Object.keys(produced), ...Object.keys(used)])]

@@ -21,8 +21,11 @@ export interface Producer117 {
   inputs: string;
   /** Bitmask of the regions this producer exists in. */
   region: number;
-  /** Burns FUEL117.good on top of its inputs. */
+  /** Burns FUEL_117.good on top of its inputs. */
   fuel?: boolean;
+  /** Takes a Silo module (Sheep Farm, Pig Farm, Horse Breeder). Comes from the
+   *  factory's `additionalModule`, NOT from modulesLimit below. */
+  silo?: boolean;
   /** Max module SLOTS this building takes — a farm's fields are modules too,
    *  which is why these run to 80/140/180. A Silo occupies slots like any
    *  other module; this is NOT a count of silos. */
