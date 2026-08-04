@@ -184,6 +184,77 @@ const ISLAND_SUGGESTIONS = [
   "Hacienda",
 ];
 
+// Starter tasks for a fresh island, by region — seeded UNTICKED on add, so
+// they read as red "still to do" gaps and become inventory once ticked.
+// Production buildings use the exact names from the calculator data (first
+// resident tier's need chains + the construction-material chain), so they
+// feed the ledger; plain entries (Marketplace, heaters…) are checklist-only.
+const ISLAND_STARTERS: { key: string; label: string; items: string[] }[] = [
+  {
+    key: "ow",
+    label: "Old World / Cape Trelawney",
+    items: [
+      "Marketplace",
+      "Lumberjack's Hut",
+      "Sawmill",
+      "Fishery",
+      "Potato Farm",
+      "Schnapps Distillery",
+      "Sheep Farm",
+      "Framework Knitters",
+      "Fire Station",
+    ],
+  },
+  {
+    key: "nw",
+    label: "New World",
+    items: [
+      "Marketplace",
+      "Lumberjack's Hut",
+      "Sawmill",
+      "Fish Oil Factory",
+      "Plantain Plantation",
+      "Fried Plantain Kitchen",
+      "Alpaca Farm",
+      "Poncho Darner",
+      "Sugar Cane Plantation",
+      "Rum Distillery",
+      "Fire Station",
+    ],
+  },
+  {
+    key: "ar",
+    label: "The Arctic",
+    items: [
+      "Heaters + coal supply",
+      "Lumberjack's Hut",
+      "Sawmill",
+      "Whaling Station",
+      "Caribou Hunting Cabin",
+      "Pemmican Cookhouse",
+      "Seal Hunting Docks",
+      "Goose Farm",
+      "Sleeping Bag Factory",
+    ],
+  },
+  {
+    key: "en",
+    label: "Enbesa",
+    items: [
+      "Marketplace",
+      "Water wells / irrigation",
+      "Wanza Woodcutter",
+      "Goat Farm",
+      "Sanga Farm",
+      "Salt Works",
+      "Dry-House",
+      "Hibiscus Farm",
+      "Tea Spicer",
+    ],
+  },
+  { key: "none", label: "Blank island", items: [] },
+];
+
 const WIKI_SEARCH = "https://anno1800.fandom.com/wiki/Special:Search?query=";
 
 function wikiUrl(t: string) {
@@ -245,6 +316,12 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
   const { status } = useAuth();
   const islands = data.islands || [];
   const [isleDraft, setIsleDraft] = useState("");
+  const [isleRegion, setIsleRegion] = useState("ow");
+  const addIslandSeeded = () => {
+    if (!isleDraft.trim()) return;
+    addIsland(isleDraft, ISLAND_STARTERS.find((r) => r.key === isleRegion)?.items);
+    setIsleDraft("");
+  };
   const [itemDrafts, setItemDrafts] = useState<Record<string, string>>({});
   const [questDraft, setQuestDraft] = useState("");
   // Saved calculator plans, offered in the 🎯 link dropdown when signed in.
@@ -510,24 +587,30 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
             ))}
           </datalist>
           <div className="plrow">
+            <select
+              className="qisle"
+              aria-label="Region of the new island"
+              title="Where the new island is — it starts with that region's usual settle-up tasks, unticked"
+              value={isleRegion}
+              onChange={(e) => setIsleRegion(e.target.value)}
+            >
+              {ISLAND_STARTERS.map((r) => (
+                <option key={r.key} value={r.key}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
             <input
               placeholder="Add island… (Enter to add)"
               value={isleDraft}
               onChange={(e) => setIsleDraft(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  addIsland(isleDraft);
-                  setIsleDraft("");
+                  addIslandSeeded();
                 }
               }}
             />
-            <button
-              className="linkbtn"
-              onClick={() => {
-                addIsland(isleDraft);
-                setIsleDraft("");
-              }}
-            >
+            <button className="linkbtn" onClick={addIslandSeeded}>
               ＋ Add
             </button>
           </div>

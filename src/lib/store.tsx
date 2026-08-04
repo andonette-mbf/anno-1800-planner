@@ -233,7 +233,7 @@ interface CompanionCtx {
   removeQuest: (i: number) => void;
   swapQuests: (i: number, j: number) => void;
   clearDoneQuests: () => void;
-  addIsland: (name: string) => void;
+  addIsland: (name: string, seed?: string[]) => void;
   removeIsland: (name: string) => void;
   addIslandCheck: (island: string, t: string) => void;
   toggleIslandCheck: (island: string, i: number, v: boolean) => void;
@@ -427,14 +427,21 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         }),
       clearDoneQuests: () =>
         update((d) => ({ ...d, quests: d.quests.filter((q) => !q.done) })),
-      addIsland: (name) => {
+      addIsland: (name, seed) => {
         const n = name.trim();
         if (!n) return;
-        update((d) =>
-          (d.islands || []).some((x) => x.toLowerCase() === n.toLowerCase())
-            ? d
-            : { ...d, islands: [...(d.islands || []), n] }
-        );
+        update((d) => {
+          if ((d.islands || []).some((x) => x.toLowerCase() === n.toLowerCase())) return d;
+          const next = { ...d, islands: [...(d.islands || []), n] };
+          // Starter tasks for the island's region, unticked — they show as
+          // red gaps until built, then stay as inventory.
+          if (seed?.length)
+            next.islandChecks = {
+              ...(d.islandChecks || {}),
+              [n]: seed.map((t) => ({ t, done: false })),
+            };
+          return next;
+        });
       },
       removeIsland: (name) =>
         update((d) => {

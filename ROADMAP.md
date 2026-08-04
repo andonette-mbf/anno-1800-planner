@@ -81,6 +81,15 @@ is in CLAUDE.md.
   `--dim` #a5926f → #97835d (icon buttons 3.6:1, was 2.97). Same brass look,
   slightly deeper.
 
+- **Island starter kits** (build 46): the add-island row gained a region
+  picker (Old World/Cape Trelawney, New World, Arctic, Enbesa, Blank); a new
+  island is seeded with that region's settle-up tasks UNTICKED (`addIsland`
+  takes a `seed`), so they read as red gaps and become inventory when
+  ticked. Lists = first resident tier's need chains + construction timber
+  from the calculator data (`ISLAND_STARTERS`), plus plain entries
+  (Marketplace, Fire Station, heaters, wells) the ledger ignores. The quest
+  tab's "＋ Add island…" prompt stays blank on purpose.
+
 ## Next (tentative order — confirm with the user before starting each)
 
 - **M6** — backup & restore: one-button JSON export/import of all companion
