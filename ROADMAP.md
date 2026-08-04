@@ -108,6 +108,12 @@ is in CLAUDE.md.
   same starter tasks as the inventory add row. Old blob items already on
   islands are left alone — ✕ them by hand.
 
+- **Send to bottom** (build 49): ⤓ on each open quest row — moves it below
+  the last visible open quest in one tap instead of repeated ▼
+  (`moveQuestAfter(from, to)`: splice out, reinsert after the target).
+  Respects the island filter (hidden rows keep their places) and lands above
+  the completed block.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M8 → M9, M6 slots
 ## anywhere as a low-risk session)
 

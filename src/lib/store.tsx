@@ -245,6 +245,7 @@ interface CompanionCtx {
   toggleQuest: (i: number, done: boolean) => void;
   removeQuest: (i: number) => void;
   swapQuests: (i: number, j: number) => void;
+  moveQuestAfter: (from: number, to: number) => void;
   clearDoneQuests: () => void;
   addIsland: (name: string, seed?: string[], region?: string) => void;
   setIslandRegion: (island: string, region: string | null) => void;
@@ -438,6 +439,18 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             return d;
           const quests = d.quests.slice();
           [quests[i], quests[j]] = [quests[j], quests[i]];
+          return { ...d, quests };
+        }),
+      // Move the quest at `from` to sit immediately after the one at `to`,
+      // leaving everything between in order — "send to bottom" passes the
+      // last visible open quest, so filtered and hidden rows stay put.
+      moveQuestAfter: (from, to) =>
+        update((d) => {
+          if (from < 0 || to < 0 || from >= d.quests.length || to >= d.quests.length)
+            return d;
+          const quests = d.quests.slice();
+          const [q] = quests.splice(from, 1);
+          quests.splice((to > from ? to - 1 : to) + 1, 0, q);
           return { ...d, quests };
         }),
       clearDoneQuests: () =>

@@ -318,6 +318,7 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
     toggleQuest,
     removeQuest,
     swapQuests,
+    moveQuestAfter,
     clearDoneQuests,
     addIsland,
     removeIsland,
@@ -548,6 +549,14 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                     onClick={() => swapQuests(i, visOpen[k + 1].i)}
                   >
                     ▼
+                  </button>
+                  <button
+                    className="plx qmove"
+                    title="Send to the bottom — do last"
+                    disabled={k === visOpen.length - 1}
+                    onClick={() => moveQuestAfter(i, visOpen[visOpen.length - 1].i)}
+                  >
+                    ⤓
                   </button>
                   <a
                     className="plx"
