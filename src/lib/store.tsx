@@ -84,6 +84,9 @@ export interface CompanionData {
   islandChecks: Record<string, CheckItem[]>;
   // Linked calculator-plan snapshots, keyed by island name (M4).
   islandPlans: Record<string, IslandPlan>;
+  // Which world each island is in ("ow"|"nw"|"ar"|"en"), keyed by island
+  // name; absent = unknown (pre-build-47 islands) → no datalist filtering.
+  islandRegions: Record<string, string>;
 }
 
 function parseChecks(raw: unknown): CheckItem[] {
@@ -156,6 +159,14 @@ function loadLocal(): CompanionData {
         })
       ) as Record<string, IslandPlan>;
   } catch {}
+  let islandRegions: Record<string, string> = {};
+  try {
+    const ir = JSON.parse(ls.get("anno_island_regions") || "{}");
+    if (ir && typeof ir === "object" && !Array.isArray(ir))
+      islandRegions = Object.fromEntries(
+        Object.entries(ir).filter(([, v]) => typeof v === "string" && v)
+      ) as Record<string, string>;
+  } catch {}
   try {
     const q = JSON.parse(ls.get("anno_quests") || "[]");
     if (Array.isArray(q))
@@ -180,6 +191,7 @@ function loadLocal(): CompanionData {
     islands,
     islandChecks,
     islandPlans,
+    islandRegions,
   };
 }
 
@@ -193,6 +205,7 @@ function saveLocal(d: CompanionData) {
   ls.set("anno_islands", JSON.stringify(d.islands || []));
   ls.set("anno_island_checks", JSON.stringify(d.islandChecks || {}));
   ls.set("anno_island_plans", JSON.stringify(d.islandPlans || {}));
+  ls.set("anno_island_regions", JSON.stringify(d.islandRegions || {}));
 }
 
 // ---------- auth ----------
@@ -233,7 +246,8 @@ interface CompanionCtx {
   removeQuest: (i: number) => void;
   swapQuests: (i: number, j: number) => void;
   clearDoneQuests: () => void;
-  addIsland: (name: string, seed?: string[]) => void;
+  addIsland: (name: string, seed?: string[], region?: string) => void;
+  setIslandRegion: (island: string, region: string | null) => void;
   removeIsland: (name: string) => void;
   addIslandCheck: (island: string, t: string) => void;
   toggleIslandCheck: (island: string, i: number, v: boolean) => void;
@@ -264,6 +278,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     islands: [],
     islandChecks: {},
     islandPlans: {},
+    islandRegions: {},
   });
   const [sync, setSync] = useState<CompanionCtx["sync"]>("local");
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -427,7 +442,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         }),
       clearDoneQuests: () =>
         update((d) => ({ ...d, quests: d.quests.filter((q) => !q.done) })),
-      addIsland: (name, seed) => {
+      addIsland: (name, seed, region) => {
         const n = name.trim();
         if (!n) return;
         update((d) => {
@@ -440,9 +455,18 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
               ...(d.islandChecks || {}),
               [n]: seed.map((t) => ({ t, done: false })),
             };
+          if (region)
+            next.islandRegions = { ...(d.islandRegions || {}), [n]: region };
           return next;
         });
       },
+      setIslandRegion: (island, region) =>
+        update((d) => {
+          const islandRegions = { ...(d.islandRegions || {}) };
+          if (region) islandRegions[island] = region;
+          else delete islandRegions[island];
+          return { ...d, islandRegions };
+        }),
       removeIsland: (name) =>
         update((d) => {
           const n = name.trim().toLowerCase();
@@ -452,11 +476,15 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           const islandPlans = { ...(d.islandPlans || {}) };
           for (const k of Object.keys(islandPlans))
             if (k.toLowerCase() === n) delete islandPlans[k];
+          const islandRegions = { ...(d.islandRegions || {}) };
+          for (const k of Object.keys(islandRegions))
+            if (k.toLowerCase() === n) delete islandRegions[k];
           return {
             ...d,
             islands: (d.islands || []).filter((x) => x.toLowerCase() !== n),
             islandChecks,
             islandPlans,
+            islandRegions,
           };
         }),
       addIslandCheck: (island, t) => {

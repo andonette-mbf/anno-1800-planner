@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { fmt } from "@/lib/data";
 import { CalcState, DEFAULT_STATE } from "@/lib/engine";
-import { BUILDING_OPTIONS, islandLedger, siloCapable } from "@/lib/ledger";
+import { buildingOptionsFor, islandLedger, siloCapable } from "@/lib/ledger";
 import { planCheck } from "@/lib/plancheck";
 import { useAuth, useCompanion } from "@/lib/store";
 
@@ -255,6 +255,16 @@ const ISLAND_STARTERS: { key: string; label: string; items: string[] }[] = [
   { key: "none", label: "Blank island", items: [] },
 ];
 
+// Region key → data.json region number (for the datalist filter) and the
+// short labels the island-header amend selector uses.
+const REGION_NUM: Record<string, number> = { ow: 1, nw: 2, ar: 4, en: 5 };
+const REGION_LABELS: Record<string, string> = {
+  ow: "Old World",
+  nw: "New World",
+  ar: "Arctic",
+  en: "Enbesa",
+};
+
 const WIKI_SEARCH = "https://anno1800.fandom.com/wiki/Special:Search?query=";
 
 function wikiUrl(t: string) {
@@ -312,6 +322,7 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
     bumpIslandCheck,
     setIslandSilo,
     setIslandPlan,
+    setIslandRegion,
   } = useCompanion();
   const { status } = useAuth();
   const islands = data.islands || [];
@@ -319,7 +330,11 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
   const [isleRegion, setIsleRegion] = useState("ow");
   const addIslandSeeded = () => {
     if (!isleDraft.trim()) return;
-    addIsland(isleDraft, ISLAND_STARTERS.find((r) => r.key === isleRegion)?.items);
+    addIsland(
+      isleDraft,
+      ISLAND_STARTERS.find((r) => r.key === isleRegion)?.items,
+      isleRegion === "none" ? undefined : isleRegion
+    );
     setIsleDraft("");
   };
   const [itemDrafts, setItemDrafts] = useState<Record<string, string>>({});
@@ -581,11 +596,6 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
             short), 🎯 links a calculator plan for built&nbsp;vs&nbsp;planned. Untick anything
             broken. Hover anything for the details.
           </p>
-          <datalist id="bldgSuggest">
-            {BUILDING_OPTIONS.map((b) => (
-              <option key={b} value={b} />
-            ))}
-          </datalist>
           <div className="plrow">
             <select
               className="qisle"
@@ -615,7 +625,7 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
             </button>
           </div>
           {islands.length ? (
-            islands.map((name) => {
+            islands.map((name, idx) => {
               const items = (data.islandChecks || {})[name] || [];
               const have = items.filter((c) => c.done).length;
               const chips = ISLAND_SUGGESTIONS.filter(
@@ -623,13 +633,33 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
               );
               const ledger = islandLedger(items);
               const plan = (data.islandPlans || {})[name];
+              const region = (data.islandRegions || {})[name] || "";
               return (
                 <div className="isleblk" key={name}>
+                  <datalist id={`bldgSuggest${idx}`}>
+                    {buildingOptionsFor(REGION_NUM[region]).map((b) => (
+                      <option key={b} value={b} />
+                    ))}
+                  </datalist>
                   <div className="islehd">
                     <h4>🏝 {name}</h4>
                     <span className="muted">
                       {have}/{items.length}
                     </span>
+                    <select
+                      className="planlink"
+                      aria-label={`Region of ${name}`}
+                      title="Which world this island is in — building suggestions only offer that world's buildings. Amend any time; you can still type any name."
+                      value={region}
+                      onChange={(e) => setIslandRegion(name, e.target.value || null)}
+                    >
+                      <option value="">🌍 region…</option>
+                      {Object.entries(REGION_LABELS).map(([k, l]) => (
+                        <option key={k} value={k}>
+                          {l}
+                        </option>
+                      ))}
+                    </select>
                     {plan ? (
                       <button
                         className="chip schip on"
@@ -853,7 +883,7 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                   <div className="plrow">
                     <input
                       placeholder="Add building… e.g. Sheep Farm — Enter to add"
-                      list="bldgSuggest"
+                      list={`bldgSuggest${idx}`}
                       value={itemDrafts[name] || ""}
                       onChange={(e) => setItemDrafts((s) => ({ ...s, [name]: e.target.value }))}
                       onKeyDown={(e) => {

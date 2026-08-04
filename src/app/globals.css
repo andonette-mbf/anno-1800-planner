@@ -23,7 +23,7 @@ a.plx:hover{color:var(--accent)}
 .qnote{display:block;color:var(--muted);font-size:11px;line-height:1.35;margin-top:2px}
 .qisle{width:auto;flex:0 0 auto;max-width:38%}
 .isleblk{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:10px 0;background:#fffdf6}
-.islehd{display:flex;align-items:center;gap:8px}
+.islehd{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .islehd h4{margin:0;flex:1}
 .ichips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .questrow.gap{border-color:#cfa08e}

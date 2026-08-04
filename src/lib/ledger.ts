@@ -25,6 +25,17 @@ const primaryName: Record<string, string> = {}; // good id -> its building's ent
 // good display name -> the building that makes it (first = Old World preferred),
 // so a deficit can be phrased as "build N× Grain Farm".
 const PRODUCER: Record<string, { building: string; rate: number }> = {};
+// Entry name -> every region that building exists in. Merged names collect
+// all their regions (Lumberjack's Hut = OW+NW+Arctic), so a region-filtered
+// datalist still offers them everywhere they're real.
+const NAME_REGIONS = new Map<string, Set<number>>();
+
+function noteRegion(name: string, region: number) {
+  const k = name.toLowerCase();
+  let s = NAME_REGIONS.get(k);
+  if (!s) NAME_REGIONS.set(k, (s = new Set()));
+  s.add(region);
+}
 
 function register(name: string, v: Variant, hidden = false): boolean {
   const k = name.toLowerCase();
@@ -42,8 +53,12 @@ for (const g of Object.values(GOODS).sort(
   const name =
     clash && clash.rate !== g.rate ? `${g.building} (${g.regionName})` : g.building;
   if (register(name, { good: g.id, rate: g.rate })) primaryName[g.id] = name;
+  noteRegion(name, g.region);
   if (!PRODUCER[g.name]) PRODUCER[g.name] = { building: name, rate: g.rate };
-  for (const a of g.alts) register(a.building, { good: g.id, rate: a.rate });
+  for (const a of g.alts) {
+    register(a.building, { good: g.id, rate: a.rate });
+    noteRegion(a.building, g.region);
+  }
 }
 // Legacy "(silo)" names — silos are a bolt-on toggle on the row now, so these
 // are hidden from the datalist but still parsed for items saved before the
@@ -58,6 +73,13 @@ for (const gid in SILO) {
 
 /** Every building name the inventory understands, for the datalist. */
 export const BUILDING_OPTIONS = [...NAMES].sort();
+
+/** Datalist names for one region (1 OW, 2 NW, 4 Arctic, 5 Enbesa) — an
+ *  island with no region set gets the full list. */
+export function buildingOptionsFor(region?: number): string[] {
+  if (!region) return BUILDING_OPTIONS;
+  return BUILDING_OPTIONS.filter((n) => NAME_REGIONS.get(n.toLowerCase())?.has(region));
+}
 
 /** Can this inventory item take a silo module? (animal farms only) */
 export function siloCapable(itemName: string): boolean {

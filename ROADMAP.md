@@ -89,6 +89,14 @@ is in CLAUDE.md.
   from the calculator data (`ISLAND_STARTERS`), plus plain entries
   (Marketplace, Fire Station, heaters, wells) the ledger ignores. The quest
   tab's "＋ Add island…" prompt stays blank on purpose.
+- **Island regions** (build 47): islands now remember which world they're in
+  (`islandRegions` / `anno_island_regions`; the add-row picker stores it, a
+  🌍 selector on the island header backwards-amends it — absent = no filter,
+  for pre-build-47 islands). The add-building datalist is per-island and
+  only offers that world's buildings (`buildingOptionsFor`; merged names
+  like Lumberjack's Hut list every region they exist in); free-typed names
+  still always work. Store/ledger halves co-built with a parallel session;
+  this session finished the provider + UI.
 
 ## Next (order confirmed with the user Aug 2026 — M7 → M8 → M9, M6 slots
 ## anywhere as a low-risk session)
