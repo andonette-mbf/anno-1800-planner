@@ -8,7 +8,7 @@
 // here means built beyond — or outside — the plan.
 import { GOODS } from "./data";
 import { CalcState, DEFAULT_STATE, buildingName, buildingRows, displaySort } from "./engine";
-import { itemGood } from "./ledger";
+import { itemGood, itemNameForGood } from "./ledger";
 import type { CheckItem } from "./store";
 
 export interface PlanCheckRow {
@@ -22,6 +22,33 @@ export interface PlanCheckResult {
   rows: PlanCheckRow[]; // every planned building, calculator display order
   short: { building: string; count: number }[]; // built < planned
   extra: { building: string; count: number }[]; // built > planned, or not in the plan at all
+}
+
+/** The plan's buildings that the island doesn't list yet, in calculator
+ *  display order — the seed for "add the plan as gaps" (M7b). Names come from
+ *  the ledger's own entries so the seeded lines feed the ledger and match the
+ *  plan check; coal keeps the plan's chosen source (Coal Mine / Charcoal
+ *  Kiln), which the ledger knows as an alternative producer. */
+export function planSeed(planSt: CalcState, items: CheckItem[]): { t: string; n: number }[] {
+  const st: CalcState = { ...DEFAULT_STATE, ...planSt, round: true };
+  const { rows } = buildingRows(st);
+  const have = new Set(items.map((c) => c.t.trim().toLowerCase()));
+  const seed: { t: string; n: number }[] = [];
+  const at = new Map<string, number>();
+  for (const r of rows.slice().sort((a, b) => displaySort(st, a.id, b.id))) {
+    if (r.cnt <= 0) continue;
+    const name = r.id === "coal" ? buildingName(st, r.id) : itemNameForGood(r.id);
+    if (!name) continue;
+    const k = name.toLowerCase();
+    if (have.has(k)) continue;
+    // Two goods can share one building name (Lumberjack's Hut) — one line.
+    const i = at.get(k);
+    if (i === undefined) {
+      at.set(k, seed.length);
+      seed.push({ t: name, n: r.cnt });
+    } else seed[i].n += r.cnt;
+  }
+  return seed;
 }
 
 export function planCheck(planSt: CalcState, items: CheckItem[]): PlanCheckResult {

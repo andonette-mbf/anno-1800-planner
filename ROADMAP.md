@@ -136,17 +136,24 @@ is in CLAUDE.md.
   island's region); no region tags anywhere → full list. Single-region lists
   drop the "· Region" suffix from group labels.
 
+- **M7 — ⚡ bolt-on + seed-from-plan** (build 53): (a) electricity is a
+  per-line counter beside the silo one ("− ⚡ 2/5 ＋", `CheckItem.e`) on Old
+  World buildings — the engine's own `electrifiable()` rule, ×2 output, no
+  feed edge; both counters share a `ModChip` component, and where a farm is
+  both silo'd and powered the multipliers stack to ×4 as in `effRate` (with
+  both counters partial, the powered ones are taken to be the silo'd ones
+  first). The chip is hidden on islands 🌍-tagged outside the Old World.
+  (b) "⤵ Add the plan's N missing buildings as gaps" under the plan check
+  (`planSeed`) adds every planned building the island doesn't list yet as an
+  UNTICKED item — red gaps, like a starter kit; names come from the ledger's
+  own entries so they parse straight back (coal keeps the plan's source).
+  Nothing already listed is touched. Quick fries not taken: island reorder,
+  editable quest notes.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)
 
-- **M7 — ⚡ bolt-on + seed-from-plan** (one short session, two small jobs):
-  (a) electricity as a per-line counter like silos ("⚡ 2/5") on electrifiable
-  buildings (`electrifiable()` = region 1; powered buildings make ×2 in the
-  ledger; no feed edge). (b) One-tap "seed inventory from linked plan" on an
-  island with a 🎯 plan: adds the plan's whole-building counts as UNTICKED
-  items (same red-gap pattern as starter kits), skipping names already
-  present. Quick fries if time allows: island reorder, editable quest notes.
 - **M8 — residents per island**: per-tier population counts on each island
   block; the ledger adds resident consumption from `POP` need rates (gated
   by unlock thresholds like `popTargets`) so net = production − chains −

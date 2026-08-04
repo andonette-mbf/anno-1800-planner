@@ -51,6 +51,9 @@ export interface CheckItem {
   // How many of the line's n farms have a silo module fitted (bolt-on, animal
   // farms only) — a line can be part-silo'd, e.g. 3 of 5. Absent = none.
   s?: number;
+  // How many of the line's n buildings are inside a power plant's radius
+  // (Old World only) — same part-line idea as silos. Absent = none.
+  e?: number;
 }
 
 // A calculator plan linked to an island (M4) — a snapshot taken at link time
@@ -93,8 +96,10 @@ function parseChecks(raw: unknown): CheckItem[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .map((x) => {
-      const o = x as { t?: unknown; done?: unknown; n?: unknown; s?: unknown };
+      const o = x as { t?: unknown; done?: unknown; n?: unknown; s?: unknown; e?: unknown };
       const n = Math.max(1, Math.floor(Number(o?.n)) || 1);
+      // Electrified count (build 52) — no older form to migrate.
+      const e = Math.min(n, Math.max(0, Math.floor(Number(o?.e)) || 0));
       let t = String(o?.t ?? "");
       // Silo count; build-39 data stored a boolean (all-or-nothing) — true
       // meant every farm in the line.
@@ -113,6 +118,7 @@ function parseChecks(raw: unknown): CheckItem[] {
         done: !!o?.done,
         ...(n > 1 ? { n } : {}),
         ...(s > 0 ? { s } : {}),
+        ...(e > 0 ? { e } : {}),
       };
     })
     .filter((x) => x.t);
@@ -255,6 +261,8 @@ interface CompanionCtx {
   removeIslandCheck: (island: string, i: number) => void;
   bumpIslandCheck: (island: string, i: number, delta: 1 | -1) => void;
   setIslandSilo: (island: string, i: number, count: number) => void;
+  setIslandElec: (island: string, i: number, count: number) => void;
+  seedIslandChecks: (island: string, seed: { t: string; n: number }[]) => void;
   setIslandPlan: (island: string, plan: IslandPlan | null) => void;
 }
 
@@ -546,11 +554,13 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
               if (j !== i) return c;
               const n = Math.max(1, (c.n || 1) + delta);
               const s = Math.min(c.s || 0, n); // fewer farms can't keep more silos
-              const { n: _n, s: _s, ...rest } = c;
+              const e = Math.min(c.e || 0, n); // ditto for powered buildings
+              const { n: _n, s: _s, e: _e, ...rest } = c;
               return {
                 ...rest,
                 ...(n > 1 ? { n } : {}),
                 ...(s > 0 ? { s } : {}),
+                ...(e > 0 ? { e } : {}),
               };
             }),
           },
@@ -568,6 +578,39 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             }),
           },
         })),
+      setIslandElec: (island, i, count) =>
+        update((d) => ({
+          ...d,
+          islandChecks: {
+            ...(d.islandChecks || {}),
+            [island]: ((d.islandChecks || {})[island] || []).map((c, j) => {
+              if (j !== i) return c;
+              const e = Math.max(0, Math.min(Math.floor(count), c.n || 1));
+              const { e: _e, ...rest } = c;
+              return e > 0 ? { ...rest, e } : rest;
+            }),
+          },
+        })),
+      // Append buildings the island doesn't list yet as UNTICKED items — red
+      // gaps to build, same pattern as the region starter kits (M7b: seeding
+      // an island from its linked plan).
+      seedIslandChecks: (island, seed) =>
+        update((d) => {
+          const cur = (d.islandChecks || {})[island] || [];
+          const have = new Set(cur.map((c) => c.t.trim().toLowerCase()));
+          const add = seed
+            .filter((x) => x.t.trim() && !have.has(x.t.trim().toLowerCase()))
+            .map((x) => ({
+              t: x.t.trim(),
+              done: false,
+              ...(x.n > 1 ? { n: Math.floor(x.n) } : {}),
+            }));
+          if (!add.length) return d;
+          return {
+            ...d,
+            islandChecks: { ...(d.islandChecks || {}), [island]: [...cur, ...add] },
+          };
+        }),
       setIslandPlan: (island, plan) =>
         update((d) => {
           const islandPlans = { ...(d.islandPlans || {}) };

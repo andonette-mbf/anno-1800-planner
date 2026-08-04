@@ -1,9 +1,10 @@
 // Island production ledger (M3): maps the island inventory's building names
 // back to the goods they produce and sums, per island, what its ticked
 // buildings make and what those buildings' own chains consume — in t/min at
-// base rates (100% productivity, no electricity). Silos are a bolt-on counter
-// on the item (`CheckItem.s` = how many of the line's farms have one): each
-// silo'd farm makes ×2 and eats SILO_FEED t/min of feed, same as the engine.
+// base rates (100% productivity). Silos and electricity are bolt-on counters
+// on the item: `CheckItem.s` = how many of the line's farms have a silo (×2
+// output, SILO_FEED t/min of feed each), `CheckItem.e` = how many are powered
+// (×2, Old World only, no feed) — same multipliers as the engine's `effRate`.
 //
 // Building names repeat across regions (Lumberjack's Hut exists in three).
 // Where the rate is identical the entries are merged — the goods share a
@@ -87,6 +88,20 @@ export function siloCapable(itemName: string): boolean {
   return !!v && !v.silo && !!SILO[v.good];
 }
 
+/** Can this inventory item be electrified? Same rule as the calculator
+ *  (`electrifiable`): Old World production buildings, ×2 when powered. */
+export function elecCapable(itemName: string): boolean {
+  const v = VARIANTS.get(itemName.trim().toLowerCase());
+  return !!v && GOODS[v.good].region === 1;
+}
+
+/** The inventory item name for a produced good — the ledger's own entry, so a
+ *  seeded line parses straight back into the ledger (region-suffixed where the
+ *  rates differ, e.g. "Cattle Farm (New World)"). */
+export function itemNameForGood(goodId: string): string | null {
+  return primaryName[goodId] ?? null;
+}
+
 /** Good id an inventory item name produces, or null if it's not a building
  *  the calculator knows (landmark chips, free-text items). */
 export function itemGood(itemName: string): string | null {
@@ -117,7 +132,12 @@ export function islandLedger(items: CheckItem[]): LedgerRow[] {
     // sc of the line's n farms have a silo (make ×2, eat feed) — a line can
     // be part-silo'd. Legacy "(silo)" names mean all of them.
     const sc = SILO[v.good] ? (v.silo ? n : Math.min(Math.max(0, c.s || 0), n)) : 0;
-    const out = (n + sc) * v.rate;
+    // ec of them are powered (×2, Old World only, no feed edge — same rule as
+    // the engine's `electrifiable`). Where a building has both, the two
+    // multipliers stack to ×4, as in `effRate`; with both counters partial the
+    // powered ones are taken to be the silo'd ones first.
+    const ec = g.region === 1 ? Math.min(Math.max(0, c.e || 0), n) : 0;
+    const out = (n + sc + ec + Math.min(sc, ec)) * v.rate;
     produced[g.name] = (produced[g.name] || 0) + out;
     for (const inp of g.inputs) {
       const nm = GOODS[inp.good].name;

@@ -2,8 +2,8 @@
 import React, { useEffect, useState } from "react";
 import { GOODS, POP, REGIONS, TIER_ORDER, fmt } from "@/lib/data";
 import { CalcState, DEFAULT_STATE } from "@/lib/engine";
-import { buildingOptionsFor, islandLedger, siloCapable } from "@/lib/ledger";
-import { planCheck } from "@/lib/plancheck";
+import { buildingOptionsFor, elecCapable, islandLedger, siloCapable } from "@/lib/ledger";
+import { planCheck, planSeed } from "@/lib/plancheck";
 import { useAuth, useCompanion } from "@/lib/store";
 
 // Anno 1800 quests are mostly procedurally generated, so a complete built-in
@@ -343,6 +343,50 @@ function linkify(t: string) {
   );
 }
 
+// A per-line bolt-on counter (silo module, electricity): how many of the
+// line's n buildings have it. One building = a tap toggle, several = −/＋ over
+// the count, because a line is often part-fitted (3 of 5 farms silo'd).
+function ModChip({
+  n,
+  count,
+  unit,
+  one,
+  many,
+  title,
+  onSet,
+}: {
+  n: number;
+  count: number;
+  unit: string; // singular, for the −/＋ aria labels
+  one: string; // chip text when the line is a single building
+  many: string; // label in front of the count
+  title: string;
+  onSet: (c: number) => void;
+}) {
+  const c = Math.min(Math.max(0, count), n);
+  if (n === 1)
+    return (
+      <button
+        className={"chip schip" + (c > 0 ? " on" : "")}
+        title={title}
+        onClick={() => onSet(c ? 0 : 1)}
+      >
+        {one}
+      </button>
+    );
+  return (
+    <span className={"chip schip" + (c > 0 ? " on" : "")} title={title}>
+      <button aria-label={`One ${unit} fewer`} disabled={c <= 0} onClick={() => onSet(c - 1)}>
+        −
+      </button>
+      {many} {c}/{n}
+      <button aria-label={`One ${unit} more`} disabled={c >= n} onClick={() => onSet(c + 1)}>
+        ＋
+      </button>
+    </span>
+  );
+}
+
 interface SavedPlanRow {
   id: string;
   name: string;
@@ -366,6 +410,8 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
     removeIslandCheck,
     bumpIslandCheck,
     setIslandSilo,
+    setIslandElec,
+    seedIslandChecks,
     setIslandPlan,
     setIslandRegion,
   } = useCompanion();
@@ -952,41 +998,48 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                         (() => {
                           const nb = c.n || 1;
                           const sc = Math.min(c.s || 0, nb);
-                          if (nb === 1)
-                            return (
-                              <button
-                                className={"chip schip" + (sc > 0 ? " on" : "")}
-                                title={
-                                  sc > 0
+                          return (
+                            <ModChip
+                              n={nb}
+                              count={sc}
+                              unit="silo"
+                              one="silo"
+                              many="silos"
+                              title={
+                                nb === 1
+                                  ? sc > 0
                                     ? "Silo fitted — output doubled, eats feed. Tap to remove."
                                     : "No silo yet — tap when you bolt one on (output ×2, eats feed)."
-                                }
-                                onClick={() => setIslandSilo(name, i, sc ? 0 : 1)}
-                              >
-                                silo
-                              </button>
-                            );
+                                  : `${sc} of the ${nb} farms have a silo — one module max per farm, and a line can be part-silo'd. Silo'd farms make ×2 and eat feed.`
+                              }
+                              onSet={(v) => setIslandSilo(name, i, v)}
+                            />
+                          );
+                        })()}
+                      {/* Electricity is Old World only; an island with no
+                          region set still gets the chip (names merge across
+                          worlds, so we can't tell which one it is). */}
+                      {elecCapable(c.t) &&
+                        (!region || region === "ow") &&
+                        (() => {
+                          const nb = c.n || 1;
+                          const ec = Math.min(c.e || 0, nb);
                           return (
-                            <span
-                              className={"chip schip" + (sc > 0 ? " on" : "")}
-                              title={`${sc} of the ${nb} farms have a silo — one module max per farm, and a line can be part-silo'd. Silo'd farms make ×2 and eat feed.`}
-                            >
-                              <button
-                                aria-label="One silo fewer"
-                                disabled={sc <= 0}
-                                onClick={() => setIslandSilo(name, i, sc - 1)}
-                              >
-                                −
-                              </button>
-                              silos {sc}/{nb}
-                              <button
-                                aria-label="One silo more"
-                                disabled={sc >= nb}
-                                onClick={() => setIslandSilo(name, i, sc + 1)}
-                              >
-                                ＋
-                              </button>
-                            </span>
+                            <ModChip
+                              n={nb}
+                              count={ec}
+                              unit="powered building"
+                              one="⚡ power"
+                              many="⚡"
+                              title={
+                                nb === 1
+                                  ? ec > 0
+                                    ? "Powered — output doubled. Tap when it's off the grid again."
+                                    : "Not powered — tap once a power plant covers it (output ×2)."
+                                  : `${ec} of the ${nb} are inside a power plant's radius — powered ones make ×2. Powered and silo'd together makes ×4.`
+                              }
+                              onSet={(v) => setIslandElec(name, i, v)}
+                            />
                           );
                         })()}
                       <button
@@ -1016,7 +1069,7 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                   {ledger.length > 0 && (
                     <div
                       className="iledger"
-                      title="Ticked buildings only, at 100% productivity — no electricity boost. Farms with the silo toggle on make double and use feed. What residents eat isn't counted; use the calculator for that."
+                      title="Ticked buildings only, at 100% productivity. Silo'd farms make double and use feed; ⚡ powered buildings make double. What residents eat isn't counted; use the calculator for that."
                     >
                       <div className="iledgrow iledghead">
                         <span>Ledger — t/min at base rates</span>
@@ -1054,6 +1107,7 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                   {plan &&
                     (() => {
                       const pc = planCheck(plan.st, items);
+                      const seed = planSeed(plan.st, items);
                       return (
                         <div
                           className="iledger"
@@ -1082,6 +1136,20 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                             <div className="iledgfix">
                               ⚠ To finish the plan — build{" "}
                               {pc.short.map((s) => `${s.count}× ${s.building}`).join(" · ")}
+                            </div>
+                          )}
+                          {seed.length > 0 && (
+                            <div className="iseed">
+                              <button
+                                className="linkbtn"
+                                title={`Adds the plan's buildings that ${name} doesn't list yet as unticked items — red gaps to build, like a new island's starter tasks. Nothing already listed is touched: ${seed
+                                  .map((s) => `${s.t} ×${s.n}`)
+                                  .join(", ")}`}
+                                onClick={() => seedIslandChecks(name, seed)}
+                              >
+                                ⤵ Add the plan&apos;s {seed.length} missing building
+                                {seed.length > 1 ? "s" : ""} as gaps
+                              </button>
                             </div>
                           )}
                           {pc.extra.length > 0 && (

@@ -44,6 +44,8 @@ a.plx:hover{color:var(--accent)}
 .schip button:disabled{opacity:.3;cursor:default}
 .islehd .schip{max-width:180px;overflow:hidden;text-overflow:ellipsis}
 .planlink{width:auto;flex:0 0 auto;font-size:11px;padding:4px 8px;color:var(--muted);border-radius:999px}
+.iseed{margin-top:7px}
+.iseed .linkbtn{padding:5px 10px;font-size:11.5px}
 .iplanextra{color:var(--gold);font-weight:600;margin-top:5px}
 .iplanok{color:var(--green);font-weight:600;margin-top:5px}
 .doneblk{margin-top:10px;padding-top:6px;border-top:1px dashed var(--line)}
