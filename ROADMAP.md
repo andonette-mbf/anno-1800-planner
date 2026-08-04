@@ -141,7 +141,11 @@ is in CLAUDE.md.
   an inline row (number input + island select, defaulting to the filtered
   island or your only island) and the goal is island-prefixed ("Crown Falls:
   Add 250 Workers") so the filter chips catch it. Threshold picks are
-  auto-prefixed with the filtered island too.
+  auto-prefixed with the filtered island too. Build 55: "still does not
+  select an island" — the island select now always defaults to a real
+  island (filtered → tier's-region island → first island; "(no island)"
+  remains an opt-out); one-click threshold goals tag the tier's-region
+  island when there's exactly one.
 
 - **M7 — ⚡ bolt-on + seed-from-plan** (build 53): (a) electricity is a
   per-line counter beside the silo one ("− ⚡ 2/5 ＋", `CheckItem.e`) on Old

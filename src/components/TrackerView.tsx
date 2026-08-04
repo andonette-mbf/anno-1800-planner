@@ -567,16 +567,23 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                 const [tid, mark] = e.target.value.split(":");
                 const t = GROWTH_TIERS.find((x) => x.tid === tid);
                 if (!t) return;
+                // The island that grows: the filtered one, else an island in
+                // this tier's region (Workers → your Old World island), else
+                // the first island — a goal should always name its island.
+                const inRegion = islands.filter(
+                  (n) => REGION_NUM[(data.islandRegions || {})[n]] === t.region
+                );
                 if (mark === "custom") {
                   setGrowthTid(t.tid);
                   setGrowthN("");
-                  setGrowthIsle(effFilter || (islands.length === 1 ? islands[0] : ""));
+                  setGrowthIsle(effFilter || inRegion[0] || islands[0] || "");
                   return;
                 }
+                const isle = effFilter || (inRegion.length === 1 ? inRegion[0] : "");
                 const target = Number(mark);
                 const goods = t.marks.find(([v]) => v === target)?.[1] || [];
                 addQuest(
-                  `${effFilter ? `${effFilter}: ` : ""}Grow to ${target} ${t.lbl} — unlocks ${goods.join(" + ")}`,
+                  `${isle ? `${isle}: ` : ""}Grow to ${target} ${t.lbl} — unlocks ${goods.join(" + ")}`,
                   `${houses(target, t.fh)} residences at ${t.fh} per house. New ${
                     goods.length > 1 ? "needs" : "need"
                   }: ${goods.join(", ")} — size the farms in the calculator's population mode.`
