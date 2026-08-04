@@ -98,6 +98,16 @@ is in CLAUDE.md.
   still always work. Store/ledger halves co-built with a parallel session;
   this session finished the provider + UI.
 
+- **Granular chips + quest-tab region ask** (build 48): "the badges are
+  moot" — blob chips replaced with real countable buildings (Fire/Police/
+  Hospital split out; Electricity → Oil Power Plant; Tractors+fuel → Fuel
+  Station; "Silos on animal farms" dropped — the per-farm counter owns
+  that), each tagged with the regions it exists in and filtered by the
+  island's 🌍 region (unset = show all). The quest tab's "＋ Add island…"
+  prompt now also asks where the island is (1–4 or blank) and seeds the
+  same starter tasks as the inventory add row. Old blob items already on
+  islands are left alone — ✕ them by hand.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M8 → M9, M6 slots
 ## anywhere as a low-risk session)
 

@@ -165,23 +165,28 @@ const STORYLINES: [string, StoryEntry[]][] = [
   ],
 ];
 
-// One-tap chips for the island inventory — the usual "does this island have
-// it yet?" facilities. A chip disappears once the island has the item.
-const ISLAND_SUGGESTIONS = [
-  "Silos on animal farms",
-  "Electricity",
-  "Tractors + fuel",
-  "Oil harbour",
-  "Docklands harbour",
-  "Commuter pier",
-  "Fire · police · hospital coverage",
-  "Zoo",
-  "Museum",
-  "Botanical Garden",
-  "Palace",
-  "Airship platform",
-  "Research Institute",
-  "Hacienda",
+// One-tap chips for the island inventory — real, countable buildings (＋ to
+// bump like any item), filtered to the island's region when one is set.
+// A chip disappears once the island has the item. Blob entries ("Silos on
+// animal farms", "Fire · police · hospital coverage") were dropped as too
+// coarse — silos/electricity are per-line counters, services are their own
+// buildings. `regions` omitted = shown everywhere.
+const ISLAND_SUGGESTIONS: { t: string; regions?: string[] }[] = [
+  { t: "Fire Station", regions: ["ow", "nw"] },
+  { t: "Police Station", regions: ["ow", "nw"] },
+  { t: "Hospital", regions: ["ow", "nw"] },
+  { t: "Oil Power Plant", regions: ["ow"] },
+  { t: "Fuel Station", regions: ["ow"] },
+  { t: "Oil harbour", regions: ["ow", "nw"] },
+  { t: "Docklands harbour" },
+  { t: "Commuter pier", regions: ["ow"] },
+  { t: "Zoo", regions: ["ow"] },
+  { t: "Museum", regions: ["ow"] },
+  { t: "Botanical Garden", regions: ["ow"] },
+  { t: "Palace", regions: ["ow"] },
+  { t: "Airship platform" },
+  { t: "Research Institute", regions: ["en"] },
+  { t: "Hacienda", regions: ["nw"] },
 ];
 
 // Starter tasks for a fresh island, by region — seeded UNTICKED on add, so
@@ -429,7 +434,20 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                 if (v === "__add") {
                   const name = window.prompt("Island name to add:");
                   if (name?.trim()) {
-                    addIsland(name);
+                    // Same ask-where-it-is + base-task-list as the inventory
+                    // add row, prompt-sized.
+                    const r = (
+                      window.prompt(
+                        "Where is it?\n1 Old World / Cape Trelawney · 2 New World · 3 Arctic · 4 Enbesa\nEnter = blank island",
+                        ""
+                      ) || ""
+                    ).trim();
+                    const key = { "1": "ow", "2": "nw", "3": "ar", "4": "en" }[r];
+                    addIsland(
+                      name,
+                      key ? ISLAND_STARTERS.find((s) => s.key === key)?.items : undefined,
+                      key
+                    );
                     setQuestDraft((d) => `${name.trim()}: ${d}`);
                   }
                 } else if (v === "__del") {
@@ -628,12 +646,14 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
             islands.map((name, idx) => {
               const items = (data.islandChecks || {})[name] || [];
               const have = items.filter((c) => c.done).length;
+              const region = (data.islandRegions || {})[name] || "";
               const chips = ISLAND_SUGGESTIONS.filter(
-                (s) => !items.some((c) => c.t.toLowerCase() === s.toLowerCase())
-              );
+                (s) =>
+                  (!s.regions || !region || s.regions.includes(region)) &&
+                  !items.some((c) => c.t.toLowerCase() === s.t.toLowerCase())
+              ).map((s) => s.t);
               const ledger = islandLedger(items);
               const plan = (data.islandPlans || {})[name];
-              const region = (data.islandRegions || {})[name] || "";
               return (
                 <div className="isleblk" key={name}>
                   <datalist id={`bldgSuggest${idx}`}>
