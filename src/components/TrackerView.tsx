@@ -1,8 +1,10 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { fmt } from "@/lib/data";
+import { CalcState, DEFAULT_STATE } from "@/lib/engine";
 import { BUILDING_OPTIONS, islandLedger, siloCapable } from "@/lib/ledger";
-import { useCompanion } from "@/lib/store";
+import { planCheck } from "@/lib/plancheck";
+import { useAuth, useCompanion } from "@/lib/store";
 
 // Anno 1800 quests are mostly procedurally generated, so a complete built-in
 // quest list isn't feasible — these are just high-confidence quest givers and
@@ -206,7 +208,13 @@ function linkify(t: string) {
   );
 }
 
-export function TrackerView() {
+interface SavedPlanRow {
+  id: string;
+  name: string;
+  data: CalcState;
+}
+
+export function TrackerView({ calcState }: { calcState: CalcState }) {
   const {
     data,
     sync,
@@ -222,11 +230,27 @@ export function TrackerView() {
     removeIslandCheck,
     bumpIslandCheck,
     setIslandSilo,
+    setIslandPlan,
   } = useCompanion();
+  const { status } = useAuth();
   const islands = data.islands || [];
   const [isleDraft, setIsleDraft] = useState("");
   const [itemDrafts, setItemDrafts] = useState<Record<string, string>>({});
   const [questDraft, setQuestDraft] = useState("");
+  // Saved calculator plans, offered in the 🎯 link dropdown when signed in.
+  const [savedPlans, setSavedPlans] = useState<SavedPlanRow[]>([]);
+  useEffect(() => {
+    if (status !== "authed") {
+      setSavedPlans([]);
+      return;
+    }
+    (async () => {
+      try {
+        const r = await fetch("/api/plans");
+        if (r.ok) setSavedPlans((await r.json()).plans || []);
+      } catch {}
+    })();
+  }, [status]);
   const quests = data.quests || [];
   const doneCount = quests.filter((q) => q.done).length;
   const savedLabel =
@@ -396,8 +420,10 @@ export function TrackerView() {
             silos are a bolt-on module, so tap it when you fit them (output ×2, eats feed).
             Buildings the calculator knows feed a per-island <b>ledger</b>: what the island makes
             and what its own chains use, in tons per minute — red net means the island
-            doesn&apos;t cover its own consumption. Chips below cover landmarks; untick anything
-            broken so gaps stay red (and drop out of the ledger).
+            doesn&apos;t cover its own consumption. 🎯 links a calculator plan to the island: the
+            plan check shows built vs planned, says what&apos;s still to build, and anything
+            beyond the plan is your real overproduction. Chips below cover landmarks; untick
+            anything broken so gaps stay red (and drop out of the ledger).
           </p>
           <datalist id="bldgSuggest">
             {BUILDING_OPTIONS.map((b) => (
@@ -434,6 +460,7 @@ export function TrackerView() {
                 (s) => !items.some((c) => c.t.toLowerCase() === s.toLowerCase())
               );
               const ledger = islandLedger(items);
+              const plan = (data.islandPlans || {})[name];
               return (
                 <div className="isleblk" key={name}>
                   <div className="islehd">
@@ -441,6 +468,54 @@ export function TrackerView() {
                     <span className="muted">
                       {have}/{items.length}
                     </span>
+                    {plan ? (
+                      <button
+                        className="chip schip on"
+                        title={`Linked plan “${plan.name}” — built vs planned below. Tap to unlink.`}
+                        onClick={() => {
+                          if (window.confirm(`Unlink plan “${plan.name}” from ${name}?`))
+                            setIslandPlan(name, null);
+                        }}
+                      >
+                        🎯 {plan.name}
+                      </button>
+                    ) : (
+                      <select
+                        className="planlink"
+                        aria-label={`Link a calculator plan to ${name}`}
+                        title="Link a calculator plan — the island block then shows built vs planned"
+                        value=""
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (v === "__cur") {
+                            const nm = window.prompt(
+                              "Name this snapshot of the calculator:",
+                              "Calc snapshot"
+                            );
+                            if (nm !== null)
+                              setIslandPlan(name, {
+                                name: nm.trim() || "Calc snapshot",
+                                st: calcState,
+                              });
+                          } else if (v) {
+                            const p = savedPlans.find((x) => x.id === v);
+                            if (p)
+                              setIslandPlan(name, {
+                                name: p.name,
+                                st: { ...DEFAULT_STATE, ...p.data },
+                              });
+                          }
+                        }}
+                      >
+                        <option value="">🎯 Link plan…</option>
+                        <option value="__cur">Current calculator setup</option>
+                        {savedPlans.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            💾 {p.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                     <button
                       className="plx"
                       title="Remove island and its checklist"
@@ -540,6 +615,51 @@ export function TrackerView() {
                       )}
                     </div>
                   )}
+                  {plan &&
+                    (() => {
+                      const pc = planCheck(plan.st, items);
+                      return (
+                        <div
+                          className="iledger"
+                          title="Linked plan vs this island's ticked buildings — whole-building counts for the plan's full chain, at the plan's own settings. The plan is a snapshot from link time; re-link after editing it."
+                        >
+                          <div className="iledgrow iledghead">
+                            <span>Plan check — {plan.name}</span>
+                            <span className="num">built</span>
+                            <span className="num">planned</span>
+                            <span className="num">Δ</span>
+                          </div>
+                          {pc.rows.map((r) => {
+                            const d = r.built - r.planned;
+                            return (
+                              <div className="iledgrow" key={r.good}>
+                                <span>{r.building}</span>
+                                <span className="num muted">{r.built}</span>
+                                <span className="num muted">{r.planned}</span>
+                                <span className={"num net" + (d < 0 ? " neg" : "")}>
+                                  {d > 0 ? `+${d}` : d < 0 ? `−${-d}` : "✓"}
+                                </span>
+                              </div>
+                            );
+                          })}
+                          {pc.short.length > 0 && (
+                            <div className="iledgfix">
+                              ⚠ To finish the plan — build{" "}
+                              {pc.short.map((s) => `${s.count}× ${s.building}`).join(" · ")}
+                            </div>
+                          )}
+                          {pc.extra.length > 0 && (
+                            <div className="iplanextra">
+                              ⤴ Beyond the plan —{" "}
+                              {pc.extra.map((s) => `${s.building} ×${s.count}`).join(" · ")}
+                            </div>
+                          )}
+                          {!pc.short.length && !pc.extra.length && (
+                            <div className="iplanok">✓ Built matches the plan.</div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   <div className="plrow">
                     <input
                       placeholder="Add building… e.g. Sheep Farm — Enter to add"

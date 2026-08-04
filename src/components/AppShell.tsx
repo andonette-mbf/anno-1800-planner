@@ -112,7 +112,7 @@ export function AppShell() {
         <Results st={st} patch={patch} />
       </div>
       <div style={{ display: view === "tracker" ? "block" : "none" }}>
-        <TrackerView />
+        <TrackerView calcState={st} />
       </div>
     </div>
   );

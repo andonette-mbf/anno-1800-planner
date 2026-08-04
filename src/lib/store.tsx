@@ -15,6 +15,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import type { CalcState } from "./engine";
 
 export const OQ_KEYS = [
   "furcoat",
@@ -50,6 +51,14 @@ export interface CheckItem {
   s?: boolean; // silo module fitted (animal farms only) — a bolt-on, not a separate building
 }
 
+// A calculator plan linked to an island (M4) — a snapshot taken at link time
+// (from a saved plan or the live calculator), so it works offline and
+// survives the saved plan being deleted. Re-link to pick up plan edits.
+export interface IslandPlan {
+  name: string;
+  st: CalcState;
+}
+
 export interface QuestItem {
   t: string;
   done: boolean;
@@ -71,6 +80,8 @@ export interface CompanionData {
   islands: string[];
   // Per-island inventory checklists, keyed by island name.
   islandChecks: Record<string, CheckItem[]>;
+  // Linked calculator-plan snapshots, keyed by island name (M4).
+  islandPlans: Record<string, IslandPlan>;
 }
 
 function parseChecks(raw: unknown): CheckItem[] {
@@ -129,6 +140,17 @@ function loadLocal(): CompanionData {
         Object.entries(ic).map(([k, v]) => [k, parseChecks(v)])
       );
   } catch {}
+  let islandPlans: Record<string, IslandPlan> = {};
+  try {
+    const ip = JSON.parse(ls.get("anno_island_plans") || "{}");
+    if (ip && typeof ip === "object" && !Array.isArray(ip))
+      islandPlans = Object.fromEntries(
+        Object.entries(ip).filter(([, v]) => {
+          const o = v as { name?: unknown; st?: unknown };
+          return !!o && typeof o.name === "string" && !!o.st && typeof o.st === "object";
+        })
+      ) as Record<string, IslandPlan>;
+  } catch {}
   try {
     const q = JSON.parse(ls.get("anno_quests") || "[]");
     if (Array.isArray(q))
@@ -143,7 +165,17 @@ function loadLocal(): CompanionData {
         }))
         .filter((x) => x.t);
   } catch {}
-  return { openq, focus, shutdown, parkinglot, quests, sessions, islands, islandChecks };
+  return {
+    openq,
+    focus,
+    shutdown,
+    parkinglot,
+    quests,
+    sessions,
+    islands,
+    islandChecks,
+    islandPlans,
+  };
 }
 
 function saveLocal(d: CompanionData) {
@@ -155,6 +187,7 @@ function saveLocal(d: CompanionData) {
   ls.set("anno_sessions", String(d.sessions || 0));
   ls.set("anno_islands", JSON.stringify(d.islands || []));
   ls.set("anno_island_checks", JSON.stringify(d.islandChecks || {}));
+  ls.set("anno_island_plans", JSON.stringify(d.islandPlans || {}));
 }
 
 // ---------- auth ----------
@@ -202,6 +235,7 @@ interface CompanionCtx {
   removeIslandCheck: (island: string, i: number) => void;
   bumpIslandCheck: (island: string, i: number, delta: 1 | -1) => void;
   setIslandSilo: (island: string, i: number, v: boolean) => void;
+  setIslandPlan: (island: string, plan: IslandPlan | null) => void;
 }
 
 const CompanionContext = createContext<CompanionCtx | null>(null);
@@ -224,6 +258,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     sessions: 0,
     islands: [],
     islandChecks: {},
+    islandPlans: {},
   });
   const [sync, setSync] = useState<CompanionCtx["sync"]>("local");
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -390,10 +425,14 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           const islandChecks = { ...(d.islandChecks || {}) };
           for (const k of Object.keys(islandChecks))
             if (k.toLowerCase() === n) delete islandChecks[k];
+          const islandPlans = { ...(d.islandPlans || {}) };
+          for (const k of Object.keys(islandPlans))
+            if (k.toLowerCase() === n) delete islandPlans[k];
           return {
             ...d,
             islands: (d.islands || []).filter((x) => x.toLowerCase() !== n),
             islandChecks,
+            islandPlans,
           };
         }),
       addIslandCheck: (island, t) => {
@@ -458,6 +497,13 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             }),
           },
         })),
+      setIslandPlan: (island, plan) =>
+        update((d) => {
+          const islandPlans = { ...(d.islandPlans || {}) };
+          if (plan) islandPlans[island] = plan;
+          else delete islandPlans[island];
+          return { ...d, islandPlans };
+        }),
     }),
     [data, sync, update]
   );

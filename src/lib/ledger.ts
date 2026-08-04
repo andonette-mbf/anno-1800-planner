@@ -65,6 +65,12 @@ export function siloCapable(itemName: string): boolean {
   return !!v && !v.silo && !!SILO[v.good];
 }
 
+/** Good id an inventory item name produces, or null if it's not a building
+ *  the calculator knows (landmark chips, free-text items). */
+export function itemGood(itemName: string): string | null {
+  return VARIANTS.get(itemName.trim().toLowerCase())?.good ?? null;
+}
+
 export interface LedgerRow {
   name: string; // good display name (regions merged: Wood is Wood)
   produced: number; // t/min made by ticked buildings

@@ -45,13 +45,17 @@ is in CLAUDE.md.
   you add later, not separate buildings. Legacy "(silo)" item names migrate
   to the flag in `parseChecks` (also applied to server blobs on sync); the
   old names still parse in the ledger as a fallback.
+- **M4 — Level 3, plan-linked islands** (build 40): 🎯 on an island block
+  links a calculator plan — a saved plan or a snapshot of the live calculator
+  (`IslandPlan` in `anno_island_plans`, synced with the rest). The plan check
+  (`src/lib/plancheck.ts`) compares ticked buildings against the plan's
+  whole-building counts per good (merged by display name, like the ledger):
+  red "to finish the plan — build N×…" for shortfalls, and buildings above or
+  outside the plan listed as "beyond the plan" — overproduction now means
+  "beyond the plan". Snapshots don't track later plan edits; re-link.
 
 ## Next (tentative order — confirm with the user before starting each)
 
-- **M4 — Level 3, plan-linked islands** (if still wanted after living with
-  the ledger): link a saved calculator Plan to an island; the island block
-  shows built-vs-planned and "overproduction" means "beyond the plan".
-  Closes the calculator ↔ session loop.
 - **M5** — quest list filterable/groupable by island tag.
 - **M6** — backup & restore: one-button JSON export/import of all companion
   state; phone polish (touch targets, PWA install).

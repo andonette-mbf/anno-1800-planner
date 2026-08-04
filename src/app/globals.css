@@ -36,3 +36,7 @@ a.plx:hover{color:var(--accent)}
 .iledgrow .net.neg{color:var(--red)}
 .iledgfix{color:var(--red);font-weight:600;margin-top:5px}
 .schip{font-size:10px;padding:2px 8px;flex:0 0 auto}
+.islehd .schip{max-width:180px;overflow:hidden;text-overflow:ellipsis}
+.planlink{width:auto;flex:0 0 auto;font-size:11px;padding:4px 8px;color:var(--muted);border-radius:999px}
+.iplanextra{color:var(--gold);font-weight:600;margin-top:5px}
+.iplanok{color:var(--green);font-weight:600;margin-top:5px}
