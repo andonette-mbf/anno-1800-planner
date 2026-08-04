@@ -1,6 +1,7 @@
 "use client";
 import React, { useCallback, useEffect, useState } from "react";
 import { CalcState } from "@/lib/engine";
+import { GAMES } from "@/lib/games";
 import { useAuth } from "@/lib/store";
 
 interface PlanRow {
@@ -38,6 +39,12 @@ export function SavedPlans({
 
   if (!db || status === "off" || status === "loading") return null;
 
+  // Plans live in one table across both games, so the list is filtered to the
+  // one you're in — a 1800 plan's good ids mean nothing in Rome. Rows saved
+  // before M10 have no marker and are 1800's, which is what they were.
+  const game = st.game ?? "anno1800";
+  const mine = plans?.filter((p) => (p.data?.game ?? "anno1800") === game) ?? null;
+
   return (
     <div className="settings">
       <div className="setrow">
@@ -58,10 +65,10 @@ export function SavedPlans({
               Save
             </button>
           </div>
-          {plans === null ? (
+          {mine === null ? (
             <div className="note">Loading plans…</div>
-          ) : plans.length ? (
-            plans.map((p) => (
+          ) : mine.length ? (
+            mine.map((p) => (
               <div className="plitem" key={p.id}>
                 <span
                   style={{ flex: 1, cursor: "pointer" }}
@@ -83,7 +90,10 @@ export function SavedPlans({
               </div>
             ))
           ) : (
-            <div className="note">No saved plans yet — name the current setup and hit Save.</div>
+            <div className="note">
+              No saved {GAMES.find((g) => g.id === game)?.label ?? ""} plans yet — name the current
+              setup and hit Save.
+            </div>
           )}
         </>
       )}

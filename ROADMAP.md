@@ -219,33 +219,48 @@ is in CLAUDE.md.
      from a newer upstream: bump `PACK` in the script. `src/lib/data117.ts`
      is the typed view (mirrors data.ts). Remaining for this phase: the 117
      building list + ledger UI on top of the pack.
-  3. 117 calculator. **The model is closer to 1800 than assumed — the
-     flexible-needs worry was wrong.** The data has no need-groups and the
-     upstream calculator has no substitution logic: each need is one good at
-     its own rate, exactly like 1800 (Patricians eat Sardines AND Porridge
-     AND Bread, not one-of). So `POP`/`popTargets` port over nearly as-is.
-     What genuinely differs:
-     - **Region is a bitmask, not an id.** 29 goods exist in both regions.
-       Six differ per region and cannot be merged: Flour (Grain Mill 30s in
-       Latium vs Donkey Mill 60s in Albion), and Leather/Amphorae/Tiles,
-       which take *different inputs* in each region. Hence `producers` +
-       `producerIn117(good, region)` — trusting the primary tuple would
-       silently compute an Albion island with Latium's chain.
-     - **Cross-region trade is structural**: all 9 tiers need goods their own
-       region can't make (Latium imports Beer/Cheese/Brooches, Albion imports
-       Garum/Soap/Olive Oil). `importsFor117()` already returns these — a
-       ready-made seed for M9.
-     - **Modifiers map over well** — and the ledger half is DONE (build 58,
-       `/rome-modifiers`): Silo exists in 117 too, on exactly 3 buildings
-       (Sheep Farm, Pig Farm, Horse Breeder — from the factory's
-       `additionalModule`, NOT modulesLimit, which counts a farm's field
-       slots and runs to 180), ×2 output for 0.2 t/min of Wheat each;
-       fuel/Coal is the direct analogue of 1800's coal source
-       (23 buildings burn 1 per 120s), but as an input EDGE, not a rate
-       modifier — it scales with building count, not output; fertility gates
-       27 buildings (still unmodelled); no
-       electricity. So `effRate` becomes per-game plug-ins as planned.
-     - Obsidian is *gathered* from a deposit, not built — a raw leaf you
-       supply, like a trade-only import.
-     - Residents-per-house is absent upstream, so 117 plans are driven by
-       resident counts; a house count would need a number we don't have.
+  3. **117 CALCULATOR — DONE** (build 59). The Calculator tab now works in
+     both games; `calcReady` is gone. The seam is `src/lib/dataset.ts`: a
+     `Dataset` bundles one game's tables with the rules that differ, and
+     `datasetFor(st)` resolves it from `CalcState.game` — which is optional,
+     so a state without it is 1800 and `tests/golden.test.cjs` passed
+     unchanged throughout. Each game keeps its own calculator state in
+     AppShell (a 117 `sel` holds ids 1800 has never heard of), and saved
+     plans + island 🎯 links are filtered to the game you're in.
+     What the port turned on:
+     - **The flexible-needs worry was wrong.** No need-groups, no
+       substitution logic upstream: each need is one good at its own rate,
+       exactly like 1800. `popTargets` ported as-is.
+     - **Region is a bitmask, and the producer varies by it.** The region
+       chips in 117 are no longer a filter — they pick the province the plan
+       is BUILT in, because that picks the recipe. Flour is a Grain Mill
+       (2/min) in Latium and a Donkey Mill (1/min) in Albion; **Leather is a
+       `Tannery` in both, at the same rate, taking salt in one and wood in
+       the other** — indistinguishable by name or rate, which is why
+       `recipe(st, id)` is the single resolution point. `regionRank`
+       replaced every `x.region - y.region` in the engine.
+     - **Fuel turned out to be the same shape as 1800's silo feed**:
+       `(tpm / effRate) × perMin`, per building rather than per ton. Both are
+       now "edges" in one helper. 4 Tilers burn 2 t/min of Coal; at 200%
+       productivity 2 Tilers burn 1.
+     - **Needs bands replaced the lifestyle toggle.** 117's pack has no
+       unlock thresholds at all — only the four `supplyWeight` bands — so
+       117 gets a "consume up to basic/+wanted/+refined/+luxury" chip row
+       (default +refined) where 1800 keeps its binary toggle, both through
+       one `needActive`.
+     - **Obsidian is gathered**, and reachable (Statuettes, Latrunculi Sets).
+       Rate 0, so every building-count site skips it or divides by zero; it
+       shows as "gather" with its t/min still tracked.
+     - No electricity: the toggle is hidden and inert.
+     - `tests/engine117.test.cjs` (`npm run test:engine117`) — 13 groups of
+       hand-derived expectations (there is no golden reference), including a
+       sweep of all 113 goods × both provinces and a nine-tier band-3 plan.
+     - **Workforce: deliberately out of scope.** A tier's `workforce` is an
+       asset GUID and `workforceFactor` converts residents to workforce, but
+       **no producer in the pack carries a workforce cost** — so we could only
+       ever show supply with nothing to spend it against. Revisit only if a
+       future extraction picks up per-building workforce.
+     - Still open: fertility gates 27 buildings and is unmodelled; 117 goods
+       borrow 1800's wiki pictures where the display names happen to collide
+       (decorative only); residents-per-house is still absent upstream, which
+       is what blocks `/rome-growth`.

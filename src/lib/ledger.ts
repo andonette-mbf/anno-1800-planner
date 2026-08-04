@@ -42,6 +42,11 @@ interface Index {
   variants: Map<string, Variant>; // key: lowercased building name
   names: string[]; // display-form names, for the datalist
   primaryName: Record<string, string>; // good id -> its building's entry name
+  // `${goodId}|${region}` -> entry name, for games where the producer varies by
+  // region. Albion's Leather building is ALSO called "Tannery" but takes
+  // different inputs, so it is registered as "Tannery (Albion)" — the entry
+  // name cannot be derived from the building name alone.
+  regionName: Map<string, string>;
   // good display name -> the building that makes it (first = Old World
   // preferred), so a deficit can be phrased as "build N× Grain Farm".
   producer: Record<string, { building: string; rate: number }>;
@@ -72,6 +77,7 @@ function emptyIndex(): IndexCore {
     variants: new Map(),
     names: [],
     primaryName: {},
+    regionName: new Map(),
     producer: {},
     nameRegions: new Map(),
   };
@@ -177,6 +183,9 @@ function build117(): Index {
       const siloFeed = p.silo ? SILO_117.feedGood || undefined : undefined;
       const v: Variant = { good: g.id, rate, inputs, siloFeed, fuel: p.fuel };
       if (register(name, v) && !ix.primaryName[g.id]) ix.primaryName[g.id] = name;
+      // Remember the entry per region, so a plan built in Albion seeds the
+      // Albion entry rather than the primary (Latium) one.
+      for (const r of [1, 2]) if (p.region & r) ix.regionName.set(`${g.id}|${r}`, name);
       noteRegion(name, p.region);
       if (!ix.producer[g.name]) ix.producer[g.name] = { building: name, rate };
     }
@@ -239,9 +248,20 @@ export function elecCapable(itemName: string, game: Game = "anno1800"): boolean 
 
 /** The inventory item name for a produced good — the ledger's own entry, so a
  *  seeded line parses straight back into the ledger (region-suffixed where the
- *  rates differ, e.g. "Cattle Farm (New World)"). */
-export function itemNameForGood(goodId: string, game: Game = "anno1800"): string | null {
-  return ix(game).primaryName[goodId] ?? null;
+ *  rates or the inputs differ, e.g. "Cattle Farm (New World)", "Tannery
+ *  (Albion)"). Pass the region a 117 plan is built in; 1800 has no per-region
+ *  producers, so it ignores the argument. */
+export function itemNameForGood(
+  goodId: string,
+  game: Game = "anno1800",
+  region = 0
+): string | null {
+  const I = ix(game);
+  if (region) {
+    const byRegion = I.regionName.get(`${goodId}|${region}`);
+    if (byRegion) return byRegion;
+  }
+  return I.primaryName[goodId] ?? null;
 }
 
 /** Good id an inventory item name produces, or null if it's not a building

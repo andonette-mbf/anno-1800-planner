@@ -361,10 +361,15 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
     (async () => {
       try {
         const r = await fetch("/api/plans");
-        if (r.ok) setSavedPlans((await r.json()).plans || []);
+        if (!r.ok) return;
+        const rows: SavedPlanRow[] = (await r.json()).plans || [];
+        // Plans share one table across both games. Only this game's can be
+        // linked to this game's islands — pre-M10 rows have no marker and are
+        // 1800's. (M10 phase 3)
+        setSavedPlans(rows.filter((p) => (p.data?.game ?? "anno1800") === game));
       } catch {}
     })();
-  }, [status]);
+  }, [status, game]);
   const quests = data.quests || [];
   // Done quests hide behind a "N completed" toggle instead of cluttering the
   // list; rows keep their index in the raw array so actions line up.

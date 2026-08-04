@@ -9,6 +9,7 @@
     "postinstall": "prisma generate",
     "test:engine": "node tests/golden.test.cjs",
     "test:117": "node tests/pack117.test.cjs",
+    "test:engine117": "node tests/engine117.test.cjs",
     "extract:117": "node scripts/extract-117.mjs",
     "test:games": "node tests/store-games.test.mjs"
   },

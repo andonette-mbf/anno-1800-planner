@@ -1,9 +1,8 @@
 "use client";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { VERSION } from "@/lib/data";
-import { VERSION_117 } from "@/lib/data117";
-import { CalcState, DEFAULT_STATE } from "@/lib/engine";
-import { GAMES } from "@/lib/games";
+import { datasetFor } from "@/lib/dataset";
+import { CalcState, defaultStateFor } from "@/lib/engine";
+import { GAMES, type Game } from "@/lib/games";
 import { decodeHash, encodeHash } from "@/lib/hash";
 import { useAuth, useCompanion } from "@/lib/store";
 import { LeftPanel } from "./calc/LeftPanel";
@@ -26,32 +25,42 @@ const LEGACY_DEFAULT: Partial<CalcState> = {
   tab: "whole",
 };
 
+// M10 phase 3: each game keeps its OWN calculator state. A 117 plan's `sel`
+// holds 117 good ids, which mean nothing in 1800 — switching games has to swap
+// the whole plan, not carry selections across.
+function initialStates(): Record<Game, CalcState> {
+  return {
+    anno1800: { ...defaultStateFor("anno1800"), ...LEGACY_DEFAULT },
+    anno117: defaultStateFor("anno117"),
+  };
+}
+
 export function AppShell() {
   const { game, setGame } = useCompanion();
-  // The calculator engine is still 1800-only (M10 phase 3), so 117 shows the
-  // Tracker alone rather than a calculator that would quietly use 1800's math.
-  const calcReady = game === "anno1800";
   const [view, setView] = useState<View>("calc");
-  // With no calculator in 117, the Tracker is the only view — so the stored
-  // "calc" preference must not leave the nav chip unhighlighted.
-  const activeView: View = calcReady ? view : "tracker";
-  const [st, setSt] = useState<CalcState>({ ...DEFAULT_STATE, ...LEGACY_DEFAULT });
+  const [states, setStates] = useState<Record<Game, CalcState>>(initialStates);
+  const st = states[game];
   const [gen, setGen] = useState(0);
   const hydrated = useRef(false);
 
   // Load state from the URL hash once (legacy-compatible links) and restore
-  // the last active view. A shared calc link should open on the calculator.
+  // the last active view. A shared calc link should open on the calculator —
+  // and, since the hash carries a game marker now, on that game.
   useEffect(() => {
     const fromHash = decodeHash(window.location.hash);
     if (fromHash) {
-      setSt(fromHash);
-      setGen((g) => g + 1);
+      const g = fromHash.game ?? "anno1800";
+      setStates((s) => ({ ...s, [g]: fromHash }));
+      setGame(g);
+      setGen((x) => x + 1);
     }
     try {
       const v = normalizeView(localStorage.getItem(VIEW_KEY));
       if (v) setView(v);
     } catch {}
     hydrated.current = true;
+    // Runs once on mount; setGame is stable for the life of the provider.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const go = useCallback((v: View) => {
@@ -61,7 +70,8 @@ export function AppShell() {
     } catch {}
   }, []);
 
-  // Reflect state into the hash (same format as the legacy app).
+  // Reflect the ACTIVE game's state into the hash (same format as the legacy
+  // app; the game marker is only written for 117, so 1800 links are unchanged).
   useEffect(() => {
     if (!hydrated.current) return;
     try {
@@ -69,33 +79,39 @@ export function AppShell() {
     } catch {}
   }, [st]);
 
-  const patch = useCallback((p: Partial<CalcState>) => setSt((s) => ({ ...s, ...p })), []);
+  const patch = useCallback(
+    (p: Partial<CalcState>) => setStates((s) => ({ ...s, [game]: { ...s[game], ...p } })),
+    [game]
+  );
   const bumpGen = useCallback(() => setGen((g) => g + 1), []);
   const loadState = useCallback(
     (data: CalcState) => {
-      setSt({ ...DEFAULT_STATE, ...data });
-      setGen((g) => g + 1);
+      const g = data.game ?? "anno1800";
+      setStates((s) => ({ ...s, [g]: { ...defaultStateFor(g), ...data } }));
+      if (g !== game) setGame(g);
+      setGen((x) => x + 1);
       go("calc");
     },
-    [go]
+    [go, game, setGame]
   );
 
+  const rome = game === "anno117";
   return (
     <div className="wrap">
       <header className="top">
-        <div className="logo">{calcReady ? "A" : "🏛"}</div>
+        <div className="logo">{rome ? "🏛" : "A"}</div>
         <div style={{ flex: 1, minWidth: 200 }}>
-          <h1>{calcReady ? "Anno 1800 Production Planner" : "Anno 117 Tracker"}</h1>
+          <h1>{rome ? "Anno 117 Production Planner" : "Anno 1800 Production Planner"}</h1>
           <div className="sub">
-            {calcReady
-              ? "Set your target output — get exact building counts, shared-resource savings & whole-building layouts."
-              : "Quests, islands and inventory for Pax Romana. The calculator is still 1800-only."}
+            Set your target output — get exact building counts, shared-resource savings &
+            whole-building layouts.
+            {rome && " Pick the region you're building in: Rome's recipes differ by province."}
           </div>
         </div>
         <span className="badge" id="verBadge">
-          {calcReady ? VERSION : VERSION_117}
+          {datasetFor(st).version}
         </span>{" "}
-        {calcReady && <ShareButton />}
+        <ShareButton />
         <AuthChip />
       </header>
       {/* Game switcher — each game keeps its own quests, islands and inventory. */}
@@ -117,13 +133,13 @@ export function AppShell() {
       <nav className="appnav" id="appnav">
         {(
           [
-            ...(calcReady ? ([["calc", "🧮 Calculator"]] as [View, string][]) : []),
+            ["calc", "🧮 Calculator"],
             ["tracker", "📜 Tracker"],
           ] as [View, string][]
         ).map(([v, label]) => (
           <button
             key={v}
-            className={`chip ${activeView === v ? "on" : ""}`}
+            className={`chip ${view === v ? "on" : ""}`}
             onClick={() => {
               go(v);
               window.scrollTo(0, 0);
@@ -136,12 +152,12 @@ export function AppShell() {
       <div
         className="grid"
         id="view-calc"
-        style={{ display: activeView === "calc" ? undefined : "none" }}
+        style={{ display: view === "calc" ? undefined : "none" }}
       >
         <LeftPanel st={st} patch={patch} gen={gen} bumpGen={bumpGen} loadState={loadState} />
         <Results st={st} patch={patch} />
       </div>
-      <div style={{ display: activeView === "tracker" ? "block" : "none" }}>
+      <div style={{ display: view === "tracker" ? "block" : "none" }}>
         <TrackerView calcState={st} />
       </div>
     </div>

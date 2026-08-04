@@ -1,11 +1,15 @@
 "use client";
-import { CATLBL } from "@/lib/data";
+import { datasetFor } from "@/lib/dataset";
 import { CalcState, goodCat } from "@/lib/engine";
 
 export function CatPill({ st, id }: { st: CalcState; id: string }) {
   const c = goodCat(st, id);
   if (c === undefined) return null;
-  const [label, cls] = CATLBL[c];
+  // 1800 has three bands (need/want/lifestyle), 117 four (basic/wanted/
+  // refined/luxury) — the labels and their pill colours come from the dataset.
+  const band = datasetFor(st).catLabels[c];
+  if (!band) return null;
+  const [label, cls] = band;
   return <span className={`pill ${cls}`}>{label}</span>;
 }
 

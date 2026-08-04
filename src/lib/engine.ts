@@ -1,7 +1,16 @@
 // Calculator engine — a faithful port of the legacy single-file app's math.
 // Algorithms are intentionally identical (same epsilons, same iteration caps);
-// tests/golden.test.mts verifies numeric equivalence against the legacy build.
-import { GOODS, POP, SILO, SILO_FEED, TIER_ORDER, GOODCAT, NeedDef } from "./data";
+// tests/golden.test.cjs verifies numeric equivalence against the legacy build.
+//
+// M10 phase 3: the engine no longer reads data.ts directly. Every table and
+// every rule that differs between the games comes from `datasetFor(st)` — see
+// dataset.ts for what actually differs. A state with no `game` is 1800, so the
+// golden tests and every pre-M10 share link exercise exactly the old code path.
+// tests/engine117.test.cjs covers the 117 side against hand-checked chains.
+import { DEFAULT_BAND, datasetFor, type NeedDef } from "./dataset";
+import type { Game } from "./games";
+
+export type { NeedDef } from "./dataset";
 
 export interface Selection {
   mode: "fac" | "tpm";
@@ -9,7 +18,12 @@ export interface Selection {
 }
 
 export interface CalcState {
+  /** Which game's data this plan is in. Absent = Anno 1800 (old links/plans). */
+  game?: Game;
   sel: Record<string, Selection>;
+  /** 1800: filters the good picker (0 = all). 117: picks the region the plan is
+   *  BUILT in, which selects the producer — Flour is a Grain Mill in Latium and
+   *  a Donkey Mill in Albion, at different rates. */
   regionFilter: number;
   prod: number;
   coalTime: number;
@@ -19,11 +33,15 @@ export interface CalcState {
   pop: Record<string, number>;
   electricity: boolean;
   lifestyle: boolean;
+  /** 117 only: consume needs up to this band (0 basic … 3 luxury). 1800 uses
+   *  the `lifestyle` toggle instead — its needs carry unlock thresholds. */
+  band?: number;
   silo: boolean;
   cons: number;
 }
 
 export const DEFAULT_STATE: CalcState = {
+  game: "anno1800",
   sel: {},
   regionFilter: 0,
   prod: 100,
@@ -34,31 +52,46 @@ export const DEFAULT_STATE: CalcState = {
   pop: {},
   electricity: false,
   lifestyle: false,
+  band: DEFAULT_BAND,
   silo: false,
   cons: 100,
 };
 
-export function electrifiable(id: string): boolean {
-  return GOODS[id].region === 1;
+/** A blank plan for a game — 117 starts in Latium, since it has no "All". */
+export function defaultStateFor(game: Game): CalcState {
+  return game === "anno117"
+    ? { ...DEFAULT_STATE, game, regionFilter: 1, sel: {}, pop: {} }
+    : { ...DEFAULT_STATE, game, sel: {}, pop: {} };
+}
+
+export function electrifiable(st: CalcState, id: string): boolean {
+  return datasetFor(st).electrifiable(id);
 }
 
 export function effRate(st: CalcState, id: string): number {
-  let t = GOODS[id].rate;
-  if (id === "coal") t = 60 / st.coalTime;
+  const D = datasetFor(st);
+  const r = D.recipe(st, id);
+  let t = r.rate;
   t *= st.prod / 100;
-  if (st.electricity && electrifiable(id)) t *= 2;
-  if (st.silo && SILO[id]) t *= 2;
+  if (st.electricity && D.electrifiable(id)) t *= 2;
+  if (st.silo && r.siloFeed) t *= 2;
   return t;
 }
 
 export function baseRate(st: CalcState, id: string): number {
-  return id === "coal" ? 60 / st.coalTime : GOODS[id].rate;
+  return datasetFor(st).recipe(st, id).rate;
 }
 
-/** Display building name (coal's source is selectable). */
+/** Display building name (1800's coal source and 117's region both pick one). */
 export function buildingName(st: CalcState, id: string): string {
-  if (id === "coal") return st.coalTime === 15 ? "Coal Mine" : "Charcoal Kiln";
-  return GOODS[id].building;
+  return datasetFor(st).recipe(st, id).building;
+}
+
+/** Goods that come from a deposit rather than a building (117's Obsidian).
+ *  They have no rate, so they are never counted as buildings — but their
+ *  demand is still tracked, because you do have to get them from somewhere. */
+export function gathered(st: CalcState, id: string): boolean {
+  return datasetFor(st).recipe(st, id).gathered;
 }
 
 export function targetTpm(st: CalcState, id: string): number {
@@ -66,22 +99,21 @@ export function targetTpm(st: CalcState, id: string): number {
   return t ? (t.mode === "fac" ? t.val * effRate(st, id) : t.val) : 0;
 }
 
-export function needActive(st: CalcState, d: NeedDef, _tid: string): boolean {
-  if (d[1] === 2 && !st.lifestyle) return false;
-  if (d[2] && (+(st.pop[d[2]] ?? 0) || 0) < (d[3] ?? 0)) return false;
-  return true;
+export function needActive(st: CalcState, d: NeedDef, tid: string): boolean {
+  return datasetFor(st).needActive(st, d, tid);
 }
 
 export function popTargets(st: CalcState): Record<string, number> {
+  const D = datasetFor(st);
   const o: Record<string, number> = {};
   for (const tid in st.pop) {
     const res = +st.pop[tid];
-    if (!res || !POP[tid]) continue;
-    const n = POP[tid].n;
+    if (!res || !D.pop[tid]) continue;
+    const n = D.pop[tid].n;
     for (const gid in n) {
-      if (!GOODS[gid]) continue;
+      if (!D.goods[gid]) continue;
       const d = n[gid];
-      if (needActive(st, d, tid)) o[gid] = (o[gid] || 0) + res * d[0] * (st.cons / 100);
+      if (D.needActive(st, d, tid)) o[gid] = (o[gid] || 0) + res * d[0] * (st.cons / 100);
     }
   }
   return o;
@@ -102,6 +134,23 @@ export interface ComputeResult {
   contrib: Record<string, Record<string, number>>;
 }
 
+/** Every consumption edge out of one good's production, per t/min made:
+ *  its chain inputs, plus the two per-BUILDING edges (silo feed, 117 fuel),
+ *  which are divided by the effective rate to turn t/min back into buildings.
+ *  Neither per-building edge can loop: 1800's feed goods are farm crops and
+ *  117's fuel is Coal, and none of them takes a silo or burns fuel itself. */
+function edges(st: CalcState, id: string, tpm: number): [string, number][] {
+  const D = datasetFor(st);
+  const r = D.recipe(st, id);
+  const out: [string, number][] = r.inputs.map((i) => [i.good, tpm * i.qty]);
+  const er = effRate(st, id);
+  if (er > 0) {
+    if (st.silo && r.siloFeed) out.push([r.siloFeed, (tpm * D.siloFeedRate) / er]);
+    if (r.fuel && D.fuelGood) out.push([D.fuelGood, (tpm * D.fuelPerMin) / er]);
+  }
+  return out;
+}
+
 export function compute(st: CalcState): ComputeResult {
   const demand: Record<string, number> = {};
   const contrib: Record<string, Record<string, number>> = {};
@@ -109,9 +158,7 @@ export function compute(st: CalcState): ComputeResult {
     demand[id] = (demand[id] || 0) + tpm;
     contrib[id] = contrib[id] || {};
     contrib[id][origin] = (contrib[id][origin] || 0) + tpm;
-    for (const inp of GOODS[id].inputs) add(inp.good, tpm * inp.qty, origin);
-    const feed = st.silo && SILO[id];
-    if (feed) add(feed, (tpm * SILO_FEED) / effRate(st, id), origin);
+    for (const [g, t] of edges(st, id, tpm)) add(g, t, origin);
   }
   const T = targets(st);
   for (const g in T) if (T[g] > 0) add(g, T[g], g);
@@ -120,33 +167,35 @@ export function compute(st: CalcState): ComputeResult {
 
 /** Category of a good under the current mode (undefined = plain production good). */
 export function goodCat(st: CalcState, id: string): number | undefined {
-  if (st.mode !== "pop") return GOODCAT[id];
+  const D = datasetFor(st);
+  if (st.mode !== "pop") return D.goodCat[id];
   let c: number | undefined;
   for (const tid in st.pop) {
     if (!+st.pop[tid]) continue;
-    const d = POP[tid] && POP[tid].n[id];
-    if (d && needActive(st, d, tid)) c = Math.min(c ?? 9, d[1]);
+    const d = D.pop[tid] && D.pop[tid].n[id];
+    if (d && D.needActive(st, d, tid)) c = Math.min(c ?? 9, d[1]);
   }
   return c;
 }
 
 /** Tier to display/group a good under (in pop mode: lowest active consuming tier). */
 export function dispTier(st: CalcState, id: string): string | null {
-  if (st.mode !== "pop") return GOODS[id].tier;
+  const D = datasetFor(st);
+  if (st.mode !== "pop") return D.goods[id].tier;
   let best: string | null = null;
   let bo = Infinity;
   for (const tid in st.pop) {
     if (!+st.pop[tid]) continue;
-    const d = POP[tid] && POP[tid].n[id];
-    if (d && needActive(st, d, tid)) {
-      const o = TIER_ORDER[tid] ?? 99;
+    const d = D.pop[tid] && D.pop[tid].n[id];
+    if (d && D.needActive(st, d, tid)) {
+      const o = D.tierOrder[tid] ?? 99;
       if (o < bo) {
         bo = o;
         best = tid;
       }
     }
   }
-  return best || GOODS[id].tier;
+  return best || D.goods[id].tier;
 }
 
 export function chainDemand(
@@ -156,9 +205,7 @@ export function chainDemand(
   acc: Record<string, number>
 ): Record<string, number> {
   acc[id] = (acc[id] || 0) + tpm;
-  for (const inp of GOODS[id].inputs) chainDemand(st, inp.good, tpm * inp.qty, acc);
-  const feed = st.silo && SILO[id];
-  if (feed) chainDemand(st, feed, (tpm * SILO_FEED) / effRate(st, id), acc);
+  for (const [g, t] of edges(st, id, tpm)) chainDemand(st, g, t, acc);
   return acc;
 }
 
@@ -182,8 +229,15 @@ export function optimPlan(st: CalcState): OptimPlanResult | null {
   const counts: Record<string, number> = {};
   const cap: Record<string, number> = {};
   for (const g in demand) {
-    counts[g] = Math.ceil(demand[g] / effRate(st, g) - 1e-9);
-    cap[g] = counts[g] * effRate(st, g);
+    const er = effRate(st, g);
+    // A gathered good is not a building you can add: it never rounds up, and it
+    // never limits a "free" final either, since you supply it by deposit/trade.
+    if (er <= 0) {
+      cap[g] = Infinity;
+      continue;
+    }
+    counts[g] = Math.ceil(demand[g] / er - 1e-9);
+    cap[g] = counts[g] * er;
   }
   const baseCounts = { ...counts };
   let baseTotal = 0;
@@ -199,6 +253,7 @@ export function optimPlan(st: CalcState): OptimPlanResult | null {
     let best: { f: string; u: Record<string, number> } | null = null;
     let bestScore = 0;
     for (const f of ids) {
+      if (effRate(st, f) <= 0) continue;
       const u = chainDemand(st, f, effRate(st, f), {});
       let ok = true;
       let score = 0;
@@ -242,7 +297,10 @@ export function optimPlan(st: CalcState): OptimPlanResult | null {
 
 export function wholePlan(st: CalcState, d: Record<string, number>): { total: number } {
   let t = 0;
-  for (const id in d) t += Math.ceil(d[id] / effRate(st, id) - 1e-9);
+  for (const id in d) {
+    const er = effRate(st, id);
+    if (er > 0) t += Math.ceil(d[id] / er - 1e-9);
+  }
   return { total: t };
 }
 
@@ -261,8 +319,13 @@ export interface PerfectRatioResult {
 export function perfectRatio(st: CalcState): PerfectRatioResult | null {
   const finals = Object.keys(targets(st));
   if (!finals.length) return null;
+  if (finals.some((f) => effRate(st, f) <= 0)) return null;
   const base = finals.map((f) => chainDemand(st, f, effRate(st, f), {}));
-  const goods = [...new Set(base.flatMap((d) => Object.keys(d)))];
+  // Gathered goods have no building count, so they cannot take part in a
+  // whole-building ratio — their demand just comes along for the ride.
+  const goods = [...new Set(base.flatMap((d) => Object.keys(d)))].filter(
+    (g) => effRate(st, g) > 0
+  );
   const frac = base.map((d) => {
     const o: Record<string, number> = {};
     for (const g of goods) o[g] = (d[g] || 0) / effRate(st, g);
@@ -322,10 +385,12 @@ export function perfectRatio(st: CalcState): PerfectRatioResult | null {
     const d = chainDemand(st, f, effRate(st, f) * (counts as number[])[j], {});
     for (const g in d) dem[g] = (dem[g] || 0) + d[g];
   });
-  const rows = Object.keys(dem).map((g) => ({
-    id: g,
-    c: Math.round(dem[g] / effRate(st, g)),
-  }));
+  const rows = Object.keys(dem)
+    .filter((g) => effRate(st, g) > 0)
+    .map((g) => ({
+      id: g,
+      c: Math.round(dem[g] / effRate(st, g)),
+    }));
   let total = 0;
   rows.forEach((r) => (total += r.c));
   return { finals, counts, rows, total };
@@ -341,6 +406,8 @@ export interface BuildingRow {
   cnt: number;
   cap: number;
   sur: number;
+  /** From a deposit, not a building — cnt is 0 and means "none to build". */
+  gathered: boolean;
 }
 
 export function buildingRows(st: CalcState): {
@@ -356,24 +423,29 @@ export function buildingRows(st: CalcState): {
   const rows = ids.map((id) => {
     const er = effRate(st, id);
     const dem = demand[id];
+    if (er <= 0)
+      return { id, dem, er: 0, exact: 0, cnt: 0, cap: 0, sur: 0, gathered: true };
     const exact = dem / er;
     const cnt = st.round ? Math.ceil(exact - 1e-9) : exact;
     const cap = cnt * er;
     total += cnt;
-    return { id, dem, er, exact, cnt, cap, sur: cap - dem };
+    return { id, dem, er, exact, cnt, cap, sur: cap - dem, gathered: false };
   });
   const byId = Object.fromEntries(rows.map((r) => [r.id, r]));
   return { rows, byId, contrib, demand, totalBuildings: total };
 }
 
-/** Legacy display ordering: finals first, then region, then (display) tier, then name. */
+/** Legacy display ordering: finals first, then region, then (display) tier, then
+ *  name. `regionRank` is the per-game region key — 1800's plain region id (so
+ *  the order is unchanged), 117's home-region-then-imports. */
 export function displaySort(st: CalcState, a: string, b: string): number {
-  const x = GOODS[a];
-  const y = GOODS[b];
+  const D = datasetFor(st);
+  const x = D.goods[a];
+  const y = D.goods[b];
   if (x.isFinal !== y.isFinal) return x.isFinal ? -1 : 1;
   return (
-    x.region - y.region ||
-    (TIER_ORDER[dispTier(st, a) ?? ""] ?? 99) - (TIER_ORDER[dispTier(st, b) ?? ""] ?? 99) ||
+    D.regionRank(st, a) - D.regionRank(st, b) ||
+    (D.tierOrder[dispTier(st, a) ?? ""] ?? 99) - (D.tierOrder[dispTier(st, b) ?? ""] ?? 99) ||
     x.name.localeCompare(y.name)
   );
 }

@@ -1,21 +1,8 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
-import {
-  GOODS,
-  POP,
-  PRESETS,
-  REGIONS,
-  TIER_ORDER,
-  fmt,
-  regionColor,
-  tierName,
-} from "@/lib/data";
-import {
-  CalcState,
-  Selection,
-  buildingName,
-  needActive,
-} from "@/lib/engine";
+import { fmt } from "@/lib/data";
+import { BAND_LABELS, datasetFor } from "@/lib/dataset";
+import { CalcState, Selection, baseRate, buildingName, needActive } from "@/lib/engine";
 import { GoodIcon } from "../GoodIcon";
 import { CatPill } from "./CatPill";
 import { SavedPlans } from "./SavedPlans";
@@ -28,10 +15,15 @@ interface Props {
   loadState: (st: CalcState) => void;
 }
 
+// In 1800 the region chips filter the good list. In 117 they pick the region the
+// plan is BUILT in — which selects the producer, and therefore the rate and the
+// chain — so the list is never filtered there, only reordered (home region
+// first, cross-region imports last).
 function finalGoodsList(st: CalcState) {
-  return Object.values(GOODS)
-    .filter((g) => g.isFinal)
-    .filter((g) => !st.regionFilter || g.region === st.regionFilter);
+  const D = datasetFor(st);
+  const all = Object.values(D.goods).filter((g) => g.isFinal);
+  if (D.regionIsPlanning) return all;
+  return all.filter((g) => !st.regionFilter || g.region === st.regionFilter);
 }
 
 export function LeftPanel({ st, patch, gen, bumpGen, loadState }: Props) {
@@ -74,6 +66,41 @@ export function LeftPanel({ st, patch, gen, bumpGen, loadState }: Props) {
   );
 }
 
+/** The region chips: a filter in 1800, the plan's build region in 117. */
+export function RegionChips({
+  st,
+  patch,
+}: {
+  st: CalcState;
+  patch: (p: Partial<CalcState>) => void;
+}) {
+  const D = datasetFor(st);
+  const entries = Object.entries(D.regions).map(([k, v]) => [Number(k), v] as [number, string]);
+  const chips: [number, string][] = D.regionIsPlanning ? entries : [[0, "All"], ...entries];
+  return (
+    <>
+      {D.regionIsPlanning && (
+        <div className="note" style={{ margin: "0 0 6px" }}>
+          <b>Building in</b> — this picks the recipe, not just the list. Flour is a Grain Mill
+          (2/min) in Latium and a Donkey Mill (1/min) in Albion, and Leather takes salt in one and
+          wood in the other.
+        </div>
+      )}
+      <div className="chips" id="regionChips">
+        {chips.map(([r, label]) => (
+          <span
+            key={r}
+            className={`chip ${st.regionFilter === r ? "on" : ""}`}
+            onClick={() => patch({ regionFilter: r })}
+          >
+            {label}
+          </span>
+        ))}
+      </div>
+    </>
+  );
+}
+
 function GoodsPanel({
   st,
   patch,
@@ -85,6 +112,7 @@ function GoodsPanel({
   gen: number;
   bumpGen: () => void;
 }) {
+  const D = datasetFor(st);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
@@ -97,45 +125,32 @@ function GoodsPanel({
     return () => document.removeEventListener("pointerdown", close);
   }, []);
 
+  const tierName = (t: string | null) => (t ? D.tierLabels[t] || t : "—");
   const q = query.toLowerCase().trim();
   let options = finalGoodsList(st).filter((g) => !st.sel[g.id]);
   if (q)
     options = options.filter(
       (g) =>
         g.name.toLowerCase().includes(q) ||
-        g.building.toLowerCase().includes(q) ||
+        buildingName(st, g.id).toLowerCase().includes(q) ||
         tierName(g.tier).toLowerCase().includes(q)
     );
   options.sort(
     (a, b) =>
-      a.region - b.region ||
-      (TIER_ORDER[a.tier ?? ""] ?? 99) - (TIER_ORDER[b.tier ?? ""] ?? 99) ||
+      D.regionRank(st, a.id) - D.regionRank(st, b.id) ||
+      (D.tierOrder[a.tier ?? ""] ?? 99) - (D.tierOrder[b.tier ?? ""] ?? 99) ||
       a.name.localeCompare(b.name)
   );
 
   const selIds = Object.keys(st.sel).sort(
     (a, b) =>
-      GOODS[a].region - GOODS[b].region ||
-      (TIER_ORDER[GOODS[a].tier ?? ""] ?? 99) - (TIER_ORDER[GOODS[b].tier ?? ""] ?? 99)
+      D.regionRank(st, a) - D.regionRank(st, b) ||
+      (D.tierOrder[D.goods[a].tier ?? ""] ?? 99) - (D.tierOrder[D.goods[b].tier ?? ""] ?? 99)
   );
-
-  const chips: [number, string][] = [[0, "All"], ...Object.entries(REGIONS).map(
-    ([k, v]) => [Number(k), v] as [number, string]
-  )];
 
   return (
     <>
-      <div className="chips" id="regionChips">
-        {chips.map(([r, label]) => (
-          <span
-            key={r}
-            className={`chip ${st.regionFilter === r ? "on" : ""}`}
-            onClick={() => patch({ regionFilter: r })}
-          >
-            {label}
-          </span>
-        ))}
-      </div>
+      <RegionChips st={st} patch={patch} />
       <div className="searchrow picker" ref={pickerRef}>
         <div style={{ flex: 1, position: "relative" }}>
           <input
@@ -166,11 +181,11 @@ function GoodsPanel({
                     {g.name} <CatPill st={st} id={g.id} />
                   </b>
                   <span>
-                    {buildingName(st, g.id)} · {fmt(g.rate)}/min
+                    {buildingName(st, g.id)} · {fmt(baseRate(st, g.id))}/min
                   </span>
                 </div>
                 <small>
-                  {g.regionName} · {tierName(g.tier)}
+                  {D.regionLabel(st, g.id)} · {tierName(g.tier)}
                 </small>
               </div>
             ))}
@@ -180,9 +195,7 @@ function GoodsPanel({
       </div>
       <div className="selected" id="selected">
         {selIds.length ? (
-          selIds.map((id) => (
-            <SelRow key={`${id}:${gen}`} st={st} id={id} patch={patch} />
-          ))
+          selIds.map((id) => <SelRow key={`${id}:${gen}`} st={st} id={id} patch={patch} />)
         ) : (
           <div className="empty">
             Pick one or more final goods above.
@@ -192,7 +205,7 @@ function GoodsPanel({
         )}
       </div>
       <div className="presets" id="presets">
-        {PRESETS.map((p, i) => (
+        {D.presets.map((p, i) => (
           <button
             key={i}
             className="pbtn"
@@ -221,18 +234,19 @@ function SelRow({
   id: string;
   patch: (p: Partial<CalcState>) => void;
 }) {
-  const g = GOODS[id];
+  const D = datasetFor(st);
+  const g = D.goods[id];
   const s = st.sel[id];
   return (
     <div className="sel">
-      <span className="dot" style={{ background: regionColor(g.region) }} />
+      <span className="dot" style={{ background: D.regionColor(st, id) }} />
       <div className="nm">
         <b title={g.name}>
           <GoodIcon name={g.name} />
           {g.name}
         </b>
         <span>
-          {buildingName(st, id)} · {g.regionName}
+          {buildingName(st, id)} · {D.regionLabel(st, id)}
         </span>
       </div>
       <input
@@ -271,6 +285,20 @@ function SelRow({
   );
 }
 
+// Pop-mode demos, per game. 1800's are the legacy buttons verbatim; 117's are
+// the two starting tiers, one per region.
+const POP_DEMOS: Record<string, { label: string; pop: Record<string, number> }[]> = {
+  anno1800: [
+    { label: "Demo · 3000 Farmers", pop: { farmers: 3000 } },
+    { label: "Demo · small OW city", pop: { farmers: 2500, workers: 2000, artisans: 800 } },
+  ],
+  anno117: [
+    { label: "Demo · 1500 Liberti", pop: { liberti: 1500 } },
+    { label: "Demo · Latium town", pop: { liberti: 1200, plebeians: 800 } },
+    { label: "Demo · Albion town", pop: { waders: 1200, smiths: 800 } },
+  ],
+};
+
 function PopPanel({
   st,
   patch,
@@ -282,36 +310,38 @@ function PopPanel({
   gen: number;
   bumpGen: () => void;
 }) {
+  const D = datasetFor(st);
   const groups: Record<number, string[]> = {};
-  for (const tid in POP) (groups[POP[tid].r] = groups[POP[tid].r] || []).push(tid);
+  for (const tid in D.pop) (groups[D.pop[tid].region] = groups[D.pop[tid].region] || []).push(tid);
+  const regionIds = Object.keys(D.regions)
+    .map(Number)
+    .sort((a, b) => a - b);
   const totalRes = Object.values(st.pop).reduce((a, b) => a + (+b || 0), 0);
+  const demos = POP_DEMOS[D.game] ?? [];
 
   return (
     <>
       <div className="note" style={{ margin: "0 0 4px" }}>
-        Enter how many <b>residents</b> you have at each tier. Needs unlock at their in-game
-        population thresholds, so early counts only demand the goods they&apos;d really consume.{" "}
-        <span className="muted">Postal service and a few late-DLC luxury goods aren&apos;t modelled.</span>
+        Enter how many <b>residents</b> you have at each tier.{" "}
+        {D.regionIsPlanning ? (
+          <>
+            Every tier also needs goods its own region can&apos;t make — those show up as{" "}
+            <b>imports</b> in the results, and you ship them in.
+          </>
+        ) : (
+          <>
+            Needs unlock at their in-game population thresholds, so early counts only demand the
+            goods they&apos;d really consume.{" "}
+            <span className="muted">
+              Postal service and a few late-DLC luxury goods aren&apos;t modelled.
+            </span>
+          </>
+        )}
       </div>
-      <div className="setrow" style={{ margin: "8px 0 2px" }}>
-        <span>
-          Lifestyle needs <span className="muted">(optional · bonus residents)</span>
-        </span>{" "}
-        <span className="toggle" id="lifeTog">
-          <button
-            className={st.lifestyle ? "" : "on"}
-            onClick={() => patch({ lifestyle: false })}
-          >
-            Off
-          </button>{" "}
-          <button className={st.lifestyle ? "on" : ""} onClick={() => patch({ lifestyle: true })}>
-            On
-          </button>
-        </span>
-      </div>
+      {D.regionIsPlanning ? <BandPicker st={st} patch={patch} /> : <LifestyleToggle st={st} patch={patch} />}
       <div className="setrow" style={{ margin: "6px 0 0" }}>
         <span>
-          Consumption rate <span className="muted">(newspaper &amp; item buffs lower it)</span>
+          Consumption rate <span className="muted">(item buffs lower it)</span>
         </span>
         <output id="consOut">{st.cons}%</output>
       </div>
@@ -324,7 +354,7 @@ function PopPanel({
         value={st.cons}
         onChange={(e) => patch({ cons: +e.target.value })}
       />
-      {[1, 2, 4, 5].map((r) =>
+      {regionIds.map((r) =>
         groups[r] ? (
           <React.Fragment key={r}>
             <div
@@ -332,25 +362,26 @@ function PopPanel({
                 fontSize: 11,
                 textTransform: "uppercase",
                 letterSpacing: ".4px",
-                color: regionColor(r),
+                color: D.regionTint(r),
                 margin: "12px 0 4px",
                 fontWeight: 700,
               }}
             >
-              {REGIONS[r]}
+              {D.regions[r]}
             </div>
             {groups[r].map((tid) => {
-              const t = POP[tid];
+              const t = D.pop[tid];
               const v = st.pop[tid] || 0;
               const act = Object.values(t.n).filter((d) => needActive(st, d, tid)).length;
               const tot = Object.keys(t.n).length;
               return (
                 <div className="sel" key={tid}>
-                  <span className="dot" style={{ background: regionColor(r) }} />
+                  <span className="dot" style={{ background: D.regionTint(r) }} />
                   <div className="nm">
                     <b title={t.lbl}>{t.lbl}</b>
                     <span>
-                      {v ? `${act} of ${tot} needs active` : `${tot} needs`} · house {t.fh}
+                      {v ? `${act} of ${tot} needs active` : `${tot} needs`}
+                      {t.housed ? ` · house ${t.housed}` : ""}
                     </span>
                   </div>
                   <input
@@ -385,24 +416,19 @@ function PopPanel({
         >
           Clear
         </button>{" "}
-        <button
-          className="pbtn"
-          onClick={() => {
-            patch({ pop: { farmers: 3000 } });
-            bumpGen();
-          }}
-        >
-          Demo · 3000 Farmers
-        </button>{" "}
-        <button
-          className="pbtn"
-          onClick={() => {
-            patch({ pop: { farmers: 2500, workers: 2000, artisans: 800 } });
-            bumpGen();
-          }}
-        >
-          Demo · small OW city
-        </button>
+        {demos.map((d) => (
+          <React.Fragment key={d.label}>
+            <button
+              className="pbtn"
+              onClick={() => {
+                patch({ pop: d.pop });
+                bumpGen();
+              }}
+            >
+              {d.label}
+            </button>{" "}
+          </React.Fragment>
+        ))}
       </div>
       <div
         className="setrow"
@@ -415,7 +441,66 @@ function PopPanel({
   );
 }
 
+/** 1800: lifestyle needs are an optional extra on top of needs + wants. */
+function LifestyleToggle({
+  st,
+  patch,
+}: {
+  st: CalcState;
+  patch: (p: Partial<CalcState>) => void;
+}) {
+  return (
+    <div className="setrow" style={{ margin: "8px 0 2px" }}>
+      <span>
+        Lifestyle needs <span className="muted">(optional · bonus residents)</span>
+      </span>{" "}
+      <span className="toggle" id="lifeTog">
+        <button className={st.lifestyle ? "" : "on"} onClick={() => patch({ lifestyle: false })}>
+          Off
+        </button>{" "}
+        <button className={st.lifestyle ? "on" : ""} onClick={() => patch({ lifestyle: true })}>
+          On
+        </button>
+      </span>
+    </div>
+  );
+}
+
+/** 117: needs carry no unlock thresholds, only one of four supply bands. This
+ *  is how far up the player is actually supplying them. */
+function BandPicker({ st, patch }: { st: CalcState; patch: (p: Partial<CalcState>) => void }) {
+  const band = st.band ?? 2;
+  return (
+    <>
+      <div className="setrow" style={{ margin: "8px 0 2px" }}>
+        <span>
+          Consume up to <span className="muted">(needs unlock as a residence upgrades)</span>
+        </span>
+      </div>
+      <div className="chips" style={{ marginBottom: 4 }}>
+        {BAND_LABELS.map((label, i) => (
+          <span
+            key={label}
+            className={`chip ${band === i ? "on" : ""}`}
+            title={
+              i === 0
+                ? "Only the goods a fresh residence demands"
+                : `Everything up to and including ${label}`
+            }
+            onClick={() => patch({ band: i })}
+          >
+            {i === 0 ? label : `+ ${label}`}
+          </span>
+        ))}
+      </div>
+    </>
+  );
+}
+
 function Settings({ st, patch }: { st: CalcState; patch: (p: Partial<CalcState>) => void }) {
+  const D = datasetFor(st);
+  const hasCoalChoice = D.game === "anno1800";
+  const hasElectricity = D.game === "anno1800";
   return (
     <div className="settings">
       <div className="setrow">
@@ -431,33 +516,54 @@ function Settings({ st, patch }: { st: CalcState; patch: (p: Partial<CalcState>)
         value={st.prod}
         onChange={(e) => patch({ prod: +e.target.value })}
       />
-      <div className="setrow">
-        <span>Coal source</span>{" "}
-        <span className="toggle" id="coalTog">
-          <button className={st.coalTime === 30 ? "on" : ""} onClick={() => patch({ coalTime: 30 })}>
-            Charcoal Kiln · 2/min
-          </button>{" "}
-          <button className={st.coalTime === 15 ? "on" : ""} onClick={() => patch({ coalTime: 15 })}>
-            Coal Mine · 4/min
-          </button>
-        </span>
-      </div>
+      {hasCoalChoice && (
+        <div className="setrow">
+          <span>Coal source</span>{" "}
+          <span className="toggle" id="coalTog">
+            <button
+              className={st.coalTime === 30 ? "on" : ""}
+              onClick={() => patch({ coalTime: 30 })}
+            >
+              Charcoal Kiln · 2/min
+            </button>{" "}
+            <button
+              className={st.coalTime === 15 ? "on" : ""}
+              onClick={() => patch({ coalTime: 15 })}
+            >
+              Coal Mine · 4/min
+            </button>
+          </span>
+        </div>
+      )}
+      {hasElectricity && (
+        <div className="setrow">
+          <span>
+            Electricity <span className="muted">(Old World ×2)</span>
+          </span>{" "}
+          <span className="toggle" id="elecTog">
+            <button
+              className={st.electricity ? "" : "on"}
+              onClick={() => patch({ electricity: false })}
+            >
+              Off
+            </button>{" "}
+            <button
+              className={st.electricity ? "on" : ""}
+              onClick={() => patch({ electricity: true })}
+            >
+              On ⚡
+            </button>
+          </span>
+        </div>
+      )}
       <div className="setrow">
         <span>
-          Electricity <span className="muted">(Old World ×2)</span>
-        </span>{" "}
-        <span className="toggle" id="elecTog">
-          <button className={st.electricity ? "" : "on"} onClick={() => patch({ electricity: false })}>
-            Off
-          </button>{" "}
-          <button className={st.electricity ? "on" : ""} onClick={() => patch({ electricity: true })}>
-            On ⚡
-          </button>
-        </span>
-      </div>
-      <div className="setrow">
-        <span>
-          Silos <span className="muted">(animal farms ×2, eat feed)</span>
+          Silos{" "}
+          <span className="muted">
+            {D.game === "anno117"
+              ? "(Sheep/Pig/Horse ×2, eat Wheat)"
+              : "(animal farms ×2, eat feed)"}
+          </span>
         </span>{" "}
         <span className="toggle" id="siloTog">
           <button className={st.silo ? "" : "on"} onClick={() => patch({ silo: false })}>
@@ -479,6 +585,13 @@ function Settings({ st, patch }: { st: CalcState; patch: (p: Partial<CalcState>)
           </button>
         </span>
       </div>
+      {D.fuelGood && (
+        <div className="note">
+          🔥 Fuel is counted automatically: every kiln, forge and furnace burns{" "}
+          {fmt(D.fuelPerMin)} t/min of {D.goods[D.fuelGood]?.name ?? D.fuelGood} while it runs, so
+          it scales with the building count rather than with output.
+        </div>
+      )}
     </div>
   );
 }

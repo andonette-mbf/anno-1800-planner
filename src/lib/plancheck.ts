@@ -6,7 +6,11 @@
 // ledger, so region variants ("Cattle Farm (New World)") and alternative
 // producers (Coal Mine vs Charcoal Kiln) land in one row. "Overproduction"
 // here means built beyond — or outside — the plan.
-import { GOODS } from "./data";
+//
+// M10 phase 3: both sides resolve through the plan's own game. A 117 plan also
+// carries the region it is built in, because that picks the producer — and so
+// the ledger entry to seed ("Tannery" in Latium, "Tannery (Albion)" in Albion).
+import { datasetFor } from "./dataset";
 import { CalcState, DEFAULT_STATE, buildingName, buildingRows, displaySort } from "./engine";
 import { itemGood, itemNameForGood } from "./ledger";
 import type { CheckItem } from "./store";
@@ -31,13 +35,22 @@ export interface PlanCheckResult {
  *  Kiln), which the ledger knows as an alternative producer. */
 export function planSeed(planSt: CalcState, items: CheckItem[]): { t: string; n: number }[] {
   const st: CalcState = { ...DEFAULT_STATE, ...planSt, round: true };
+  const D = datasetFor(st);
+  const game = D.game;
+  const region = D.itemRegion(st);
   const { rows } = buildingRows(st);
   const have = new Set(items.map((c) => c.t.trim().toLowerCase()));
   const seed: { t: string; n: number }[] = [];
   const at = new Map<string, number>();
   for (const r of rows.slice().sort((a, b) => displaySort(st, a.id, b.id))) {
-    if (r.cnt <= 0) continue;
-    const name = r.id === "coal" ? buildingName(st, r.id) : itemNameForGood(r.id);
+    // Gathered goods (117's Obsidian) have no building to seed.
+    if (r.cnt <= 0 || r.gathered) continue;
+    // 1800's coal source is a plan-wide toggle rather than a region, so the
+    // plan's chosen kiln/mine wins over the good's primary building.
+    const name =
+      game === "anno1800" && r.id === "coal"
+        ? buildingName(st, r.id)
+        : itemNameForGood(r.id, game, region);
     if (!name) continue;
     const k = name.toLowerCase();
     if (have.has(k)) continue;
@@ -54,12 +67,14 @@ export function planSeed(planSt: CalcState, items: CheckItem[]): { t: string; n:
 export function planCheck(planSt: CalcState, items: CheckItem[]): PlanCheckResult {
   // Old snapshots may predate newer CalcState fields; rounding is forced on.
   const st: CalcState = { ...DEFAULT_STATE, ...planSt, round: true };
+  const D = datasetFor(st);
   const { rows: brows } = buildingRows(st);
   const ordered = brows.slice().sort((a, b) => displaySort(st, a.id, b.id));
   const rows: PlanCheckRow[] = [];
   const byGood = new Map<string, PlanCheckRow>();
   for (const r of ordered) {
-    const good = GOODS[r.id].name;
+    if (r.gathered) continue;
+    const good = D.goods[r.id].name;
     const cur = byGood.get(good);
     if (cur) cur.planned += r.cnt;
     else {
@@ -72,9 +87,9 @@ export function planCheck(planSt: CalcState, items: CheckItem[]): PlanCheckResul
   const offPlan = new Map<string, { building: string; count: number }>();
   for (const c of items) {
     if (!c.done) continue;
-    const gid = itemGood(c.t);
-    if (!gid) continue;
-    const good = GOODS[gid].name;
+    const gid = itemGood(c.t, D.game);
+    if (!gid || !D.goods[gid]) continue;
+    const good = D.goods[gid].name;
     const n = Math.max(1, c.n || 1);
     const row = byGood.get(good);
     if (row) row.built += n;
