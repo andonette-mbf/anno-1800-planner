@@ -145,3 +145,18 @@ is in CLAUDE.md.
   route records only if the suggestions aren't enough.
 - **M6** — backup & restore: one-button JSON export/import of all companion
   state; phone polish (touch targets, PWA install).
+- **M10 — Anno 117 support** (noodled Aug 2026; timing open — user decides
+  when, knowing M8/M9 deepen 1800-specific data and would need rework after).
+  One app, game switcher at the top, per-game everything (dataset, storage
+  keys, share-link marker, tracker content) — not a fork. Phased:
+  1. Switcher + 117 tracker only (quests/islands/free-text inventory;
+     regions = Latium/Albion). Tracker barely touches game data — short.
+  2. 117 building list + ledger, once a goods dataset is sourced (community
+     wiki / datamined files / an open-source 117 calculator; version it —
+     the game still patches rates; no golden reference exists like 1800's
+     legacy app).
+  3. 117 calculator. One real model change: flexible needs (a need met by
+     alternative goods, porridge OR bread) → need-groups with a player
+     choice, unlike 1800's need = one good. Latium/Albion map onto regions;
+     fields ≈ farm abstraction; deity/research buffs ≈ productivity slider;
+     no electricity — modifier layer becomes per-game plug-ins.
