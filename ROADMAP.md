@@ -16,22 +16,20 @@ is in CLAUDE.md.
   the game's real building list (datalist from `GOODS`), with counts
   ("Sheep Farm ×2") and a "(silo)" variant for silo-capable animal farms.
   The landmark chips stay as a separate quick-add row.
-
-## Open decision — the overproduction question
-
-The user's core need: "know I'm not over-producing" per island. Two candidate
-end states, undecided as of Aug 2026 (revisit after M2 has been used a while):
-
-- **Level 2 — production ledger**: counts × engine `effRate` → per-island
-  produced t/min per good. Numbers, no target. Cheap once M2 data exists.
-- **Level 3 — plan-linked islands**: link a saved calculator Plan to an
-  island; the island block shows built-vs-planned, and "overproduction" means
-  "beyond the plan". Bigger, but closes the calculator ↔ session loop.
+- **M3 — Production ledger** (build 35): the overproduction question was
+  decided (Aug 2026) in favour of Level 2 first. Each island block now sums
+  its ticked buildings into a makes/uses/net t/min ledger per good
+  (`src/lib/ledger.ts`): base rates, silo variants ×2 + feed, on-island chain
+  consumption netted, goods merged by display name across regions. Cattle
+  Farm got a "(New World)" entry because its rate differs from the Old World
+  one. No target yet — numbers only.
 
 ## Next (tentative order — confirm with the user before starting each)
 
-- **M3** — whichever of Level 2 / Level 3 wins the open decision above.
-- **M4** — the other one, if still wanted.
+- **M4 — Level 3, plan-linked islands** (if still wanted after living with
+  the ledger): link a saved calculator Plan to an island; the island block
+  shows built-vs-planned and "overproduction" means "beyond the plan".
+  Closes the calculator ↔ session loop.
 - **M5** — quest list filterable/groupable by island tag.
 - **M6** — backup & restore: one-button JSON export/import of all companion
   state; phone polish (touch targets, PWA install).

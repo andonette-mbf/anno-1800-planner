@@ -6,7 +6,8 @@ import {
   SESSION_THE_POINT,
   SESSION_TYPES,
 } from "@/content/companion";
-import { GOODS, SILO } from "@/lib/data";
+import { fmt } from "@/lib/data";
+import { BUILDING_OPTIONS, islandLedger } from "@/lib/ledger";
 import { useCompanion } from "@/lib/store";
 
 const PHASES: [string, string][] = [
@@ -204,23 +205,6 @@ const ISLAND_SUGGESTIONS = [
   "Research Institute",
   "Hacienda",
 ];
-
-// Every production building the calculator knows, for the island inventory —
-// the same vocabulary as the game. Silo-capable animal farms get a "(silo)"
-// variant so "Sheep Farm (silo)" is one pick.
-const BUILDING_OPTIONS = (() => {
-  const names = new Set<string>();
-  for (const g of Object.values(GOODS)) {
-    names.add(g.building);
-    for (const a of g.alts) names.add(a.building);
-  }
-  const siloBuildings = new Set(
-    Object.keys(SILO).map((gid) => GOODS[gid]?.building).filter(Boolean)
-  );
-  return [...names]
-    .sort()
-    .flatMap((b) => (siloBuildings.has(b) ? [b, `${b} (silo)`] : [b]));
-})();
 
 const WIKI_SEARCH = "https://anno1800.fandom.com/wiki/Special:Search?query=";
 
@@ -517,8 +501,11 @@ export function SessionView() {
           <p className="lead">
             What each island already runs, in the game&apos;s own words — type a building name
             (silo variants included, e.g. &quot;Sheep Farm (silo)&quot;), re-add or ＋ for counts
-            like ×2, so you can see existing capacity before building more. Chips below cover
-            landmarks; untick anything broken so gaps stay red.
+            like ×2, so you can see existing capacity before building more. Buildings the
+            calculator knows feed a per-island <b>ledger</b>: what the island makes and what its
+            own chains use, in tons per minute — red net means the island doesn&apos;t cover its
+            own consumption. Chips below cover landmarks; untick anything broken so gaps stay
+            red (and drop out of the ledger).
           </p>
           <datalist id="bldgSuggest">
             {BUILDING_OPTIONS.map((b) => (
@@ -554,6 +541,7 @@ export function SessionView() {
               const chips = ISLAND_SUGGESTIONS.filter(
                 (s) => !items.some((c) => c.t.toLowerCase() === s.toLowerCase())
               );
+              const ledger = islandLedger(items);
               return (
                 <div className="isleblk" key={name}>
                   <div className="islehd">
@@ -609,6 +597,34 @@ export function SessionView() {
                       </button>
                     </div>
                   ))}
+                  {ledger.length > 0 && (
+                    <div
+                      className="iledger"
+                      title="Ticked buildings only, at 100% productivity — no electricity boost. Silo variants make double and use feed. What residents eat isn't counted; use the calculator for that."
+                    >
+                      <div className="iledgrow iledghead">
+                        <span>Ledger — t/min at base rates</span>
+                        <span className="num">makes</span>
+                        <span className="num">uses</span>
+                        <span className="num">net</span>
+                      </div>
+                      {ledger.map((r) => (
+                        <div className="iledgrow" key={r.name}>
+                          <span>{r.name}</span>
+                          <span className="num muted">
+                            {r.produced > 0 ? `+${fmt(r.produced)}` : ""}
+                          </span>
+                          <span className="num muted">
+                            {r.used > 0 ? `−${fmt(r.used)}` : ""}
+                          </span>
+                          <span className={"num net" + (r.net < -1e-9 ? " neg" : "")}>
+                            {(r.net > 1e-9 ? "+" : r.net < -1e-9 ? "−" : "") +
+                              fmt(Math.abs(r.net))}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div className="plrow">
                     <input
                       placeholder="Add building… e.g. Sheep Farm (silo) — Enter to add"

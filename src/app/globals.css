@@ -24,3 +24,9 @@ a.plx:hover{color:var(--accent)}
 .ichips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .questrow.gap{border-color:#7c3b3b}
 .questrow.gap span{color:var(--red)}
+.iledger{margin-top:9px;border-top:1px dashed var(--line);padding-top:7px;font-size:12px}
+.iledgrow{display:grid;grid-template-columns:1fr 62px 62px 70px;gap:6px;padding:2px 0;align-items:baseline}
+.iledgrow .num{text-align:right}
+.iledghead{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.4px}
+.iledgrow .net{font-weight:700;color:var(--green)}
+.iledgrow .net.neg{color:var(--red)}
