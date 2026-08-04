@@ -545,20 +545,41 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                         (() => {
                           const nb = c.n || 1;
                           const sc = Math.min(c.s || 0, nb);
-                          return (
-                            <button
-                              className={"chip schip" + (sc > 0 ? " on" : "")}
-                              title={
-                                nb > 1
-                                  ? `${sc} of the ${nb} farms have a silo — tap to fit one more (past all ${nb} wraps back to none). Silo'd farms make ×2 and eat feed.`
-                                  : sc > 0
+                          if (nb === 1)
+                            return (
+                              <button
+                                className={"chip schip" + (sc > 0 ? " on" : "")}
+                                title={
+                                  sc > 0
                                     ? "Silo fitted — output doubled, eats feed. Tap to remove."
                                     : "No silo yet — tap when you bolt one on (output ×2, eats feed)."
-                              }
-                              onClick={() => setIslandSilo(name, i, (sc + 1) % (nb + 1))}
+                                }
+                                onClick={() => setIslandSilo(name, i, sc ? 0 : 1)}
+                              >
+                                silo
+                              </button>
+                            );
+                          return (
+                            <span
+                              className={"chip schip" + (sc > 0 ? " on" : "")}
+                              title={`${sc} of the ${nb} farms have a silo — one module max per farm, and a line can be part-silo'd. Silo'd farms make ×2 and eat feed.`}
                             >
-                              {nb > 1 ? `silos ${sc}/${nb}` : "silo"}
-                            </button>
+                              <button
+                                aria-label="One silo fewer"
+                                disabled={sc <= 0}
+                                onClick={() => setIslandSilo(name, i, sc - 1)}
+                              >
+                                −
+                              </button>
+                              silos {sc}/{nb}
+                              <button
+                                aria-label="One silo more"
+                                disabled={sc >= nb}
+                                onClick={() => setIslandSilo(name, i, sc + 1)}
+                              >
+                                ＋
+                              </button>
+                            </span>
                           );
                         })()}
                       <button
