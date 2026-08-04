@@ -130,6 +130,17 @@ function linkify(t: string) {
   );
 }
 
+// How long a quest has been sitting in the tracker. Availability is a signal:
+// the longer something waits, the louder the game is hinting you'll need it.
+function questAge(added: number): { label: string; cls: string } | null {
+  if (!added) return null;
+  const days = Math.floor((Date.now() - added) / 86400000);
+  if (days < 1) return { label: "new", cls: "" };
+  if (days < 7) return { label: `${days}d`, cls: "" };
+  if (days < 21) return { label: `${Math.floor(days / 7)}w`, cls: " warn" };
+  return { label: `${Math.floor(days / 7)}w`, cls: " old" };
+}
+
 function Prose({ html }: { html: string }) {
   return <div dangerouslySetInnerHTML={{ __html: html }} />;
 }
@@ -146,6 +157,7 @@ export function SessionView() {
     addQuest,
     toggleQuest,
     removeQuest,
+    moveQuest,
     clearDoneQuests,
   } = useCompanion();
   const [draft, setDraft] = useState("");
@@ -224,7 +236,9 @@ export function SessionView() {
         <div className="bd doc">
           <p className="lead">
             Campaign chapters, DLC storylines and self-set goals — pick from the list or type
-            your own. Tick them off as they finish; ↗ looks a quest up on the wiki.
+            your own. Top of the list = do next; sort it with ▲▼. The age tag shows how long a
+            quest has sat waiting — the longer it&apos;s been available, the sooner you probably
+            need what it gives. ↗ looks it up on the wiki.
           </p>
           <div className="plrow">
             <select
@@ -276,28 +290,52 @@ export function SessionView() {
           </div>
           <div id="questList">
             {quests.length ? (
-              quests.map((q, i) => (
-                <div className={"plitem questrow" + (q.done ? " done" : "")} key={`${i}:${q.t}`}>
-                  <input
-                    type="checkbox"
-                    checked={q.done}
-                    onChange={(e) => toggleQuest(i, e.target.checked)}
-                  />
-                  <span style={{ flex: 1 }}>{linkify(q.t)}</span>
-                  <a
-                    className="plx"
-                    href={wikiUrl(q.t)}
-                    target="_blank"
-                    rel="noreferrer"
-                    title="Look up on the Anno 1800 wiki"
-                  >
-                    ↗
-                  </a>
-                  <button className="plx" title="Remove quest" onClick={() => removeQuest(i)}>
-                    ✕
-                  </button>
-                </div>
-              ))
+              quests.map((q, i) => {
+                const age = q.done ? null : questAge(q.added);
+                return (
+                  <div className={"plitem questrow" + (q.done ? " done" : "")} key={`${i}:${q.t}`}>
+                    <input
+                      type="checkbox"
+                      checked={q.done}
+                      onChange={(e) => toggleQuest(i, e.target.checked)}
+                    />
+                    <span style={{ flex: 1 }}>{linkify(q.t)}</span>
+                    {age && (
+                      <span className={"qage" + age.cls} title="How long this has been tracked">
+                        {age.label}
+                      </span>
+                    )}
+                    <button
+                      className="plx qmove"
+                      title="Move up — do sooner"
+                      disabled={i === 0}
+                      onClick={() => moveQuest(i, -1)}
+                    >
+                      ▲
+                    </button>
+                    <button
+                      className="plx qmove"
+                      title="Move down — do later"
+                      disabled={i === quests.length - 1}
+                      onClick={() => moveQuest(i, 1)}
+                    >
+                      ▼
+                    </button>
+                    <a
+                      className="plx"
+                      href={wikiUrl(q.t)}
+                      target="_blank"
+                      rel="noreferrer"
+                      title="Look up on the Anno 1800 wiki"
+                    >
+                      ↗
+                    </a>
+                    <button className="plx" title="Remove quest" onClick={() => removeQuest(i)}>
+                      ✕
+                    </button>
+                  </div>
+                );
+              })
             ) : (
               <div className="empty">No quests tracked — add one above.</div>
             )}

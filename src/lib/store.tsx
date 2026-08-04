@@ -43,6 +43,7 @@ const ls = {
 export interface QuestItem {
   t: string;
   done: boolean;
+  added: number; // epoch ms when tracked; 0 = unknown (pre-build-28 items)
 }
 
 export interface CompanionData {
@@ -73,7 +74,11 @@ function loadLocal(): CompanionData {
     const q = JSON.parse(ls.get("anno_quests") || "[]");
     if (Array.isArray(q))
       quests = q
-        .map((x) => ({ t: String(x?.t ?? ""), done: !!x?.done }))
+        .map((x) => ({
+          t: String(x?.t ?? ""),
+          done: !!x?.done,
+          added: Number(x?.added) || 0,
+        }))
         .filter((x) => x.t);
   } catch {}
   return { openq, focus, shutdown, parkinglot, quests };
@@ -123,6 +128,7 @@ interface CompanionCtx {
   addQuest: (t: string) => void;
   toggleQuest: (i: number, done: boolean) => void;
   removeQuest: (i: number) => void;
+  moveQuest: (i: number, dir: -1 | 1) => void;
   clearDoneQuests: () => void;
 }
 
@@ -252,7 +258,10 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         update((d) => ({ ...d, parkinglot: d.parkinglot.filter((_, j) => j !== i) })),
       addQuest: (t) =>
         t.trim()
-          ? update((d) => ({ ...d, quests: [...d.quests, { t: t.trim(), done: false }] }))
+          ? update((d) => ({
+              ...d,
+              quests: [...d.quests, { t: t.trim(), done: false, added: Date.now() }],
+            }))
           : undefined,
       toggleQuest: (i, done) =>
         update((d) => ({
@@ -261,6 +270,14 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         })),
       removeQuest: (i) =>
         update((d) => ({ ...d, quests: d.quests.filter((_, j) => j !== i) })),
+      moveQuest: (i, dir) =>
+        update((d) => {
+          const j = i + dir;
+          if (j < 0 || j >= d.quests.length) return d;
+          const quests = d.quests.slice();
+          [quests[i], quests[j]] = [quests[j], quests[i]];
+          return { ...d, quests };
+        }),
       clearDoneQuests: () =>
         update((d) => ({ ...d, quests: d.quests.filter((q) => !q.done) })),
     }),
