@@ -485,6 +485,23 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
     return regs.size ? GROWTH_TIERS.filter((t) => regs.has(t.region)) : GROWTH_TIERS;
   })();
   const growthRegions = new Set(growthTiers.map((t) => t.region));
+  // Custom growth goal: an inline row (number + island), no window.prompt.
+  // Opens when "Add a custom number of X…" is picked; island defaults to the
+  // filtered island (or your only island).
+  const [growthTid, setGrowthTid] = useState<string | null>(null);
+  const [growthN, setGrowthN] = useState("");
+  const [growthIsle, setGrowthIsle] = useState("");
+  const addGrowth = () => {
+    const t = GROWTH_TIERS.find((x) => x.tid === growthTid);
+    const n = Math.floor(Number(growthN));
+    if (!t || !(n > 0)) return;
+    addQuest(
+      `${growthIsle ? `${growthIsle}: ` : ""}Add ${n} ${t.lbl}`,
+      `≈${houses(n, t.fh)} residences at ${t.fh} per house.`
+    );
+    setGrowthTid(null);
+    setGrowthN("");
+  };
   // Route task builder ("from, to, what"), collapsed until asked for.
   const [routeOpen, setRouteOpen] = useState(false);
   const [routeFrom, setRouteFrom] = useState("");
@@ -551,20 +568,15 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                 const t = GROWTH_TIERS.find((x) => x.tid === tid);
                 if (!t) return;
                 if (mark === "custom") {
-                  const n = Math.floor(
-                    Number(window.prompt(`How many ${t.lbl} to add?`, "100"))
-                  );
-                  if (n > 0)
-                    addQuest(
-                      `Add ${n} ${t.lbl}`,
-                      `≈${houses(n, t.fh)} residences at ${t.fh} per house.`
-                    );
+                  setGrowthTid(t.tid);
+                  setGrowthN("");
+                  setGrowthIsle(effFilter || (islands.length === 1 ? islands[0] : ""));
                   return;
                 }
                 const target = Number(mark);
                 const goods = t.marks.find(([v]) => v === target)?.[1] || [];
                 addQuest(
-                  `Grow to ${target} ${t.lbl} — unlocks ${goods.join(" + ")}`,
+                  `${effFilter ? `${effFilter}: ` : ""}Grow to ${target} ${t.lbl} — unlocks ${goods.join(" + ")}`,
                   `${houses(target, t.fh)} residences at ${t.fh} per house. New ${
                     goods.length > 1 ? "needs" : "need"
                   }: ${goods.join(", ")} — size the farms in the calculator's population mode.`
@@ -587,6 +599,50 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
               ))}
             </select>
           </div>
+          {growthTid &&
+            (() => {
+              const t = GROWTH_TIERS.find((x) => x.tid === growthTid);
+              if (!t) return null;
+              return (
+                <div className="plrow">
+                  <input
+                    type="number"
+                    min={1}
+                    autoFocus
+                    style={{ width: 96, flex: "0 0 auto" }}
+                    placeholder="how many"
+                    aria-label={`How many ${t.lbl} to add`}
+                    value={growthN}
+                    onChange={(e) => setGrowthN(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") addGrowth();
+                    }}
+                  />
+                  <span className="muted" style={{ alignSelf: "center", flex: "0 0 auto" }}>
+                    {t.lbl} on
+                  </span>
+                  <select
+                    className="qisle"
+                    aria-label="Which island grows"
+                    value={growthIsle}
+                    onChange={(e) => setGrowthIsle(e.target.value)}
+                  >
+                    <option value="">(no island)</option>
+                    {islands.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                  <button className="linkbtn" disabled={!(Math.floor(Number(growthN)) > 0)} onClick={addGrowth}>
+                    ＋ Add
+                  </button>
+                  <button className="plx" title="Cancel" onClick={() => setGrowthTid(null)}>
+                    ✕
+                  </button>
+                </div>
+              );
+            })()}
           <div className="plrow">
             <select
               className="qisle"

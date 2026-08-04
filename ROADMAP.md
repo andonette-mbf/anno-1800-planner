@@ -136,6 +136,13 @@ is in CLAUDE.md.
   island's region); no region tags anywhere → full list. Single-region lists
   drop the "· Region" suffix from group labels.
 
+- **Growth goals log their island** (build 54): "doesn't log which island" —
+  custom growth goals lost the `window.prompt` alert; picking "custom" opens
+  an inline row (number input + island select, defaulting to the filtered
+  island or your only island) and the goal is island-prefixed ("Crown Falls:
+  Add 250 Workers") so the filter chips catch it. Threshold picks are
+  auto-prefixed with the filtered island too.
+
 - **M7 — ⚡ bolt-on + seed-from-plan** (build 53): (a) electricity is a
   per-line counter beside the silo one ("− ⚡ 2/5 ＋", `CheckItem.e`) on Old
   World buildings — the engine's own `electrifiable()` rule, ×2 output, no
