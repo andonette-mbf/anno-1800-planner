@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Anno 1800 Production Planner — shared-resource calculator",
   description:
-    "Production calculator, lean playbook and session tracker for Anno 1800. Building counts, shared-resource savings, zero-waste layouts, population needs.",
+    "Production calculator and session tracker for Anno 1800. Building counts, shared-resource savings, zero-waste layouts, population needs.",
 };
 
 export const viewport: Viewport = {

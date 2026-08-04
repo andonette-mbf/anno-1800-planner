@@ -124,7 +124,7 @@ const STORYLINES: [string, StoryEntry[]][] = [
       },
       {
         t: "Settle Cape Trelawney",
-        note: "Sunken Treasures: the giant Crown Falls island — room for the endgame city (Playbook phases 2–3).",
+        note: "Sunken Treasures: the giant Crown Falls island — room for the endgame city (phases 2–3).",
       },
       {
         t: "Host tourists",
@@ -140,11 +140,11 @@ const STORYLINES: [string, StoryEntry[]][] = [
       },
       {
         t: "Settle Enbesa",
-        note: "Land of Lions: new session with irrigation farming and the Research Institute (Playbook phase 6).",
+        note: "Land of Lions: new session with irrigation farming and the Research Institute (phase 6).",
       },
       {
         t: "Establish the Arctic outpost",
-        note: "The Passage: heaters against the cold, gas mining for airships (Playbook phase 6).",
+        note: "The Passage: heaters against the cold, gas mining for airships (phase 6).",
       },
       {
         t: "Take residents high-rise",
@@ -286,7 +286,7 @@ export function SessionView() {
         <div className="bd doc">
           <p className="lead">It&apos;s how the save remembers itself across gaps.</p>
           <div className="focusgrid">
-            <label htmlFor="focusPhase">Phase (1–6, see playbook)</label>
+            <label htmlFor="focusPhase">Phase (1–6)</label>
             <select
               id="focusPhase"
               value={data.focus.phase || ""}
@@ -623,6 +623,16 @@ export function SessionView() {
                           </span>
                         </div>
                       ))}
+                      {ledger.some((r) => r.fix) && (
+                        <div className="iledgfix">
+                          ⚠ Short — build{" "}
+                          {ledger
+                            .filter((r) => r.fix)
+                            .map((r) => `${r.fix!.count}× ${r.fix!.building}`)
+                            .join(" · ")}{" "}
+                          <span className="muted">(or equivalent)</span>
+                        </div>
+                      )}
                     </div>
                   )}
                   <div className="plrow">

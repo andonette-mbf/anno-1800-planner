@@ -23,6 +23,13 @@ is in CLAUDE.md.
   consumption netted, goods merged by display name across regions. Cattle
   Farm got a "(New World)" entry because its rate differs from the Old World
   one. No target yet — numbers only.
+- **Ledger fix hints + Playbook removed** (build 36): red ledger deficits now
+  say what to build ("⚠ Short — build 1× Grain Farm", `fix` on `LedgerRow` —
+  5 silos × 0.2 feed = one Grain Farm). The Playbook tab was removed at the
+  user's request ("pointless"): tab, view and `PLAYBOOK_*` prose deleted,
+  dangling "see playbook" references cleaned from Session prose + docs,
+  `openq` state kept in the store/sync schema for old blobs. The wording
+  survives in `anno-1800-lean-playbook.md` and `/legacy.html`.
 
 ## Next (tentative order — confirm with the user before starting each)
 

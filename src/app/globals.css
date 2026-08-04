@@ -30,3 +30,4 @@ a.plx:hover{color:var(--accent)}
 .iledghead{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.4px}
 .iledgrow .net{font-weight:700;color:var(--green)}
 .iledgrow .net.neg{color:var(--red)}
+.iledgfix{color:var(--red);font-weight:600;margin-top:5px}

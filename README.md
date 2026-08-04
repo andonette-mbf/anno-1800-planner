@@ -14,9 +14,9 @@ at `/legacy.html`).
 - **Two input modes** — target final goods (factories or tons/min), or enter **residents per tier** and let in-game need thresholds derive demand (lifestyle-needs toggle, consumption-rate slider)
 - **Five result views** — Optimal build (fewest buildings incl. free top-ups), Perfect ratio (smallest all-100% blueprint), exact Buildings table, Shared resources, Chain tree
 - **Electricity, Bright Harvest silos, coal source and productivity** all modelled in one place
-- **Playbook & Session tabs** — the lean-architecture strategy doc and per-session routine, live in the app with saved fields
+- **Session tab** — per-session routine with saved fields: Current Focus, quest tracker, island inventory with a makes/uses/net production ledger, Shutdown Check, Parking Lot
 - **Shareable links** — the whole plan is encoded in the URL (legacy links keep working)
-- **Optional cross-device sync** — with a Neon Postgres database and a passphrase, Playbook/Session state syncs between devices and calculator plans can be saved by name. Without it, everything still works per-browser via localStorage.
+- **Optional cross-device sync** — with a Neon Postgres database and a passphrase, Session state syncs between devices and calculator plans can be saved by name. Without it, everything still works per-browser via localStorage.
 
 ## Develop
 

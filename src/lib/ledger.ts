@@ -21,6 +21,9 @@ interface Variant {
 const VARIANTS = new Map<string, Variant>(); // key: lowercased building name
 const NAMES: string[] = []; // display-form names, for the datalist
 const primaryName: Record<string, string> = {}; // good id -> its building's entry name
+// good display name -> the building that makes it (first = Old World preferred),
+// so a deficit can be phrased as "build N× Grain Farm".
+const PRODUCER: Record<string, { building: string; rate: number }> = {};
 
 function register(name: string, v: Variant): boolean {
   const k = name.toLowerCase();
@@ -38,6 +41,7 @@ for (const g of Object.values(GOODS).sort(
   const name =
     clash && clash.rate !== g.rate ? `${g.building} (${g.regionName})` : g.building;
   if (register(name, { good: g.id, rate: g.rate })) primaryName[g.id] = name;
+  if (!PRODUCER[g.name]) PRODUCER[g.name] = { building: name, rate: g.rate };
   for (const a of g.alts) register(a.building, { good: g.id, rate: a.rate });
 }
 for (const gid in SILO) {
@@ -56,6 +60,9 @@ export interface LedgerRow {
   produced: number; // t/min made by ticked buildings
   used: number; // t/min consumed by ticked buildings (inputs + silo feed)
   net: number;
+  // Set when net is negative: how many of the good's producer (or equivalent)
+  // would cover the shortfall. 5 silo farms × 0.2 feed = 1× Grain Farm.
+  fix?: { building: string; count: number };
 }
 
 /** Sum one island's checklist into per-good makes/uses/net rows.
@@ -85,6 +92,10 @@ export function islandLedger(items: CheckItem[]): LedgerRow[] {
     .map((name) => {
       const p = produced[name] || 0;
       const u = used[name] || 0;
-      return { name, produced: p, used: u, net: p - u };
+      const row: LedgerRow = { name, produced: p, used: u, net: p - u };
+      const pr = PRODUCER[name];
+      if (row.net < -1e-9 && pr)
+        row.fix = { building: pr.building, count: Math.ceil((u - p) / pr.rate - 1e-9) };
+      return row;
     });
 }

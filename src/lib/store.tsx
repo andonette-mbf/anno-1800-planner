@@ -1,5 +1,6 @@
 "use client";
-// Auth + companion (Playbook/Session) state.
+// Auth + companion (Session) state. openq survives from the removed Playbook
+// tab so old localStorage/sync blobs stay round-trippable.
 // localStorage keys are identical to the legacy single-file app, so values saved
 // there carry over. When signed in and a DB is configured, state syncs to the
 // server: dirty local edits win (last-writer-wins), otherwise newer server wins.

@@ -6,15 +6,15 @@ import { decodeHash, encodeHash } from "@/lib/hash";
 import { useAuth } from "@/lib/store";
 import { LeftPanel } from "./calc/LeftPanel";
 import { Results } from "./calc/Results";
-import { PlaybookView } from "./PlaybookView";
 import { SessionView } from "./SessionView";
 
-type View = "calc" | "playbook" | "session";
+type View = "calc" | "session";
 
 const VIEW_KEY = "anno_view";
 
+// A stored "playbook" (removed tab) falls through to the default view.
 function isView(v: string | null): v is View {
-  return v === "calc" || v === "playbook" || v === "session";
+  return v === "calc" || v === "session";
 }
 
 const LEGACY_DEFAULT: Partial<CalcState> = {
@@ -90,7 +90,6 @@ export function AppShell() {
         {(
           [
             ["calc", "🧮 Calculator"],
-            ["playbook", "📖 Playbook"],
             ["session", "⏱️ Session"],
           ] as [View, string][]
         ).map(([v, label]) => (
@@ -109,9 +108,6 @@ export function AppShell() {
       <div className="grid" id="view-calc" style={{ display: view === "calc" ? undefined : "none" }}>
         <LeftPanel st={st} patch={patch} gen={gen} bumpGen={bumpGen} loadState={loadState} />
         <Results st={st} patch={patch} />
-      </div>
-      <div style={{ display: view === "playbook" ? "block" : "none" }}>
-        <PlaybookView />
       </div>
       <div style={{ display: view === "session" ? "block" : "none" }}>
         <SessionView />

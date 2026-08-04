@@ -1,13 +1,13 @@
 # Anno 1800 — Session Rhythm (2-hour blocks)
 
-*Companion to the Lean Architecture Playbook. The playbook is the map — this is how you spend a session. One focused job per sitting. Start clean, work one thing, leave clean. This is what stops the "everything's half-built and I panicked" spiral that killed past saves.*
+*How you spend a session. One focused job per sitting. Start clean, work one thing, leave clean. This is what stops the "everything's half-built and I panicked" spiral that killed past saves.*
 
 ---
 
 ## CURRENT FOCUS
 *(Update this line every time you stop. It's how the save remembers itself across gaps.)*
 
-- **Phase:** `____` (1–6, see playbook)
+- **Phase:** `____` (1–6)
 - **This session I'm working on:** `____`
 - **Left mid-build / unfinished:** `____`
 - **Next session, start with:** `____`
@@ -75,7 +75,7 @@
 ### 🗺️ EXPEDITION / QUEST RUN
 *The lighter, exploratory session.*
 - Send a ship on an expedition, chase a timed quest, dive a wreck (Sunken Treasures).
-- Camera/photo quest? Check the tech reminders — switch to GeForce Now if the pitch axis is locked.
+- Camera/photo quest? Switch to GeForce Now if the pitch axis is locked (Shadow PC camera quirk).
 - **Done when:** the expedition's away or the quest's done. Low commitment — good when you've only got half a session in you.
 
 ---
