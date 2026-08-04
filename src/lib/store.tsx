@@ -44,6 +44,8 @@ export interface QuestItem {
   t: string;
   done: boolean;
   added: number; // epoch ms when tracked; 0 = unknown (pre-build-28 items)
+  sess: number; // play-session counter value when tracked
+  note?: string; // context line (storyline picker entries)
 }
 
 export interface CompanionData {
@@ -52,6 +54,9 @@ export interface CompanionData {
   shutdown: boolean[];
   parkinglot: string[];
   quests: QuestItem[];
+  // Play sessions completed so far; a session "ends" when the Shutdown Check
+  // is fully ticked. Quest age = sessions - quest.sess.
+  sessions: number;
 }
 
 function loadLocal(): CompanionData {
@@ -70,6 +75,7 @@ function loadLocal(): CompanionData {
     const p = JSON.parse(ls.get("anno_parkinglot") || "[]");
     if (Array.isArray(p)) parkinglot = p.map(String);
   } catch {}
+  const sessions = Math.max(0, Math.floor(Number(ls.get("anno_sessions")) || 0));
   try {
     const q = JSON.parse(ls.get("anno_quests") || "[]");
     if (Array.isArray(q))
@@ -78,10 +84,13 @@ function loadLocal(): CompanionData {
           t: String(x?.t ?? ""),
           done: !!x?.done,
           added: Number(x?.added) || 0,
+          // Items from before session-aging start aging from now.
+          sess: Number.isFinite(Number(x?.sess)) ? Number(x.sess) : sessions,
+          ...(x?.note ? { note: String(x.note) } : {}),
         }))
         .filter((x) => x.t);
   } catch {}
-  return { openq, focus, shutdown, parkinglot, quests };
+  return { openq, focus, shutdown, parkinglot, quests, sessions };
 }
 
 function saveLocal(d: CompanionData) {
@@ -90,6 +99,7 @@ function saveLocal(d: CompanionData) {
   ls.set("anno_shutdown_checks", JSON.stringify(d.shutdown));
   ls.set("anno_parkinglot", JSON.stringify(d.parkinglot));
   ls.set("anno_quests", JSON.stringify(d.quests));
+  ls.set("anno_sessions", String(d.sessions || 0));
 }
 
 // ---------- auth ----------
@@ -125,7 +135,7 @@ interface CompanionCtx {
   resetShutdown: () => void;
   addParking: (t: string) => void;
   removeParking: (i: number) => void;
-  addQuest: (t: string) => void;
+  addQuest: (t: string, note?: string) => void;
   toggleQuest: (i: number, done: boolean) => void;
   removeQuest: (i: number) => void;
   moveQuest: (i: number, dir: -1 | 1) => void;
@@ -149,6 +159,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     shutdown: [],
     parkinglot: [],
     quests: [],
+    sessions: 0,
   });
   const [sync, setSync] = useState<CompanionCtx["sync"]>("local");
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -247,8 +258,14 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
       setShutdown: (i, v) =>
         update((d) => {
           const s = Array.from({ length: SHUTDOWN_COUNT }, (_, j) => !!d.shutdown[j]);
+          const wasComplete = s.every(Boolean);
           s[i] = v;
-          return { ...d, shutdown: s };
+          const sessionEnded = !wasComplete && s.every(Boolean);
+          return {
+            ...d,
+            shutdown: s,
+            sessions: (d.sessions || 0) + (sessionEnded ? 1 : 0),
+          };
         }),
       resetShutdown: () =>
         update((d) => ({ ...d, shutdown: Array(SHUTDOWN_COUNT).fill(false) })),
@@ -256,11 +273,20 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         t.trim() ? update((d) => ({ ...d, parkinglot: [...d.parkinglot, t.trim()] })) : undefined,
       removeParking: (i) =>
         update((d) => ({ ...d, parkinglot: d.parkinglot.filter((_, j) => j !== i) })),
-      addQuest: (t) =>
+      addQuest: (t, note) =>
         t.trim()
           ? update((d) => ({
               ...d,
-              quests: [...d.quests, { t: t.trim(), done: false, added: Date.now() }],
+              quests: [
+                ...d.quests,
+                {
+                  t: t.trim(),
+                  done: false,
+                  added: Date.now(),
+                  sess: d.sessions || 0,
+                  ...(note ? { note } : {}),
+                },
+              ],
             }))
           : undefined,
       toggleQuest: (i, done) =>

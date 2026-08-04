@@ -11,6 +11,12 @@ import { SessionView } from "./SessionView";
 
 type View = "calc" | "playbook" | "session";
 
+const VIEW_KEY = "anno_view";
+
+function isView(v: string | null): v is View {
+  return v === "calc" || v === "playbook" || v === "session";
+}
+
 const LEGACY_DEFAULT: Partial<CalcState> = {
   sel: { steel_beams: { mode: "fac", val: 2 }, weapons: { mode: "fac", val: 2 } },
   tab: "whole",
@@ -22,14 +28,26 @@ export function AppShell() {
   const [gen, setGen] = useState(0);
   const hydrated = useRef(false);
 
-  // Load state from the URL hash once (legacy-compatible links).
+  // Load state from the URL hash once (legacy-compatible links) and restore
+  // the last active view. A shared calc link should open on the calculator.
   useEffect(() => {
     const fromHash = decodeHash(window.location.hash);
     if (fromHash) {
       setSt(fromHash);
       setGen((g) => g + 1);
     }
+    try {
+      const v = localStorage.getItem(VIEW_KEY);
+      if (isView(v)) setView(v);
+    } catch {}
     hydrated.current = true;
+  }, []);
+
+  const go = useCallback((v: View) => {
+    setView(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {}
   }, []);
 
   // Reflect state into the hash (same format as the legacy app).
@@ -42,11 +60,14 @@ export function AppShell() {
 
   const patch = useCallback((p: Partial<CalcState>) => setSt((s) => ({ ...s, ...p })), []);
   const bumpGen = useCallback(() => setGen((g) => g + 1), []);
-  const loadState = useCallback((data: CalcState) => {
-    setSt({ ...DEFAULT_STATE, ...data });
-    setGen((g) => g + 1);
-    setView("calc");
-  }, []);
+  const loadState = useCallback(
+    (data: CalcState) => {
+      setSt({ ...DEFAULT_STATE, ...data });
+      setGen((g) => g + 1);
+      go("calc");
+    },
+    [go]
+  );
 
   return (
     <div className="wrap">
@@ -77,7 +98,7 @@ export function AppShell() {
             key={v}
             className={`chip ${view === v ? "on" : ""}`}
             onClick={() => {
-              setView(v);
+              go(v);
               window.scrollTo(0, 0);
             }}
           >

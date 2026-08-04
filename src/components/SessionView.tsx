@@ -49,61 +49,120 @@ const QUEST_SUGGESTIONS = [
   "Expedition: Rescue",
 ];
 
-// Named story content: campaign chapters, DLC storylines by season, scenarios.
-// Names verified against the Anno 1800 wiki / official sources. Parentheticals
-// are stripped before the wiki search so lookups stay clean.
-const STORYLINES: [string, string[]][] = [
+// Named story content with context: what it actually is and what you do.
+// Only real playable storylines are listed as stories; feature add-ons are
+// reframed as concrete setup goals. Facts verified against the Anno 1800
+// wiki / Anno Union. The note is stored on the quest and shown under it.
+interface StoryEntry {
+  t: string;
+  note: string;
+}
+
+const STORYLINES: [string, StoryEntry[]][] = [
   [
-    "Campaign",
+    "Campaign story",
     [
-      "Campaign 1: A Tale of Two Brothers",
-      "Campaign 2: A Sign of Fire",
-      "Campaign 3: Prosperity",
-      "Campaign 4: The Torch Passes",
+      {
+        t: "Campaign 1: A Tale of Two Brothers",
+        note: "Settle the Old World, pay off the family debt and start clearing your father's name.",
+      },
+      {
+        t: "Campaign 2: A Sign of Fire",
+        note: "The Goode family feud escalates — keep your city growing while the plot unfolds.",
+      },
+      {
+        t: "Campaign 3: Prosperity",
+        note: "Industrialise and take the story across the ocean to the New World.",
+      },
+      {
+        t: "Campaign 4: The Torch Passes",
+        note: "The campaign finale against Edvard Goode.",
+      },
     ],
   ],
   [
-    "Season 1",
+    "DLC storylines",
     [
-      "Sunken Treasures (Old Nate, Cape Trelawney)",
-      "Botanica (botanical garden)",
-      "The Passage (Arctic)",
+      {
+        t: "Sunken Treasures story",
+        note: "Cape Trelawney: find the vanished Queen, build Old Nate's diving bell, salvage the battle wrecks.",
+      },
+      {
+        t: "The Passage story",
+        note: "Arctic: search for the lost expedition — Old Nate walks you into heaters, gas and your first airship.",
+      },
+      {
+        t: "Land of Lions stories",
+        note: "Enbesa: four questlines with Emperor Ketema — irrigation, the research institute and more.",
+      },
+      {
+        t: "Tourist Season quests",
+        note: "Old World: culinary story quests tied to hotels and visiting tourists.",
+      },
+      {
+        t: "The Anarchist",
+        note: "Dr Hugo Mercier arrives as a rival with a full questline — propaganda, commune, disruption.",
+      },
     ],
   ],
   [
-    "Season 2",
+    "Add-on setup goals (feature DLCs, no real storyline)",
     [
-      "Seat of Power (palace)",
-      "Bright Harvest (tractors)",
-      "Land of Lions (Enbesa, Emperor Ketema)",
+      {
+        t: "Open the Botanical Garden",
+        note: "Botanica: garden modules that boost attractiveness, plus the music pavilion.",
+      },
+      {
+        t: "Build the Palace",
+        note: "Seat of Power: palace with ministry policy buffs; short intro quest only.",
+      },
+      {
+        t: "Mechanise farms with tractors",
+        note: "Bright Harvest: tractor barns and fuel stations for Old World farms.",
+      },
+      {
+        t: "Set up a Docklands harbour",
+        note: "Docklands: modular port and export/import contracts with Captain Tobias.",
+      },
+      {
+        t: "Take residents high-rise",
+        note: "The High Life: Engineer/Investor skyscrapers and shopping arcades.",
+      },
+      {
+        t: "Found a Hacienda",
+        note: "Seeds of Change: New World agricultural hub with its own farm/brewery/residence modules.",
+      },
+      {
+        t: "Launch an airship fleet",
+        note: "Empire of the Skies: airship platforms, cargo and the mail system.",
+      },
+      {
+        t: "Grow the New World skyline",
+        note: "New World Rising: Artista tier, waterfront and high-rise New World cities.",
+      },
     ],
   ],
   [
-    "Season 3",
+    "Scenarios (standalone missions)",
     [
-      "Docklands (Captain Tobias)",
-      "Tourist Season (hotel & visitors)",
-      "The High Life (skyscrapers)",
+      {
+        t: "Scenario: Eden Burning",
+        note: "Restore a ravaged island as Isabel Sarmento — clean up pollution, build the dam. Free with update 13.",
+      },
+      {
+        t: "Scenario: Seasons of Silver",
+        note: "Mine silver for La Corona as Vasco Oliveira through harsh seasons. Comes with Seeds of Change.",
+      },
+      {
+        t: "Scenario: A Clash of Couriers",
+        note: "Airship mail race. Comes with Empire of the Skies.",
+      },
+      {
+        t: "Scenario: Pride and Peddlers",
+        note: "Trade duel as Madame Kahina against von Malching, Hunt and Silva. Comes with New World Rising.",
+      },
     ],
   ],
-  [
-    "Season 4",
-    [
-      "Seeds of Change (hacienda)",
-      "Empire of the Skies (airships)",
-      "New World Rising (New World story)",
-    ],
-  ],
-  [
-    "Scenarios",
-    [
-      "Scenario: Eden Burning",
-      "Scenario: Seasons of Silver",
-      "Scenario: A Clash of Couriers",
-      "Scenario: Pride and Peddlers",
-    ],
-  ],
-  ["Character DLC", ["The Anarchist (Dr. Hugo Mercier)"]],
 ];
 
 const WIKI_SEARCH = "https://anno1800.fandom.com/wiki/Special:Search?query=";
@@ -130,15 +189,14 @@ function linkify(t: string) {
   );
 }
 
-// How long a quest has been sitting in the tracker. Availability is a signal:
-// the longer something waits, the louder the game is hinting you'll need it.
-function questAge(added: number): { label: string; cls: string } | null {
-  if (!added) return null;
-  const days = Math.floor((Date.now() - added) / 86400000);
-  if (days < 1) return { label: "new", cls: "" };
-  if (days < 7) return { label: `${days}d`, cls: "" };
-  if (days < 21) return { label: `${Math.floor(days / 7)}w`, cls: " warn" };
-  return { label: `${Math.floor(days / 7)}w`, cls: " old" };
+// How many play sessions a quest has been waiting. The game runs in minutes
+// and hours, not calendar days — so age is measured in sessions, ticked over
+// each time the Shutdown Check is completed.
+function questAge(sess: number, sessions: number): { label: string; cls: string } {
+  const n = Math.max(0, sessions - sess);
+  if (n === 0) return { label: "new", cls: "" };
+  const label = n === 1 ? "1 session" : `${n} sessions`;
+  return { label, cls: n >= 4 ? " old" : n >= 2 ? " warn" : "" };
 }
 
 function Prose({ html }: { html: string }) {
@@ -235,25 +293,28 @@ export function SessionView() {
         </div>
         <div className="bd doc">
           <p className="lead">
-            Campaign chapters, DLC storylines and self-set goals — pick from the list or type
-            your own. Top of the list = do next; sort it with ▲▼. The age tag shows how long a
-            quest has sat waiting — the longer it&apos;s been available, the sooner you probably
-            need what it gives. ↗ looks it up on the wiki.
+            Story questlines, add-on setup goals and your own tasks — pick from the list (each
+            comes with a what-it-is note) or type your own. Top of the list = do next; sort with
+            ▲▼. The age pill counts <b>play sessions</b> a quest has waited, not days — a session
+            ends when you complete the Shutdown Check below. ↗ looks it up on the wiki.
           </p>
           <div className="plrow">
             <select
-              aria-label="Add a story or DLC questline"
+              aria-label="Add a story questline or add-on goal"
               value=""
               onChange={(e) => {
-                if (e.target.value) addQuest(e.target.value);
+                const entry = STORYLINES.flatMap(([, items]) => items).find(
+                  (s) => s.t === e.target.value
+                );
+                if (entry) addQuest(entry.t, entry.note);
               }}
             >
-              <option value="">＋ Add a story / DLC questline…</option>
+              <option value="">＋ Add a story questline / add-on goal…</option>
               {STORYLINES.map(([group, items]) => (
                 <optgroup key={group} label={group}>
                   {items.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
+                    <option key={s.t} value={s.t} title={s.note}>
+                      {s.t}
                     </option>
                   ))}
                 </optgroup>
@@ -291,7 +352,7 @@ export function SessionView() {
           <div id="questList">
             {quests.length ? (
               quests.map((q, i) => {
-                const age = q.done ? null : questAge(q.added);
+                const age = q.done ? null : questAge(q.sess, data.sessions || 0);
                 return (
                   <div className={"plitem questrow" + (q.done ? " done" : "")} key={`${i}:${q.t}`}>
                     <label className="qmain" title="Tap to tick off">
@@ -300,10 +361,16 @@ export function SessionView() {
                         checked={q.done}
                         onChange={(e) => toggleQuest(i, e.target.checked)}
                       />
-                      <span style={{ flex: 1 }}>{linkify(q.t)}</span>
+                      <span style={{ flex: 1 }}>
+                        {linkify(q.t)}
+                        {q.note && <small className="qnote">{q.note}</small>}
+                      </span>
                     </label>
                     {age && (
-                      <span className={"qage" + age.cls} title="How long this has been tracked">
+                      <span
+                        className={"qage" + age.cls}
+                        title="Play sessions this has waited — completing the Shutdown Check ends a session"
+                      >
                         {age.label}
                       </span>
                     )}
