@@ -6,3 +6,5 @@ button{font:inherit}
 .linkbtn:disabled{opacity:.5;cursor:default}
 .questrow input[type=checkbox]{width:17px;height:17px;flex:0 0 auto;margin:0;padding:0;accent-color:var(--gold2);cursor:pointer}
 .questrow.done span{opacity:.55;text-decoration:line-through}
+a.plx{text-decoration:none;line-height:1.3}
+a.plx:hover{color:var(--accent)}

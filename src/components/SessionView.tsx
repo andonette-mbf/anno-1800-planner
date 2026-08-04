@@ -26,6 +26,55 @@ const SHUTDOWN_ITEMS: [string, string][] = [
   ["Parking Lot", "— dump every \"I noticed X\" thought below so it's out of your head and off the map."],
 ];
 
+// Anno 1800 quests are mostly procedurally generated, so a complete built-in
+// quest list isn't feasible — these are just high-confidence quest givers and
+// quest/expedition types to speed up typing. The wiki link on each row covers
+// the long tail.
+const QUEST_SUGGESTIONS = [
+  "Sir Archibald Blake: ",
+  "Madame Kahina: ",
+  "Eli Bleakworth: ",
+  "Anne Harlow: ",
+  "Jean La Fortune: ",
+  "Carl Leonard von Malching: ",
+  "Princess Qing: ",
+  "Hugo Mercier: ",
+  "Old Nate: ",
+  "Emperor Ketema: ",
+  "Queen Margaret: ",
+  "Captain Tobias: ",
+  "Delivery quest: ",
+  "Escort quest: ",
+  "Salvage flotsam: ",
+  "Photographic excursion: ",
+  "Find the person: ",
+  "Buried treasure: ",
+  "Expedition: Zoological",
+  "Expedition: Botanical",
+  "Expedition: Archaeological",
+  "Expedition: Rescue",
+];
+
+const WIKI_SEARCH = "https://anno1800.fandom.com/wiki/Special:Search?query=";
+
+function wikiUrl(t: string) {
+  const q = t.replace(/https?:\/\/\S+/g, "").trim() || t;
+  return WIKI_SEARCH + encodeURIComponent(q);
+}
+
+// Render pasted URLs inside quest text as clickable links.
+function linkify(t: string) {
+  return t.split(/(https?:\/\/\S+)/g).map((p, i) =>
+    /^https?:\/\//.test(p) ? (
+      <a key={i} href={p} target="_blank" rel="noreferrer">
+        {p.replace(/^https?:\/\//, "")}
+      </a>
+    ) : (
+      p
+    )
+  );
+}
+
 function Prose({ html }: { html: string }) {
   return <div dangerouslySetInnerHTML={{ __html: html }} />;
 }
@@ -124,7 +173,8 @@ export function SessionView() {
           </p>
           <div className="plrow">
             <input
-              placeholder="Quest or goal… (Enter to add)"
+              placeholder="Quest or goal… (type for suggestions, Enter to add)"
+              list="questSuggest"
               value={questDraft}
               onChange={(e) => setQuestDraft(e.target.value)}
               onKeyDown={(e) => {
@@ -134,6 +184,11 @@ export function SessionView() {
                 }
               }}
             />
+            <datalist id="questSuggest">
+              {QUEST_SUGGESTIONS.map((s) => (
+                <option key={s} value={s} />
+              ))}
+            </datalist>
             <button
               className="linkbtn"
               onClick={() => {
@@ -153,7 +208,16 @@ export function SessionView() {
                     checked={q.done}
                     onChange={(e) => toggleQuest(i, e.target.checked)}
                   />
-                  <span style={{ flex: 1 }}>{q.t}</span>
+                  <span style={{ flex: 1 }}>{linkify(q.t)}</span>
+                  <a
+                    className="plx"
+                    href={wikiUrl(q.t)}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="Look up on the Anno 1800 wiki"
+                  >
+                    ↗
+                  </a>
                   <button className="plx" title="Remove quest" onClick={() => removeQuest(i)}>
                     ✕
                   </button>
