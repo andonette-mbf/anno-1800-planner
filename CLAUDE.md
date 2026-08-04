@@ -13,7 +13,7 @@ An Anno 1800 production calculator + companion Tracker tab (quest tracker, islan
 - `npm run test:engine` — **golden tests**: compiles the engine and compares its numbers against the legacy app (`tests/legacy.html`) in jsdom across goods/pop/electricity/silo scenarios
 - `npx prisma db push` — apply schema to the database in `DATABASE_URL`
 - **Deploy:** push `main` → Vercel. Verify via the build tag in the footer (`src/components/calc/Results.tsx`) — bump it (`build N · slug`) on every user-visible change.
-- **Before starting work: `git fetch`** — this repo is edited from multiple sessions/machines.
+- **Before starting work: `git fetch`** — this repo is edited from multiple sessions/machines. `/carry-on` (`.claude/commands/carry-on.md`) is the session-start ritual: sync, flag a concurrent session's uncommitted work, summarize new builds, and pick up the roadmap. When the tree has someone else's changes in it, monitor for their commit rather than editing the same files.
 - **Dev roadmap: `ROADMAP.md`** — M-numbered milestones; pick up the next open one, and confirm direction with the user before starting a milestone marked tentative.
 
 ## Environment
