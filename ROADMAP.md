@@ -183,14 +183,39 @@ is in CLAUDE.md.
   not a fork. Phased:
   1. Switcher + 117 tracker only (quests/islands/free-text inventory;
      regions = Latium/Albion). Tracker barely touches game data — short.
-  2. 117 building list + ledger, once a goods dataset is sourced. CONFIRMED
-     SOURCE: anno-mods/anno-117-calculator on GitHub (MIT, the Warenrechner
-     lineage our 1800 data.json came from) — covers Latium/Albion chains,
-     workforce and population-tier needs; extract programmatically like the
-     legacy `_C` extraction. Version the pack — the game still patches
-     rates; no golden reference exists like 1800's legacy app.
-  3. 117 calculator. One real model change: flexible needs (a need met by
-     alternative goods, porridge OR bread) → need-groups with a player
-     choice, unlike 1800's need = one good. Latium/Albion map onto regions;
-     fields ≈ farm abstraction; deity/research buffs ≈ productivity slider;
-     no electricity — modifier layer becomes per-game plug-ins.
+     NEXT UP — the data phase below landed first, out of order, because a
+     concurrent session held store/TrackerView while M7 was in flight.
+  2. **DATA PACK — DONE** (`src/lib/data-117.json`, pack 1). Extracted by
+     `npm run extract:117` from anno-mods/anno-117-calculator @ c6a6e75
+     (v2.1, MIT tooling; values © Ubisoft, same provenance as data.json).
+     113 goods (Latium 70, Albion 72, 29 in both), 118 producers, 9 tiers,
+     per-resident need rates. `npm run test:117` enforces coherence — chains
+     resolve, acyclic, producers agree with their goods, provenance pinned —
+     since there's no golden reference like 1800's legacy app. Re-extracting
+     from a newer upstream: bump `PACK` in the script. `src/lib/data117.ts`
+     is the typed view (mirrors data.ts). Remaining for this phase: the 117
+     building list + ledger UI on top of the pack.
+  3. 117 calculator. **The model is closer to 1800 than assumed — the
+     flexible-needs worry was wrong.** The data has no need-groups and the
+     upstream calculator has no substitution logic: each need is one good at
+     its own rate, exactly like 1800 (Patricians eat Sardines AND Porridge
+     AND Bread, not one-of). So `POP`/`popTargets` port over nearly as-is.
+     What genuinely differs:
+     - **Region is a bitmask, not an id.** 29 goods exist in both regions.
+       Six differ per region and cannot be merged: Flour (Grain Mill 30s in
+       Latium vs Donkey Mill 60s in Albion), and Leather/Amphorae/Tiles,
+       which take *different inputs* in each region. Hence `producers` +
+       `producerIn117(good, region)` — trusting the primary tuple would
+       silently compute an Albion island with Latium's chain.
+     - **Cross-region trade is structural**: all 9 tiers need goods their own
+       region can't make (Latium imports Beer/Cheese/Brooches, Albion imports
+       Garum/Soap/Olive Oil). `importsFor117()` already returns these — a
+       ready-made seed for M9.
+     - **Modifiers map over well**: Silo exists in 117 too (16 buildings,
+       eats Wheat); fuel/Coal is the direct analogue of 1800's coal source
+       (23 buildings burn 1 per 120s); fertility gates 27 buildings; no
+       electricity. So `effRate` becomes per-game plug-ins as planned.
+     - Obsidian is *gathered* from a deposit, not built — a raw leaf you
+       supply, like a trade-only import.
+     - Residents-per-house is absent upstream, so 117 plans are driven by
+       resident counts; a house count would need a number we don't have.

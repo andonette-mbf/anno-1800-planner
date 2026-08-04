@@ -1,0 +1,2891 @@
+{
+ "_C": {
+  "version": "117 pack 1",
+  "game": "anno117",
+  "g": [
+   [
+    "amphorae",
+    "Amphorae",
+    3,
+    "plebeians",
+    "Potter",
+    60,
+    "clay|resin"
+   ],
+   [
+    "armour",
+    "Armour",
+    3,
+    "",
+    "Armourer",
+    90,
+    "iron|leather"
+   ],
+   [
+    "barley",
+    "Barley",
+    2,
+    "",
+    "Barley Farm",
+    60,
+    ""
+   ],
+   [
+    "beavers",
+    "Beavers",
+    2,
+    "",
+    "Beaver Trapper",
+    90,
+    ""
+   ],
+   [
+    "beer",
+    "Beer",
+    2,
+    "liberti",
+    "Brewery",
+    60,
+    "malt"
+   ],
+   [
+    "bird_tongues",
+    "Bird Tongues",
+    2,
+    "",
+    "Tongue Plucker",
+    120,
+    "small_birds"
+   ],
+   [
+    "bird_tongues_in_aspic",
+    "Bird Tongues in Aspic",
+    2,
+    "patricians",
+    "Epicure of Air",
+    90,
+    "bird_tongues|lard"
+   ],
+   [
+    "bread",
+    "Bread",
+    3,
+    "plebeians",
+    "Bakery",
+    60,
+    "flour"
+   ],
+   [
+    "bronze",
+    "Bronze",
+    2,
+    "",
+    "Bronze Smelter",
+    60,
+    "tin_ore|copper_ore"
+   ],
+   [
+    "brooches",
+    "Brooches",
+    2,
+    "equites",
+    "Fibularium",
+    120,
+    "silver"
+   ],
+   [
+    "caviar",
+    "Caviar",
+    1,
+    "",
+    "Fish Gutter",
+    45,
+    "sturgeon"
+   ],
+   [
+    "celtic_green",
+    "Celtic Green",
+    2,
+    "",
+    "Greenhands",
+    90,
+    "dye_plants|copper_ore"
+   ],
+   [
+    "chariots",
+    "Chariots",
+    2,
+    "aldermen",
+    "Chariot Workshop",
+    120,
+    "ponies|chassis"
+   ],
+   [
+    "chassis",
+    "Chassis",
+    2,
+    "",
+    "Chassis Builder",
+    90,
+    "wood|reeds"
+   ],
+   [
+    "cheese",
+    "Cheese",
+    2,
+    "smiths",
+    "Dairy",
+    120,
+    "ochs"
+   ],
+   [
+    "clan_shields",
+    "Clan Shields",
+    2,
+    "smiths",
+    "Shieldbeater",
+    90,
+    "dye_plants|bronze"
+   ],
+   [
+    "clay",
+    "Clay",
+    1,
+    "",
+    "Clay Pit",
+    30,
+    ""
+   ],
+   [
+    "cloaks",
+    "Cloaks",
+    2,
+    "aldermen",
+    "Birrus Stitcher",
+    60,
+    "sheep|celtic_green"
+   ],
+   [
+    "cloth",
+    "Cloth",
+    1,
+    "",
+    "Weaver",
+    120,
+    "flax"
+   ],
+   [
+    "coal",
+    "Coal",
+    3,
+    "",
+    "Charcoal Burner",
+    30,
+    ""
+   ],
+   [
+    "cockles",
+    "Cockles",
+    2,
+    "waders",
+    "Cockle Picker",
+    45,
+    ""
+   ],
+   [
+    "concrete",
+    "Concrete",
+    3,
+    "",
+    "Concrete Mixer",
+    90,
+    "limestone|silica"
+   ],
+   [
+    "copper_ore",
+    "Copper Ore",
+    2,
+    "",
+    "Copper Mine",
+    30,
+    ""
+   ],
+   [
+    "cushions",
+    "Cushions",
+    1,
+    "",
+    "Cushion Stuffer",
+    90,
+    "flax|tyrian_purple"
+   ],
+   [
+    "drinking_horns",
+    "Drinking Horns",
+    2,
+    "smiths",
+    "Horner",
+    120,
+    "ochs|tin_ore"
+   ],
+   [
+    "dye_plants",
+    "Dye Plants",
+    2,
+    "",
+    "Weld Crop",
+    60,
+    ""
+   ],
+   [
+    "eels",
+    "Eels",
+    2,
+    "waders",
+    "Eel Grabber",
+    60,
+    ""
+   ],
+   [
+    "fine_glass",
+    "Fine Glass",
+    1,
+    "equites",
+    "Glassblower",
+    120,
+    "pigments|glass"
+   ],
+   [
+    "flax",
+    "Flax",
+    3,
+    "",
+    "Flax Farm",
+    90,
+    ""
+   ],
+   [
+    "flour",
+    "Flour",
+    3,
+    "",
+    "Grain Mill",
+    30,
+    "wheat"
+   ],
+   [
+    "fur_hats",
+    "Fur Hats",
+    2,
+    "aldermen",
+    "Beaver Hatter",
+    120,
+    "beavers|saltwash"
+   ],
+   [
+    "garum",
+    "Garum",
+    1,
+    "waders",
+    "Garum Works",
+    90,
+    "mackerel|salt"
+   ],
+   [
+    "glass",
+    "Glass",
+    1,
+    "",
+    "Glass Smelter",
+    90,
+    "silica"
+   ],
+   [
+    "gold",
+    "Gold",
+    1,
+    "",
+    "Goldsmith",
+    60,
+    "gold_ore"
+   ],
+   [
+    "gold_ore",
+    "Gold Ore",
+    1,
+    "",
+    "Gold Mine",
+    150,
+    ""
+   ],
+   [
+    "granite",
+    "Granite",
+    2,
+    "",
+    "Granite Cutter",
+    120,
+    "granite_block"
+   ],
+   [
+    "granite_block",
+    "Granite Block",
+    2,
+    "",
+    "Granite Quarry",
+    45,
+    ""
+   ],
+   [
+    "grapes",
+    "Grapes",
+    3,
+    "",
+    "Vineyard",
+    90,
+    ""
+   ],
+   [
+    "handmirrors",
+    "Handmirrors",
+    2,
+    "patricians",
+    "Narcissium",
+    120,
+    "seashells|silver"
+   ],
+   [
+    "head_piece",
+    "Head Piece",
+    2,
+    "",
+    "Headpiece Maker",
+    120,
+    "flax|resin"
+   ],
+   [
+    "hemp",
+    "Hemp",
+    3,
+    "",
+    "Hemp Farm",
+    60,
+    ""
+   ],
+   [
+    "herbs",
+    "Herbs",
+    2,
+    "",
+    "Herb Garden",
+    90,
+    ""
+   ],
+   [
+    "honeycombs",
+    "Honeycombs",
+    3,
+    "",
+    "Apiary",
+    45,
+    ""
+   ],
+   [
+    "horses",
+    "Horses",
+    3,
+    "",
+    "Horse Breeder",
+    120,
+    ""
+   ],
+   [
+    "iron",
+    "Iron",
+    3,
+    "",
+    "Furnace",
+    60,
+    "iron_ore"
+   ],
+   [
+    "iron_ore",
+    "Iron Ore",
+    3,
+    "",
+    "Iron Mine",
+    30,
+    ""
+   ],
+   [
+    "lard",
+    "Lard",
+    3,
+    "",
+    "Renderer",
+    60,
+    "pigs"
+   ],
+   [
+    "latrunculi_sets",
+    "Latrunculi Sets",
+    1,
+    "aldermen",
+    "Latrunculi Workshop",
+    90,
+    "obsidian|ornate_wood"
+   ],
+   [
+    "lavender",
+    "Lavender",
+    1,
+    "",
+    "Lavender Grower",
+    120,
+    ""
+   ],
+   [
+    "leather",
+    "Leather",
+    3,
+    "",
+    "Tannery",
+    60,
+    "pigs|salt"
+   ],
+   [
+    "limestone",
+    "Limestone",
+    3,
+    "",
+    "Limestone Quarry",
+    30,
+    ""
+   ],
+   [
+    "loungers",
+    "Loungers",
+    1,
+    "patricians",
+    "Chair Maker",
+    120,
+    "sandarac_wood|cushions"
+   ],
+   [
+    "mackerel",
+    "Mackerel",
+    1,
+    "",
+    "Scomber's Shack",
+    60,
+    ""
+   ],
+   [
+    "malt",
+    "Malt",
+    2,
+    "",
+    "Malthouse",
+    30,
+    "barley"
+   ],
+   [
+    "marble",
+    "Marble",
+    1,
+    "",
+    "Marble Mason",
+    90,
+    "uncut_marble"
+   ],
+   [
+    "minerals",
+    "Minerals",
+    1,
+    "",
+    "Mineral Quarry",
+    45,
+    ""
+   ],
+   [
+    "mosaics",
+    "Mosaics",
+    1,
+    "",
+    "Tessera Works",
+    120,
+    "clay|pigments"
+   ],
+   [
+    "mud",
+    "Mud",
+    2,
+    "",
+    "Mud Drier",
+    90,
+    ""
+   ],
+   [
+    "murex_snails",
+    "Murex Snails",
+    1,
+    "",
+    "Snailery",
+    90,
+    ""
+   ],
+   [
+    "necklaces",
+    "Necklaces",
+    1,
+    "patricians",
+    "Jeweller",
+    90,
+    "minerals|gold"
+   ],
+   [
+    "oats",
+    "Oats",
+    1,
+    "",
+    "Oat Farm",
+    60,
+    ""
+   ],
+   [
+    "obsidian",
+    "Obsidian",
+    1,
+    "",
+    null,
+    0,
+    ""
+   ],
+   [
+    "ochs",
+    "Ochs",
+    2,
+    "",
+    "Ochs Farm",
+    60,
+    ""
+   ],
+   [
+    "olive_oil",
+    "Olive Oil",
+    1,
+    "plebeians",
+    "Olive Press",
+    90,
+    "olives"
+   ],
+   [
+    "olives",
+    "Olives",
+    1,
+    "",
+    "Olive Grower",
+    120,
+    ""
+   ],
+   [
+    "ornate_wood",
+    "Ornate Wood",
+    1,
+    "",
+    "Gilder",
+    60,
+    "sandarac_wood|gold"
+   ],
+   [
+    "oysters",
+    "Oysters",
+    1,
+    "",
+    "Oyster Bed",
+    90,
+    ""
+   ],
+   [
+    "oysters_with_caviar",
+    "Oysters with Caviar",
+    1,
+    "patricians",
+    "Epicure of Water",
+    60,
+    "oysters|caviar"
+   ],
+   [
+    "pigments",
+    "Pigments",
+    1,
+    "",
+    "Mineral Crusher",
+    60,
+    "minerals"
+   ],
+   [
+    "pigs",
+    "Pigs",
+    3,
+    "",
+    "Pig Farm",
+    30,
+    ""
+   ],
+   [
+    "pileus",
+    "Pileus",
+    1,
+    "liberti",
+    "Pileus Felter",
+    60,
+    "sheep"
+   ],
+   [
+    "ponies",
+    "Ponies",
+    2,
+    "",
+    "Horsecatcher",
+    90,
+    ""
+   ],
+   [
+    "porridge",
+    "Porridge",
+    1,
+    "liberti",
+    "Porridge Stand",
+    60,
+    "oats"
+   ],
+   [
+    "reed_shoes",
+    "Reed Shoes",
+    2,
+    "waders",
+    "Shoe Weaver",
+    120,
+    "reeds"
+   ],
+   [
+    "reeds",
+    "Reeds",
+    2,
+    "",
+    "Reed Gatherer",
+    60,
+    ""
+   ],
+   [
+    "resin",
+    "Resin",
+    3,
+    "",
+    "Resin Tapper",
+    60,
+    ""
+   ],
+   [
+    "roast_beef",
+    "Roast Beef",
+    2,
+    "aldermen",
+    "Earth Oven",
+    120,
+    "saltwort|ochs"
+   ],
+   [
+    "rope",
+    "Rope",
+    3,
+    "",
+    "Ropemaker",
+    120,
+    "hemp"
+   ],
+   [
+    "sails",
+    "Sails",
+    3,
+    "",
+    "Sailmaker",
+    90,
+    "sheep"
+   ],
+   [
+    "salt",
+    "Salt",
+    1,
+    "",
+    "Salt Ponds",
+    30,
+    ""
+   ],
+   [
+    "saltwash",
+    "Saltwash",
+    2,
+    "",
+    "Saltwort Burner",
+    60,
+    "saltwort"
+   ],
+   [
+    "saltwort",
+    "Saltwort",
+    2,
+    "",
+    "Saltwort Picker",
+    90,
+    ""
+   ],
+   [
+    "sandals",
+    "Sandals",
+    1,
+    "plebeians",
+    "Sandal Maker",
+    120,
+    "leather"
+   ],
+   [
+    "sandarac_wood",
+    "Sandarac Wood",
+    1,
+    "",
+    "Sandarac Nursery",
+    90,
+    ""
+   ],
+   [
+    "sardines",
+    "Sardines",
+    1,
+    "liberti",
+    "Fishing Hut",
+    60,
+    ""
+   ],
+   [
+    "sausages",
+    "Sausages",
+    2,
+    "mercators",
+    "Salsicium",
+    60,
+    "pigs|herbs"
+   ],
+   [
+    "seashells",
+    "Seashells",
+    2,
+    "",
+    "Shell Gatherer",
+    45,
+    ""
+   ],
+   [
+    "sheep",
+    "Sheep",
+    3,
+    "",
+    "Sheep Farm",
+    30,
+    ""
+   ],
+   [
+    "silica",
+    "Silica",
+    3,
+    "",
+    "Sand Refinery",
+    45,
+    ""
+   ],
+   [
+    "silver",
+    "Silver",
+    2,
+    "",
+    "Silver Forge",
+    60,
+    "silver_ore"
+   ],
+   [
+    "silver_ore",
+    "Silver Ore",
+    2,
+    "",
+    "Silver Mine",
+    30,
+    ""
+   ],
+   [
+    "small_birds",
+    "Small Birds",
+    2,
+    "",
+    "Bird Charmer",
+    90,
+    ""
+   ],
+   [
+    "soap",
+    "Soap",
+    1,
+    "plebeians",
+    "Soap Maker",
+    60,
+    "lavender|lard"
+   ],
+   [
+    "standing_lyres",
+    "Standing Lyres",
+    1,
+    "patricians",
+    "Lythier",
+    60,
+    "string|ornate_wood"
+   ],
+   [
+    "statuettes",
+    "Statuettes",
+    1,
+    "equites",
+    "Caelator",
+    180,
+    "obsidian|uncut_marble"
+   ],
+   [
+    "string",
+    "String",
+    1,
+    "",
+    "Stringer",
+    90,
+    "sheep"
+   ],
+   [
+    "sturgeon",
+    "Sturgeon",
+    1,
+    "",
+    "Sturgeon Hatchery",
+    90,
+    ""
+   ],
+   [
+    "tiles",
+    "Tiles",
+    3,
+    "",
+    "Tiler",
+    60,
+    "clay"
+   ],
+   [
+    "timber",
+    "Timber",
+    3,
+    "",
+    "Sawmill",
+    30,
+    "wood"
+   ],
+   [
+    "tin_ore",
+    "Tin Ore",
+    2,
+    "",
+    "Tin Mine",
+    30,
+    ""
+   ],
+   [
+    "togas",
+    "Togas",
+    1,
+    "equites",
+    "Loom Weavery",
+    60,
+    "cloth|tyrian_purple"
+   ],
+   [
+    "torcs",
+    "Torcs",
+    2,
+    "smiths",
+    "Wire-Twister",
+    90,
+    "copper_ore"
+   ],
+   [
+    "trousers",
+    "Trousers",
+    2,
+    "smiths",
+    "Hosier",
+    90,
+    "sheep|dye_plants"
+   ],
+   [
+    "tunics",
+    "Tunics",
+    3,
+    "liberti",
+    "Spinner",
+    60,
+    "hemp"
+   ],
+   [
+    "tyrian_purple",
+    "Tyrian Purple",
+    1,
+    "",
+    "Dye Works",
+    120,
+    "murex_snails"
+   ],
+   [
+    "uncut_marble",
+    "Uncut Marble",
+    1,
+    "",
+    "Marble Quarry",
+    60,
+    ""
+   ],
+   [
+    "wattle_daub",
+    "Wattle & Daub",
+    2,
+    "",
+    "Labourer's Yard",
+    60,
+    "reeds|mud"
+   ],
+   [
+    "weapons",
+    "Weapons",
+    3,
+    "",
+    "Weaponsmith",
+    90,
+    "iron"
+   ],
+   [
+    "wheat",
+    "Wheat",
+    3,
+    "",
+    "Wheat Farm",
+    60,
+    ""
+   ],
+   [
+    "wigs",
+    "Wigs",
+    2,
+    "nobles",
+    "Wig Maker",
+    90,
+    "horses|head_piece"
+   ],
+   [
+    "wine",
+    "Wine",
+    3,
+    "equites",
+    "Vintner",
+    45,
+    "grapes|honeycombs"
+   ],
+   [
+    "wood",
+    "Wood",
+    3,
+    "",
+    "Woodcutter",
+    30,
+    ""
+   ],
+   [
+    "writing_tablets",
+    "Writing Tablets",
+    1,
+    "equites",
+    "Tabulus",
+    120,
+    "sandarac_wood|honeycombs"
+   ]
+  ],
+  "alts": {},
+  "POP": {
+   "liberti": {
+    "lbl": "Liberti",
+    "region": 1,
+    "workforceFactor": 0.5,
+    "workforce": 2181,
+    "n": {
+     "sardines": [
+      0.01785,
+      0
+     ],
+     "porridge": [
+      0.01388,
+      0
+     ],
+     "tunics": [
+      0.01785,
+      0
+     ],
+     "pileus": [
+      0.01666,
+      0
+     ],
+     "beer": [
+      0.01428,
+      1
+     ]
+    },
+    "services": [
+     [
+      "market",
+      0
+     ],
+     [
+      "tavern",
+      0
+     ]
+    ]
+   },
+   "waders": {
+    "lbl": "Waders",
+    "region": 2,
+    "workforceFactor": 0.5,
+    "workforce": 2192,
+    "n": {
+     "cockles": [
+      0.02,
+      0
+     ],
+     "eels": [
+      0.01785,
+      0
+     ],
+     "reed_shoes": [
+      0.00847,
+      0
+     ],
+     "tunics": [
+      0.01785,
+      0
+     ],
+     "garum": [
+      0.01111,
+      1
+     ]
+    },
+    "services": [
+     [
+      "market",
+      0
+     ],
+     [
+      "bardic_hearth",
+      0
+     ]
+    ]
+   },
+   "plebeians": {
+    "lbl": "Plebeians",
+    "region": 1,
+    "workforceFactor": 0.3,
+    "workforce": 2184,
+    "n": {
+     "sardines": [
+      0.01376,
+      0
+     ],
+     "porridge": [
+      0.01136,
+      0
+     ],
+     "tunics": [
+      0.01376,
+      0
+     ],
+     "pileus": [
+      0.01303,
+      0
+     ],
+     "beer": [
+      0.01154,
+      1
+     ],
+     "bread": [
+      0.01079,
+      1
+     ],
+     "garum": [
+      0.0087,
+      1
+     ],
+     "sandals": [
+      0.006504,
+      1
+     ],
+     "soap": [
+      0.01425,
+      1
+     ],
+     "amphorae": [
+      0.012,
+      1
+     ],
+     "olive_oil": [
+      0.007353,
+      1
+     ]
+    },
+    "services": [
+     [
+      "market",
+      0
+     ],
+     [
+      "tavern",
+      0
+     ],
+     [
+      "sanctuary",
+      1
+     ],
+     [
+      "grammaticus",
+      1
+     ]
+    ]
+   },
+   "smiths": {
+    "lbl": "Smiths",
+    "region": 2,
+    "workforceFactor": 0.3,
+    "workforce": 2196,
+    "n": {
+     "cockles": [
+      0.0158,
+      0
+     ],
+     "eels": [
+      0.013756,
+      0
+     ],
+     "reed_shoes": [
+      0.006601,
+      0
+     ],
+     "tunics": [
+      0.01376,
+      0
+     ],
+     "garum": [
+      0.0087,
+      1
+     ],
+     "cheese": [
+      0.00635,
+      1
+     ],
+     "beer": [
+      0.01153,
+      1
+     ],
+     "trousers": [
+      0.00905,
+      1
+     ],
+     "torcs": [
+      0.00909,
+      1
+     ],
+     "drinking_horns": [
+      0.006,
+      1
+     ],
+     "clan_shields": [
+      0.00695,
+      1
+     ]
+    },
+    "services": [
+     [
+      "market",
+      0
+     ],
+     [
+      "bardic_hearth",
+      0
+     ],
+     [
+      "recreation_ground",
+      1
+     ],
+     [
+      "fanum",
+      1
+     ]
+    ]
+   },
+   "equites": {
+    "lbl": "Equites",
+    "region": 1,
+    "workforceFactor": 0.2,
+    "workforce": 2185,
+    "n": {
+     "sardines": [
+      0.0112,
+      0
+     ],
+     "porridge": [
+      0.00962,
+      0
+     ],
+     "tunics": [
+      0.01119,
+      0
+     ],
+     "pileus": [
+      0.01072,
+      0
+     ],
+     "beer": [
+      0.00968,
+      1
+     ],
+     "bread": [
+      0.00915,
+      1
+     ],
+     "garum": [
+      0.00714,
+      1
+     ],
+     "sandals": [
+      0.005343,
+      1
+     ],
+     "soap": [
+      0.01151,
+      1
+     ],
+     "amphorae": [
+      0.00994,
+      1
+     ],
+     "olive_oil": [
+      0.006215,
+      1
+     ],
+     "wine": [
+      0.012902,
+      2
+     ],
+     "cheese": [
+      0.005725,
+      2
+     ],
+     "togas": [
+      0.01,
+      2
+     ],
+     "brooches": [
+      0.005669,
+      2
+     ],
+     "writing_tablets": [
+      0.005001,
+      2
+     ],
+     "fine_glass": [
+      0.004922,
+      2
+     ],
+     "statuettes": [
+      0.003529,
+      2
+     ]
+    },
+    "services": [
+     [
+      "market",
+      0
+     ],
+     [
+      "tavern",
+      0
+     ],
+     [
+      "sanctuary",
+      1
+     ],
+     [
+      "grammaticus",
+      1
+     ],
+     [
+      "aqueduct_cistern",
+      2
+     ],
+     [
+      "theatre",
+      2
+     ],
+     [
+      "gambling_house",
+      2
+     ],
+     [
+      "forum",
+      2
+     ],
+     [
+      "baths",
+      2
+     ]
+    ]
+   },
+   "aldermen": {
+    "lbl": "Aldermen",
+    "region": 2,
+    "workforceFactor": 0.2,
+    "workforce": 2197,
+    "n": {
+     "cockles": [
+      0.0132,
+      0
+     ],
+     "eels": [
+      0.0112,
+      0
+     ],
+     "reed_shoes": [
+      0.00542,
+      0
+     ],
+     "tunics": [
+      0.01119,
+      0
+     ],
+     "garum": [
+      0.00606,
+      1
+     ],
+     "cheese": [
+      0.005245,
+      1
+     ],
+     "beer": [
+      0.00968,
+      1
+     ],
+     "trousers": [
+      0.00738,
+      1
+     ],
+     "torcs": [
+      0.007405,
+      1
+     ],
+     "drinking_horns": [
+      0.005,
+      1
+     ],
+     "clan_shields": [
+      0.0059,
+      1
+     ],
+     "roast_beef": [
+      0.00519,
+      2
+     ],
+     "wine": [
+      0.012902,
+      2
+     ],
+     "cloaks": [
+      0.008745,
+      2
+     ],
+     "fur_hats": [
+      0.00532,
+      2
+     ],
+     "chariots": [
+      0.005102,
+      2
+     ],
+     "fine_glass": [
+      0.005303,
+      2
+     ],
+     "latrunculi_sets": [
+      0.005333,
+      2
+     ]
+    },
+    "services": [
+     [
+      "market",
+      0
+     ],
+     [
+      "bardic_hearth",
+      0
+     ],
+     [
+      "recreation_ground",
+      1
+     ],
+     [
+      "fanum",
+      1
+     ],
+     [
+      "alder_council",
+      2
+     ],
+     [
+      "theatre",
+      2
+     ],
+     [
+      "gambling_house",
+      2
+     ],
+     [
+      "barrow",
+      2
+     ],
+     [
+      "sacred_grove",
+      2
+     ]
+    ]
+   },
+   "patricians": {
+    "lbl": "Patricians",
+    "region": 1,
+    "workforceFactor": 0.1,
+    "workforce": 2186,
+    "n": {
+     "sardines": [
+      0.00943,
+      0
+     ],
+     "porridge": [
+      0.00833,
+      0
+     ],
+     "tunics": [
+      0.009433,
+      0
+     ],
+     "pileus": [
+      0.00909,
+      0
+     ],
+     "beer": [
+      0.00833,
+      1
+     ],
+     "bread": [
+      0.007935,
+      1
+     ],
+     "garum": [
+      0.00606,
+      1
+     ],
+     "sandals": [
+      0.004535,
+      1
+     ],
+     "soap": [
+      0.00966,
+      1
+     ],
+     "amphorae": [
+      0.00848,
+      1
+     ],
+     "olive_oil": [
+      0.005375,
+      1
+     ],
+     "wine": [
+      0.01111,
+      2
+     ],
+     "cheese": [
+      0.004808,
+      2
+     ],
+     "togas": [
+      0.0085,
+      2
+     ],
+     "brooches": [
+      0.004768,
+      2
+     ],
+     "writing_tablets": [
+      0.004288,
+      2
+     ],
+     "fine_glass": [
+      0.004228,
+      2
+     ],
+     "statuettes": [
+      0.003,
+      2
+     ],
+     "oysters_with_caviar": [
+      0.007528,
+      3
+     ],
+     "bird_tongues_in_aspic": [
+      0.006012,
+      3
+     ],
+     "necklaces": [
+      0.0054645,
+      3
+     ],
+     "cloaks": [
+      0.008658,
+      3
+     ],
+     "loungers": [
+      0.0043745,
+      3
+     ],
+     "handmirrors": [
+      0.004474,
+      3
+     ],
+     "standing_lyres": [
+      0.006814,
+      3
+     ],
+     "chariots": [
+      0.004596,
+      3
+     ],
+     "latrunculi_sets": [
+      0.005333,
+      3
+     ]
+    },
+    "services": [
+     [
+      "market",
+      0
+     ],
+     [
+      "tavern",
+      0
+     ],
+     [
+      "sanctuary",
+      1
+     ],
+     [
+      "grammaticus",
+      1
+     ],
+     [
+      "aqueduct_cistern",
+      2
+     ],
+     [
+      "theatre",
+      2
+     ],
+     [
+      "gambling_house",
+      2
+     ],
+     [
+      "forum",
+      2
+     ],
+     [
+      "baths",
+      2
+     ],
+     [
+      "temple",
+      3
+     ],
+     [
+      "library",
+      3
+     ],
+     [
+      "amphitheatre",
+      3
+     ]
+    ]
+   },
+   "mercators": {
+    "lbl": "Mercators",
+    "region": 2,
+    "workforceFactor": 0.3,
+    "workforce": 2198,
+    "n": {
+     "cockles": [
+      0.0158,
+      0
+     ],
+     "eels": [
+      0.013756,
+      0
+     ],
+     "reed_shoes": [
+      0.006601,
+      0
+     ],
+     "tunics": [
+      0.01376,
+      0
+     ],
+     "garum": [
+      0.0087,
+      1
+     ],
+     "bread": [
+      0.01034,
+      1
+     ],
+     "sausages": [
+      0.0105,
+      1
+     ],
+     "brooches": [
+      0.006543,
+      1
+     ],
+     "soap": [
+      0.01425,
+      1
+     ],
+     "amphorae": [
+      0.012,
+      1
+     ],
+     "olive_oil": [
+      0.00893,
+      1
+     ],
+     "statuettes": [
+      0.003529,
+      1
+     ]
+    },
+    "services": [
+     [
+      "market",
+      0
+     ],
+     [
+      "bardic_hearth",
+      0
+     ],
+     [
+      "grammaticus",
+      1
+     ],
+     [
+      "fanum",
+      1
+     ]
+    ]
+   },
+   "nobles": {
+    "lbl": "Nobles",
+    "region": 2,
+    "workforceFactor": 0.2,
+    "workforce": 2199,
+    "n": {
+     "cockles": [
+      0.0132,
+      0
+     ],
+     "eels": [
+      0.0112,
+      0
+     ],
+     "reed_shoes": [
+      0.00542,
+      0
+     ],
+     "tunics": [
+      0.01119,
+      0
+     ],
+     "garum": [
+      0.00606,
+      1
+     ],
+     "bread": [
+      0.00883,
+      1
+     ],
+     "sausages": [
+      0.0089,
+      1
+     ],
+     "brooches": [
+      0.00537,
+      1
+     ],
+     "soap": [
+      0.01151,
+      1
+     ],
+     "amphorae": [
+      0.00994,
+      1
+     ],
+     "olive_oil": [
+      0.0073,
+      1
+     ],
+     "statuettes": [
+      0.003,
+      1
+     ],
+     "bird_tongues_in_aspic": [
+      0.00669,
+      2
+     ],
+     "wine": [
+      0.012902,
+      2
+     ],
+     "wigs": [
+      0.00637,
+      2
+     ],
+     "togas": [
+      0.01,
+      2
+     ],
+     "handmirrors": [
+      0.00468,
+      2
+     ],
+     "fine_glass": [
+      0.005303,
+      2
+     ]
+    },
+    "services": [
+     [
+      "market",
+      0
+     ],
+     [
+      "bardic_hearth",
+      0
+     ],
+     [
+      "grammaticus",
+      1
+     ],
+     [
+      "fanum",
+      1
+     ],
+     [
+      "aqueduct_cistern",
+      2
+     ],
+     [
+      "theatre",
+      2
+     ],
+     [
+      "gambling_house",
+      2
+     ],
+     [
+      "temple",
+      2
+     ],
+     [
+      "baths",
+      2
+     ]
+    ]
+   }
+  },
+  "tierOrder": {
+   "liberti": 0,
+   "waders": 0,
+   "plebeians": 1,
+   "smiths": 1,
+   "equites": 2,
+   "aldermen": 2,
+   "patricians": 3,
+   "mercators": 3,
+   "nobles": 4
+  },
+  "tierLabels": {
+   "liberti": "Liberti",
+   "waders": "Waders",
+   "plebeians": "Plebeians",
+   "smiths": "Smiths",
+   "equites": "Equites",
+   "aldermen": "Aldermen",
+   "patricians": "Patricians",
+   "mercators": "Mercators",
+   "nobles": "Nobles"
+  },
+  "regions": {
+   "1": "Latium",
+   "2": "Albion"
+  },
+  "catLabels": [
+   "basic",
+   "wanted",
+   "refined",
+   "luxury"
+  ]
+ },
+ "producers": {
+  "sardines": [
+   {
+    "building": "Fishing Hut",
+    "time": 60,
+    "inputs": "",
+    "region": 1
+   }
+  ],
+  "mackerel": [
+   {
+    "building": "Scomber's Shack",
+    "time": 60,
+    "inputs": "",
+    "region": 1,
+    "fertility": "Mackerel Population"
+   }
+  ],
+  "salt": [
+   {
+    "building": "Salt Ponds",
+    "time": 30,
+    "inputs": "",
+    "region": 1
+   }
+  ],
+  "murex_snails": [
+   {
+    "building": "Snailery",
+    "time": 90,
+    "inputs": "",
+    "region": 1,
+    "fertility": "Murex Snail Population"
+   }
+  ],
+  "silica": [
+   {
+    "building": "Sand Refinery",
+    "time": 45,
+    "inputs": "",
+    "region": 3
+   }
+  ],
+  "oysters": [
+   {
+    "building": "Oyster Bed",
+    "time": 90,
+    "inputs": "",
+    "region": 1,
+    "fertility": "Oyster Population"
+   }
+  ],
+  "oats": [
+   {
+    "building": "Oat Farm",
+    "time": 60,
+    "inputs": "",
+    "region": 1,
+    "modules": 80
+   }
+  ],
+  "hemp": [
+   {
+    "building": "Hemp Farm",
+    "time": 60,
+    "inputs": "",
+    "region": 3,
+    "modules": 60
+   }
+  ],
+  "wheat": [
+   {
+    "building": "Wheat Farm",
+    "time": 60,
+    "inputs": "",
+    "region": 3,
+    "modules": 140
+   }
+  ],
+  "lavender": [
+   {
+    "building": "Lavender Grower",
+    "time": 120,
+    "inputs": "",
+    "region": 1,
+    "modules": 180,
+    "fertility": "Lavender Fertility"
+   }
+  ],
+  "olives": [
+   {
+    "building": "Olive Grower",
+    "time": 120,
+    "inputs": "",
+    "region": 1,
+    "modules": 160,
+    "fertility": "Olive Fertility"
+   }
+  ],
+  "grapes": [
+   {
+    "building": "Vineyard",
+    "time": 90,
+    "inputs": "",
+    "region": 3,
+    "modules": 100,
+    "fertility": "Grape Fertility"
+   }
+  ],
+  "flax": [
+   {
+    "building": "Flax Farm",
+    "time": 90,
+    "inputs": "",
+    "region": 3,
+    "modules": 140,
+    "fertility": "Flax Fertility"
+   }
+  ],
+  "sandarac_wood": [
+   {
+    "building": "Sandarac Nursery",
+    "time": 90,
+    "inputs": "",
+    "region": 1,
+    "modules": 120,
+    "fertility": "Sandarac Fertility"
+   }
+  ],
+  "wood": [
+   {
+    "building": "Woodcutter",
+    "time": 30,
+    "inputs": "",
+    "region": 3
+   }
+  ],
+  "coal": [
+   {
+    "building": "Charcoal Burner",
+    "time": 30,
+    "inputs": "",
+    "region": 3
+   },
+   {
+    "building": "Coal Mine",
+    "time": 30,
+    "inputs": "",
+    "region": 3
+   }
+  ],
+  "resin": [
+   {
+    "building": "Resin Tapper",
+    "time": 60,
+    "inputs": "",
+    "region": 3,
+    "fertility": "Resin Fertility"
+   }
+  ],
+  "honeycombs": [
+   {
+    "building": "Apiary",
+    "time": 45,
+    "inputs": "",
+    "region": 3
+   }
+  ],
+  "iron_ore": [
+   {
+    "building": "Iron Mine",
+    "time": 30,
+    "inputs": "",
+    "region": 3,
+    "fertility": "Iron Deposit"
+   }
+  ],
+  "limestone": [
+   {
+    "building": "Limestone Quarry",
+    "time": 30,
+    "inputs": "",
+    "region": 3
+   }
+  ],
+  "uncut_marble": [
+   {
+    "building": "Marble Quarry",
+    "time": 60,
+    "inputs": "",
+    "region": 1,
+    "fertility": "Marble Deposit"
+   }
+  ],
+  "minerals": [
+   {
+    "building": "Mineral Quarry",
+    "time": 45,
+    "inputs": "",
+    "region": 1,
+    "fertility": "Mineral Deposit"
+   }
+  ],
+  "sheep": [
+   {
+    "building": "Sheep Farm",
+    "time": 30,
+    "inputs": "",
+    "region": 3,
+    "modules": 3
+   }
+  ],
+  "pigs": [
+   {
+    "building": "Pig Farm",
+    "time": 30,
+    "inputs": "",
+    "region": 3,
+    "modules": 5
+   }
+  ],
+  "horses": [
+   {
+    "building": "Horse Breeder",
+    "time": 120,
+    "inputs": "",
+    "region": 3,
+    "modules": 5
+   }
+  ],
+  "clay": [
+   {
+    "building": "Clay Pit",
+    "time": 30,
+    "inputs": "",
+    "region": 1
+   }
+  ],
+  "sturgeon": [
+   {
+    "building": "Sturgeon Hatchery",
+    "time": 90,
+    "inputs": "",
+    "region": 1,
+    "fertility": "Sturgeon Population"
+   }
+  ],
+  "gold_ore": [
+   {
+    "building": "Gold Mine",
+    "time": 150,
+    "inputs": "",
+    "region": 1,
+    "fertility": "Gold Ore Deposit"
+   },
+   {
+    "building": "Gold Washer",
+    "time": 240,
+    "inputs": "",
+    "region": 1,
+    "fertility": "Gold Ore Deposit"
+   }
+  ],
+  "leather": [
+   {
+    "building": "Tannery",
+    "time": 60,
+    "inputs": "pigs|salt",
+    "region": 1
+   },
+   {
+    "building": "Tannery",
+    "time": 60,
+    "inputs": "pigs|wood",
+    "region": 2
+   }
+  ],
+  "tyrian_purple": [
+   {
+    "building": "Dye Works",
+    "time": 120,
+    "inputs": "murex_snails",
+    "region": 1
+   }
+  ],
+  "lard": [
+   {
+    "building": "Renderer",
+    "time": 60,
+    "inputs": "pigs",
+    "region": 3,
+    "fuel": true
+   }
+  ],
+  "cloth": [
+   {
+    "building": "Weaver",
+    "time": 120,
+    "inputs": "flax",
+    "region": 1
+   }
+  ],
+  "ornate_wood": [
+   {
+    "building": "Gilder",
+    "time": 60,
+    "inputs": "sandarac_wood|gold",
+    "region": 1
+   }
+  ],
+  "cushions": [
+   {
+    "building": "Cushion Stuffer",
+    "time": 90,
+    "inputs": "flax|tyrian_purple",
+    "region": 1
+   }
+  ],
+  "string": [
+   {
+    "building": "Stringer",
+    "time": 90,
+    "inputs": "sheep",
+    "region": 1
+   }
+  ],
+  "iron": [
+   {
+    "building": "Furnace",
+    "time": 60,
+    "inputs": "iron_ore",
+    "region": 3,
+    "fuel": true
+   }
+  ],
+  "glass": [
+   {
+    "building": "Glass Smelter",
+    "time": 90,
+    "inputs": "silica",
+    "region": 1,
+    "fuel": true
+   }
+  ],
+  "pigments": [
+   {
+    "building": "Mineral Crusher",
+    "time": 60,
+    "inputs": "minerals",
+    "region": 1
+   }
+  ],
+  "gold": [
+   {
+    "building": "Goldsmith",
+    "time": 60,
+    "inputs": "gold_ore",
+    "region": 1,
+    "fuel": true
+   }
+  ],
+  "flour": [
+   {
+    "building": "Grain Mill",
+    "time": 30,
+    "inputs": "wheat",
+    "region": 1
+   },
+   {
+    "building": "Donkey Mill",
+    "time": 60,
+    "inputs": "wheat",
+    "region": 2
+   }
+  ],
+  "caviar": [
+   {
+    "building": "Fish Gutter",
+    "time": 45,
+    "inputs": "sturgeon",
+    "region": 1
+   }
+  ],
+  "porridge": [
+   {
+    "building": "Porridge Stand",
+    "time": 60,
+    "inputs": "oats",
+    "region": 1
+   }
+  ],
+  "bread": [
+   {
+    "building": "Bakery",
+    "time": 60,
+    "inputs": "flour",
+    "region": 3,
+    "fuel": true
+   }
+  ],
+  "garum": [
+   {
+    "building": "Garum Works",
+    "time": 90,
+    "inputs": "mackerel|salt",
+    "region": 1
+   }
+  ],
+  "wine": [
+   {
+    "building": "Vintner",
+    "time": 45,
+    "inputs": "grapes|honeycombs",
+    "region": 3
+   }
+  ],
+  "oysters_with_caviar": [
+   {
+    "building": "Epicure of Water",
+    "time": 60,
+    "inputs": "oysters|caviar",
+    "region": 1
+   }
+  ],
+  "tunics": [
+   {
+    "building": "Spinner",
+    "time": 60,
+    "inputs": "hemp",
+    "region": 3
+   }
+  ],
+  "pileus": [
+   {
+    "building": "Pileus Felter",
+    "time": 60,
+    "inputs": "sheep",
+    "region": 1
+   }
+  ],
+  "soap": [
+   {
+    "building": "Soap Maker",
+    "time": 60,
+    "inputs": "lavender|lard",
+    "region": 1
+   }
+  ],
+  "sandals": [
+   {
+    "building": "Sandal Maker",
+    "time": 120,
+    "inputs": "leather",
+    "region": 1
+   }
+  ],
+  "togas": [
+   {
+    "building": "Loom Weavery",
+    "time": 60,
+    "inputs": "cloth|tyrian_purple",
+    "region": 1
+   }
+  ],
+  "necklaces": [
+   {
+    "building": "Jeweller",
+    "time": 90,
+    "inputs": "minerals|gold",
+    "region": 1,
+    "fuel": true
+   }
+  ],
+  "writing_tablets": [
+   {
+    "building": "Tabulus",
+    "time": 120,
+    "inputs": "sandarac_wood|honeycombs",
+    "region": 1
+   }
+  ],
+  "fine_glass": [
+   {
+    "building": "Glassblower",
+    "time": 120,
+    "inputs": "pigments|glass",
+    "region": 1,
+    "fuel": true
+   }
+  ],
+  "loungers": [
+   {
+    "building": "Chair Maker",
+    "time": 120,
+    "inputs": "sandarac_wood|cushions",
+    "region": 1
+   }
+  ],
+  "olive_oil": [
+   {
+    "building": "Olive Press",
+    "time": 90,
+    "inputs": "olives",
+    "region": 1
+   }
+  ],
+  "amphorae": [
+   {
+    "building": "Potter",
+    "time": 60,
+    "inputs": "clay|resin",
+    "region": 1,
+    "fuel": true
+   },
+   {
+    "building": "Potter",
+    "time": 60,
+    "inputs": "mud|resin",
+    "region": 2,
+    "fuel": true
+   }
+  ],
+  "standing_lyres": [
+   {
+    "building": "Lythier",
+    "time": 60,
+    "inputs": "string|ornate_wood",
+    "region": 1
+   }
+  ],
+  "timber": [
+   {
+    "building": "Sawmill",
+    "time": 30,
+    "inputs": "wood",
+    "region": 3
+   }
+  ],
+  "tiles": [
+   {
+    "building": "Tiler",
+    "time": 60,
+    "inputs": "clay",
+    "region": 1,
+    "fuel": true
+   },
+   {
+    "building": "Tiler",
+    "time": 60,
+    "inputs": "mud",
+    "region": 2,
+    "fuel": true
+   }
+  ],
+  "concrete": [
+   {
+    "building": "Concrete Mixer",
+    "time": 90,
+    "inputs": "limestone|silica",
+    "region": 3
+   }
+  ],
+  "marble": [
+   {
+    "building": "Marble Mason",
+    "time": 90,
+    "inputs": "uncut_marble",
+    "region": 1
+   }
+  ],
+  "mosaics": [
+   {
+    "building": "Tessera Works",
+    "time": 120,
+    "inputs": "clay|pigments",
+    "region": 1,
+    "fuel": true
+   }
+  ],
+  "rope": [
+   {
+    "building": "Ropemaker",
+    "time": 120,
+    "inputs": "hemp",
+    "region": 3
+   }
+  ],
+  "sails": [
+   {
+    "building": "Sailmaker",
+    "time": 90,
+    "inputs": "sheep",
+    "region": 3
+   }
+  ],
+  "weapons": [
+   {
+    "building": "Weaponsmith",
+    "time": 90,
+    "inputs": "iron",
+    "region": 3,
+    "fuel": true
+   }
+  ],
+  "armour": [
+   {
+    "building": "Armourer",
+    "time": 90,
+    "inputs": "iron|leather",
+    "region": 3,
+    "fuel": true
+   }
+  ],
+  "seashells": [
+   {
+    "building": "Shell Gatherer",
+    "time": 45,
+    "inputs": "",
+    "region": 2,
+    "fertility": "Sea Shell Population"
+   }
+  ],
+  "cockles": [
+   {
+    "building": "Cockle Picker",
+    "time": 45,
+    "inputs": "",
+    "region": 2
+   }
+  ],
+  "small_birds": [
+   {
+    "building": "Bird Charmer",
+    "time": 90,
+    "inputs": "",
+    "region": 2,
+    "fertility": "Small Bird Population"
+   }
+  ],
+  "silver_ore": [
+   {
+    "building": "Silver Mine",
+    "time": 30,
+    "inputs": "",
+    "region": 2,
+    "fertility": "Silver Deposit"
+   }
+  ],
+  "herbs": [
+   {
+    "building": "Herb Garden",
+    "time": 90,
+    "inputs": "",
+    "region": 2,
+    "modules": 60,
+    "fertility": "Herbs Fertility"
+   }
+  ],
+  "head_piece": [
+   {
+    "building": "Headpiece Maker",
+    "time": 120,
+    "inputs": "flax|resin",
+    "region": 2
+   }
+  ],
+  "silver": [
+   {
+    "building": "Silver Forge",
+    "time": 60,
+    "inputs": "silver_ore",
+    "region": 2,
+    "fuel": true
+   }
+  ],
+  "bird_tongues": [
+   {
+    "building": "Tongue Plucker",
+    "time": 120,
+    "inputs": "small_birds",
+    "region": 2
+   }
+  ],
+  "sausages": [
+   {
+    "building": "Salsicium",
+    "time": 60,
+    "inputs": "pigs|herbs",
+    "region": 2,
+    "fuel": true
+   }
+  ],
+  "bird_tongues_in_aspic": [
+   {
+    "building": "Epicure of Air",
+    "time": 90,
+    "inputs": "bird_tongues|lard",
+    "region": 2
+   }
+  ],
+  "brooches": [
+   {
+    "building": "Fibularium",
+    "time": 120,
+    "inputs": "silver",
+    "region": 2,
+    "fuel": true
+   }
+  ],
+  "wigs": [
+   {
+    "building": "Wig Maker",
+    "time": 90,
+    "inputs": "horses|head_piece",
+    "region": 2
+   }
+  ],
+  "handmirrors": [
+   {
+    "building": "Narcissium",
+    "time": 120,
+    "inputs": "seashells|silver",
+    "region": 2,
+    "fuel": true
+   }
+  ],
+  "saltwort": [
+   {
+    "building": "Saltwort Picker",
+    "time": 90,
+    "inputs": "",
+    "region": 2,
+    "fertility": "Saltwort Fertility"
+   }
+  ],
+  "barley": [
+   {
+    "building": "Barley Farm",
+    "time": 60,
+    "inputs": "",
+    "region": 2,
+    "modules": 120,
+    "fertility": "Barley Fertility"
+   }
+  ],
+  "dye_plants": [
+   {
+    "building": "Weld Crop",
+    "time": 60,
+    "inputs": "",
+    "region": 2,
+    "modules": 100,
+    "fertility": "Dye Plant Fertility"
+   }
+  ],
+  "reeds": [
+   {
+    "building": "Reed Gatherer",
+    "time": 60,
+    "inputs": "",
+    "region": 2,
+    "modules": 140
+   }
+  ],
+  "mud": [
+   {
+    "building": "Mud Drier",
+    "time": 90,
+    "inputs": "",
+    "region": 2
+   }
+  ],
+  "ochs": [
+   {
+    "building": "Ochs Farm",
+    "time": 60,
+    "inputs": "",
+    "region": 2,
+    "modules": 5
+   }
+  ],
+  "eels": [
+   {
+    "building": "Eel Grabber",
+    "time": 60,
+    "inputs": "",
+    "region": 2
+   }
+  ],
+  "beavers": [
+   {
+    "building": "Beaver Trapper",
+    "time": 90,
+    "inputs": "",
+    "region": 2,
+    "fertility": "Beaver Population"
+   }
+  ],
+  "tin_ore": [
+   {
+    "building": "Tin Mine",
+    "time": 30,
+    "inputs": "",
+    "region": 2,
+    "fertility": "Tin Deposit"
+   }
+  ],
+  "copper_ore": [
+   {
+    "building": "Copper Mine",
+    "time": 30,
+    "inputs": "",
+    "region": 2,
+    "fertility": "Copper Deposit"
+   }
+  ],
+  "granite_block": [
+   {
+    "building": "Granite Quarry",
+    "time": 45,
+    "inputs": "",
+    "region": 2,
+    "fertility": "Granite Deposit"
+   }
+  ],
+  "ponies": [
+   {
+    "building": "Horsecatcher",
+    "time": 90,
+    "inputs": "",
+    "region": 2,
+    "fertility": "Pony Population"
+   }
+  ],
+  "celtic_green": [
+   {
+    "building": "Greenhands",
+    "time": 90,
+    "inputs": "dye_plants|copper_ore",
+    "region": 2
+   }
+  ],
+  "saltwash": [
+   {
+    "building": "Saltwort Burner",
+    "time": 60,
+    "inputs": "saltwort",
+    "region": 2,
+    "fuel": true
+   }
+  ],
+  "chassis": [
+   {
+    "building": "Chassis Builder",
+    "time": 90,
+    "inputs": "wood|reeds",
+    "region": 2
+   }
+  ],
+  "bronze": [
+   {
+    "building": "Bronze Smelter",
+    "time": 60,
+    "inputs": "tin_ore|copper_ore",
+    "region": 2,
+    "fuel": true
+   }
+  ],
+  "malt": [
+   {
+    "building": "Malthouse",
+    "time": 30,
+    "inputs": "barley",
+    "region": 2
+   }
+  ],
+  "cheese": [
+   {
+    "building": "Dairy",
+    "time": 120,
+    "inputs": "ochs",
+    "region": 2
+   }
+  ],
+  "beer": [
+   {
+    "building": "Brewery",
+    "time": 60,
+    "inputs": "malt",
+    "region": 2,
+    "fuel": true
+   }
+  ],
+  "roast_beef": [
+   {
+    "building": "Earth Oven",
+    "time": 120,
+    "inputs": "saltwort|ochs",
+    "region": 2,
+    "fuel": true
+   }
+  ],
+  "reed_shoes": [
+   {
+    "building": "Shoe Weaver",
+    "time": 120,
+    "inputs": "reeds",
+    "region": 2
+   }
+  ],
+  "trousers": [
+   {
+    "building": "Hosier",
+    "time": 90,
+    "inputs": "sheep|dye_plants",
+    "region": 2
+   }
+  ],
+  "cloaks": [
+   {
+    "building": "Birrus Stitcher",
+    "time": 60,
+    "inputs": "sheep|celtic_green",
+    "region": 2
+   }
+  ],
+  "torcs": [
+   {
+    "building": "Wire-Twister",
+    "time": 90,
+    "inputs": "copper_ore",
+    "region": 2,
+    "fuel": true
+   }
+  ],
+  "fur_hats": [
+   {
+    "building": "Beaver Hatter",
+    "time": 120,
+    "inputs": "beavers|saltwash",
+    "region": 2
+   }
+  ],
+  "drinking_horns": [
+   {
+    "building": "Horner",
+    "time": 120,
+    "inputs": "ochs|tin_ore",
+    "region": 2
+   }
+  ],
+  "clan_shields": [
+   {
+    "building": "Shieldbeater",
+    "time": 90,
+    "inputs": "dye_plants|bronze",
+    "region": 2
+   }
+  ],
+  "chariots": [
+   {
+    "building": "Chariot Workshop",
+    "time": 120,
+    "inputs": "ponies|chassis",
+    "region": 2
+   }
+  ],
+  "wattle_daub": [
+   {
+    "building": "Labourer's Yard",
+    "time": 60,
+    "inputs": "reeds|mud",
+    "region": 2
+   }
+  ],
+  "granite": [
+   {
+    "building": "Granite Cutter",
+    "time": 120,
+    "inputs": "granite_block",
+    "region": 2
+   }
+  ],
+  "obsidian": [],
+  "statuettes": [
+   {
+    "building": "Caelator",
+    "time": 180,
+    "inputs": "obsidian|uncut_marble",
+    "region": 1
+   }
+  ],
+  "latrunculi_sets": [
+   {
+    "building": "Latrunculi Workshop",
+    "time": 90,
+    "inputs": "obsidian|ornate_wood",
+    "region": 1
+   }
+  ]
+ },
+ "gathered": [
+  "obsidian"
+ ],
+ "fuel": {
+  "good": "coal",
+  "time": 120
+ },
+ "silo": {
+  "feedGood": "wheat",
+  "feedPerMin": 0.2,
+  "productivityUpgrade": 100
+ },
+ "presets": [],
+ "source": {
+  "repo": "anno-mods/anno-117-calculator",
+  "commit": "c6a6e7525d16927f74d4f554dde5831b84fa287c",
+  "upstreamVersion": "2.1",
+  "licence": "MIT (tooling); game values © Ubisoft",
+  "extractedBy": "scripts/extract-117.mjs"
+ }
+}
