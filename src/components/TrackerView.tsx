@@ -295,9 +295,6 @@ function houses(residents: number, fh: number) {
   return Math.ceil(residents / fh);
 }
 
-// Island 🌍 region keys → the data's region numbers.
-const REGION_NUM: Record<string, number> = { ow: 1, nw: 2, ar: 4, en: 5 };
-
 // Every good display name, for the route-task datalist — shipping moves
 // goods, not buildings. Regions merged: Rum is Rum.
 const GOOD_NAMES = [...new Set(Object.values(GOODS).map((g) => g.name))].sort();
