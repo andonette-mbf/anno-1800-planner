@@ -130,8 +130,9 @@ is in CLAUDE.md.
   island filter catches it. From/to stay filled after add (several goods
   often ride one route); from = to disables Add.
 
-## Next (order confirmed with the user Aug 2026 — M7 → M8 → M9, M6 slots
-## anywhere as a low-risk session)
+## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
+## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
+## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)
 
 - **M7 — ⚡ bolt-on + seed-from-plan** (one short session, two small jobs):
   (a) electricity as a per-line counter like silos ("⚡ 2/5") on electrifiable
@@ -151,16 +152,19 @@ is in CLAUDE.md.
   route records only if the suggestions aren't enough.
 - **M6** — backup & restore: one-button JSON export/import of all companion
   state; phone polish (touch targets, PWA install).
-- **M10 — Anno 117 support** (noodled Aug 2026; timing open — user decides
-  when, knowing M8/M9 deepen 1800-specific data and would need rework after).
-  One app, game switcher at the top, per-game everything (dataset, storage
-  keys, share-link marker, tracker content) — not a fork. Phased:
+- **M10 — Anno 117 support** (noodled Aug 2026; timing DECIDED — after M7,
+  before M8/M9, so residents/trade-routes are built per-game once instead of
+  being generalised later). One app, game switcher at the top, per-game
+  everything (dataset, storage keys, share-link marker, tracker content) —
+  not a fork. Phased:
   1. Switcher + 117 tracker only (quests/islands/free-text inventory;
      regions = Latium/Albion). Tracker barely touches game data — short.
-  2. 117 building list + ledger, once a goods dataset is sourced (community
-     wiki / datamined files / an open-source 117 calculator; version it —
-     the game still patches rates; no golden reference exists like 1800's
-     legacy app).
+  2. 117 building list + ledger, once a goods dataset is sourced. CONFIRMED
+     SOURCE: anno-mods/anno-117-calculator on GitHub (MIT, the Warenrechner
+     lineage our 1800 data.json came from) — covers Latium/Albion chains,
+     workforce and population-tier needs; extract programmatically like the
+     legacy `_C` extraction. Version the pack — the game still patches
+     rates; no golden reference exists like 1800's legacy app.
   3. 117 calculator. One real model change: flexible needs (a need met by
      alternative goods, porridge OR bread) → need-groups with a player
      choice, unlike 1800's need = one good. Latium/Albion map onto regions;
