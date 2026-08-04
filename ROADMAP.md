@@ -66,9 +66,14 @@ is in CLAUDE.md.
   intros cut to one line (details live in hover titles). Island inventory
   items intentionally stay visible when ticked — they're inventory, not
   todos.
+- **M5 — quest island filter** (build 44): chip row above the quest list —
+  "All" plus one chip per island that has a tagged quest ("Island: …" prefix
+  matched against the island list, `questIsland`), open-quest count on the
+  chip. Filters both the open list and the completed fold; ▲▼ swap within
+  the visible subset; Clear-all hidden while filtered (it clears everything).
+  Chips only render when a tag exists — no empty chrome.
 
 ## Next (tentative order — confirm with the user before starting each)
 
-- **M5** — quest list filterable/groupable by island tag.
 - **M6** — backup & restore: one-button JSON export/import of all companion
   state; phone polish (touch targets, PWA install).

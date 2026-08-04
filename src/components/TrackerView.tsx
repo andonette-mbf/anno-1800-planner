@@ -195,6 +195,16 @@ function wikiUrl(t: string) {
   return WIKI_SEARCH + encodeURIComponent(q);
 }
 
+// Island tag = an "Island: …" prefix on the quest text (the 🏝 dropdown
+// writes these). Only prefixes matching one of the player's islands count —
+// "Expedition: Zoological" isn't a tag.
+function questIsland(t: string, islands: string[]): string | null {
+  const m = /^([^:]+):/.exec(t);
+  if (!m) return null;
+  const p = m[1].trim().toLowerCase();
+  return islands.find((n) => n.toLowerCase() === p) || null;
+}
+
 // Render pasted URLs inside quest text as clickable links.
 function linkify(t: string) {
   return t.split(/(https?:\/\/\S+)/g).map((p, i) =>
@@ -258,6 +268,25 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
   const openQuests = indexed.filter((x) => !x.q.done);
   const doneQuests = indexed.filter((x) => x.q.done);
   const [showDone, setShowDone] = useState(false);
+  // M5 — filter the quest list by island tag. Chips appear for islands with
+  // at least one tagged quest; the count on a chip is its open quests.
+  const [isleFilter, setIsleFilter] = useState<string | null>(null);
+  const openCounts = new Map<string, number>();
+  const anyTagged = new Set<string>();
+  for (const { q } of indexed) {
+    const isle = questIsland(q.t, islands);
+    if (!isle) continue;
+    anyTagged.add(isle);
+    if (!q.done) openCounts.set(isle, (openCounts.get(isle) || 0) + 1);
+  }
+  const filterIslands = islands.filter((n) => anyTagged.has(n));
+  const effFilter = isleFilter && anyTagged.has(isleFilter) ? isleFilter : null;
+  const visOpen = effFilter
+    ? openQuests.filter((x) => questIsland(x.q.t, islands) === effFilter)
+    : openQuests;
+  const visDone = effFilter
+    ? doneQuests.filter((x) => questIsland(x.q.t, islands) === effFilter)
+    : doneQuests;
   // Landmark quick-add chips, collapsed per island until asked for.
   const [chipsOpen, setChipsOpen] = useState<Record<string, boolean>>({});
   const savedLabel =
@@ -357,9 +386,31 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
               ＋ Add
             </button>
           </div>
+          {filterIslands.length > 0 && (
+            <div className="chips qfilter">
+              <button
+                className={"chip" + (!effFilter ? " on" : "")}
+                title="Show every quest"
+                onClick={() => setIsleFilter(null)}
+              >
+                All
+              </button>
+              {filterIslands.map((n) => (
+                <button
+                  key={n}
+                  className={"chip" + (effFilter === n ? " on" : "")}
+                  title={`Only ${n}'s quests`}
+                  onClick={() => setIsleFilter(isleFilter === n ? null : n)}
+                >
+                  🏝 {n}
+                  {(openCounts.get(n) || 0) > 0 && <> · {openCounts.get(n)}</>}
+                </button>
+              ))}
+            </div>
+          )}
           <div id="questList">
-            {openQuests.length ? (
-              openQuests.map(({ q, i }, k) => (
+            {visOpen.length ? (
+              visOpen.map(({ q, i }, k) => (
                 <div className="plitem questrow" key={`${i}:${q.t}`}>
                   <label className="qmain" title="Tap to tick off">
                     <input
@@ -376,15 +427,15 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                     className="plx qmove"
                     title="Move up — do sooner"
                     disabled={k === 0}
-                    onClick={() => swapQuests(i, openQuests[k - 1].i)}
+                    onClick={() => swapQuests(i, visOpen[k - 1].i)}
                   >
                     ▲
                   </button>
                   <button
                     className="plx qmove"
                     title="Move down — do later"
-                    disabled={k === openQuests.length - 1}
-                    onClick={() => swapQuests(i, openQuests[k + 1].i)}
+                    disabled={k === visOpen.length - 1}
+                    onClick={() => swapQuests(i, visOpen[k + 1].i)}
                   >
                     ▼
                   </button>
@@ -404,23 +455,25 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
               ))
             ) : (
               <div className="empty">
-                {doneQuests.length
-                  ? "All caught up — nothing open."
-                  : "No quests tracked — add one above."}
+                {effFilter
+                  ? `Nothing open for ${effFilter}.`
+                  : visDone.length
+                    ? "All caught up — nothing open."
+                    : "No quests tracked — add one above."}
               </div>
             )}
-            {doneQuests.length > 0 && (
+            {visDone.length > 0 && (
               <div className="doneblk">
                 <button className="linkbtn" onClick={() => setShowDone((v) => !v)}>
-                  {showDone ? "▾" : "▸"} {doneQuests.length} completed
+                  {showDone ? "▾" : "▸"} {visDone.length} completed
                 </button>
-                {showDone && (
+                {showDone && !effFilter && (
                   <button className="linkbtn" onClick={clearDoneQuests}>
                     ✕ Clear all
                   </button>
                 )}
                 {showDone &&
-                  doneQuests.map(({ q, i }) => (
+                  visDone.map(({ q, i }) => (
                     <div className="plitem questrow done" key={`${i}:${q.t}`}>
                       <label className="qmain" title="Untick to reopen">
                         <input
