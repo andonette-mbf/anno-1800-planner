@@ -58,6 +58,14 @@ is in CLAUDE.md.
   module. Build-39 boolean `s:true` parses as all-silo'd; ledger feed/output
   scale with the silo count. Build 42 replaced the tap-to-cycle chip with an
   explicit −/＋ counter ("− silos 3/5 ＋") after the cycling read as broken.
+- **Tidy tracker** (build 43): the screen-clogging feedback. Ticked quests
+  sink to the bottom of the list (`toggleQuest` keeps the array partitioned
+  open-first; ▲▼ swap within the open subset via `swapQuests`) and hide
+  behind a "▸ N completed" toggle with Clear-all; the landmark chip wall per
+  island collapses behind one "＋ Landmarks & facilities…" chip; both card
+  intros cut to one line (details live in hover titles). Island inventory
+  items intentionally stay visible when ticked — they're inventory, not
+  todos.
 
 ## Next (tentative order — confirm with the user before starting each)
 

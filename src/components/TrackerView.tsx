@@ -221,7 +221,7 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
     addQuest,
     toggleQuest,
     removeQuest,
-    moveQuest,
+    swapQuests,
     clearDoneQuests,
     addIsland,
     removeIsland,
@@ -252,7 +252,14 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
     })();
   }, [status]);
   const quests = data.quests || [];
-  const doneCount = quests.filter((q) => q.done).length;
+  // Done quests hide behind a "N completed" toggle instead of cluttering the
+  // list; rows keep their index in the raw array so actions line up.
+  const indexed = quests.map((q, i) => ({ q, i }));
+  const openQuests = indexed.filter((x) => !x.q.done);
+  const doneQuests = indexed.filter((x) => x.q.done);
+  const [showDone, setShowDone] = useState(false);
+  // Landmark quick-add chips, collapsed per island until asked for.
+  const [chipsOpen, setChipsOpen] = useState<Record<string, boolean>>({});
   const savedLabel =
     sync === "synced" ? "synced" : sync === "syncing" ? "syncing…" : "saves automatically";
 
@@ -261,19 +268,12 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
       <div className="card">
         <div className="hd">
           <h2>📜 Quest Tracker</h2>
-          {doneCount ? (
-            <button className="linkbtn" onClick={clearDoneQuests}>
-              ✓ Clear {doneCount} completed
-            </button>
-          ) : (
-            <span className="muted">{savedLabel}</span>
-          )}
+          <span className="muted">{savedLabel}</span>
         </div>
         <div className="bd doc">
           <p className="lead">
-            Story questlines, add-on setup goals and your own tasks — pick from the list (each
-            comes with a what-it-is note) or type your own. Top of the list = do next; sort with
-            ▲▼. ↗ looks it up on the wiki.
+            Pick a storyline / add-on goal or type your own — top of the list = do next. Ticked
+            quests tuck away below.
           </p>
           <div className="plrow">
             <select
@@ -358,9 +358,9 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
             </button>
           </div>
           <div id="questList">
-            {quests.length ? (
-              quests.map((q, i) => (
-                <div className={"plitem questrow" + (q.done ? " done" : "")} key={`${i}:${q.t}`}>
+            {openQuests.length ? (
+              openQuests.map(({ q, i }, k) => (
+                <div className="plitem questrow" key={`${i}:${q.t}`}>
                   <label className="qmain" title="Tap to tick off">
                     <input
                       type="checkbox"
@@ -375,16 +375,16 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                   <button
                     className="plx qmove"
                     title="Move up — do sooner"
-                    disabled={i === 0}
-                    onClick={() => moveQuest(i, -1)}
+                    disabled={k === 0}
+                    onClick={() => swapQuests(i, openQuests[k - 1].i)}
                   >
                     ▲
                   </button>
                   <button
                     className="plx qmove"
                     title="Move down — do later"
-                    disabled={i === quests.length - 1}
-                    onClick={() => moveQuest(i, 1)}
+                    disabled={k === openQuests.length - 1}
+                    onClick={() => swapQuests(i, openQuests[k + 1].i)}
                   >
                     ▼
                   </button>
@@ -403,7 +403,39 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                 </div>
               ))
             ) : (
-              <div className="empty">No quests tracked — add one above.</div>
+              <div className="empty">
+                {doneQuests.length
+                  ? "All caught up — nothing open."
+                  : "No quests tracked — add one above."}
+              </div>
+            )}
+            {doneQuests.length > 0 && (
+              <div className="doneblk">
+                <button className="linkbtn" onClick={() => setShowDone((v) => !v)}>
+                  {showDone ? "▾" : "▸"} {doneQuests.length} completed
+                </button>
+                {showDone && (
+                  <button className="linkbtn" onClick={clearDoneQuests}>
+                    ✕ Clear all
+                  </button>
+                )}
+                {showDone &&
+                  doneQuests.map(({ q, i }) => (
+                    <div className="plitem questrow done" key={`${i}:${q.t}`}>
+                      <label className="qmain" title="Untick to reopen">
+                        <input
+                          type="checkbox"
+                          checked={q.done}
+                          onChange={(e) => toggleQuest(i, e.target.checked)}
+                        />
+                        <span style={{ flex: 1 }}>{linkify(q.t)}</span>
+                      </label>
+                      <button className="plx" title="Remove quest" onClick={() => removeQuest(i)}>
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+              </div>
             )}
           </div>
         </div>
@@ -415,16 +447,9 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
         </div>
         <div className="bd doc">
           <p className="lead">
-            What each island already runs, in the game&apos;s own words — type a building name,
-            re-add or ＋ for counts like ×2. Animal farms get a <b>silo</b> counter on their row —
-            silos are bolt-on modules, so tap as you fit them; a line can be part-silo&apos;d
-            (&quot;silos 3/5&quot;). Silo&apos;d farms make ×2 and eat feed.
-            Buildings the calculator knows feed a per-island <b>ledger</b>: what the island makes
-            and what its own chains use, in tons per minute — red net means the island
-            doesn&apos;t cover its own consumption. 🎯 links a calculator plan to the island: the
-            plan check shows built vs planned, says what&apos;s still to build, and anything
-            beyond the plan is your real overproduction. Chips below cover landmarks; untick
-            anything broken so gaps stay red (and drop out of the ledger).
+            What each island already runs — buildings feed the <b>ledger</b> (makes/uses, red =
+            short), 🎯 links a calculator plan for built&nbsp;vs&nbsp;planned. Untick anything
+            broken. Hover anything for the details.
           </p>
           <datalist id="bldgSuggest">
             {BUILDING_OPTIONS.map((b) => (
@@ -705,16 +730,35 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                   </div>
                   {chips.length > 0 && (
                     <div className="ichips">
-                      {chips.map((s) => (
+                      {chipsOpen[name] ? (
+                        <>
+                          {chips.map((s) => (
+                            <button
+                              key={s}
+                              className="chip"
+                              title={`One tap: ${name} has ${s}`}
+                              onClick={() => addIslandCheck(name, s)}
+                            >
+                              ＋ {s}
+                            </button>
+                          ))}
+                          <button
+                            className="chip"
+                            title="Hide the quick-add chips"
+                            onClick={() => setChipsOpen((s) => ({ ...s, [name]: false }))}
+                          >
+                            ▴ hide
+                          </button>
+                        </>
+                      ) : (
                         <button
-                          key={s}
                           className="chip"
-                          title={`One tap: ${name} has ${s}`}
-                          onClick={() => addIslandCheck(name, s)}
+                          title="Quick-add the usual landmarks & facilities"
+                          onClick={() => setChipsOpen((s) => ({ ...s, [name]: true }))}
                         >
-                          ＋ {s}
+                          ＋ Landmarks &amp; facilities…
                         </button>
-                      ))}
+                      )}
                     </div>
                   )}
                 </div>

@@ -231,7 +231,7 @@ interface CompanionCtx {
   addQuest: (t: string, note?: string) => void;
   toggleQuest: (i: number, done: boolean) => void;
   removeQuest: (i: number) => void;
-  moveQuest: (i: number, dir: -1 | 1) => void;
+  swapQuests: (i: number, j: number) => void;
   clearDoneQuests: () => void;
   addIsland: (name: string) => void;
   removeIsland: (name: string) => void;
@@ -399,16 +399,28 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             }))
           : undefined,
       toggleQuest: (i, done) =>
-        update((d) => ({
-          ...d,
-          quests: d.quests.map((q, j) => (j === i ? { ...q, done } : q)),
-        })),
+        update((d) => {
+          if (i < 0 || i >= d.quests.length) return d;
+          // Keep the array partitioned open-first: ticking sinks the quest to
+          // the bottom (out of the way, completions read in order), unticking
+          // re-surfaces it at the end of the open list.
+          const quests = d.quests.slice();
+          const [q] = quests.splice(i, 1);
+          const at = done
+            ? quests.length
+            : (() => {
+                const f = quests.findIndex((x) => x.done);
+                return f < 0 ? quests.length : f;
+              })();
+          quests.splice(at, 0, { ...q, done });
+          return { ...d, quests };
+        }),
       removeQuest: (i) =>
         update((d) => ({ ...d, quests: d.quests.filter((_, j) => j !== i) })),
-      moveQuest: (i, dir) =>
+      swapQuests: (i, j) =>
         update((d) => {
-          const j = i + dir;
-          if (j < 0 || j >= d.quests.length) return d;
+          if (i < 0 || j < 0 || i >= d.quests.length || j >= d.quests.length || i === j)
+            return d;
           const quests = d.quests.slice();
           [quests[i], quests[j]] = [quests[j], quests[i]];
           return { ...d, quests };

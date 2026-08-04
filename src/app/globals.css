@@ -42,3 +42,5 @@ a.plx:hover{color:var(--accent)}
 .planlink{width:auto;flex:0 0 auto;font-size:11px;padding:4px 8px;color:var(--muted);border-radius:999px}
 .iplanextra{color:var(--gold);font-weight:600;margin-top:5px}
 .iplanok{color:var(--green);font-weight:600;margin-top:5px}
+.doneblk{margin-top:10px;padding-top:6px;border-top:1px dashed var(--line)}
+.doneblk .linkbtn{margin-right:6px}
