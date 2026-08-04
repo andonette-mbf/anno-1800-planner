@@ -295,6 +295,9 @@ function houses(residents: number, fh: number) {
   return Math.ceil(residents / fh);
 }
 
+// Island 🌍 region keys → the data's region numbers.
+const REGION_NUM: Record<string, number> = { ow: 1, nw: 2, ar: 4, en: 5 };
+
 // Every good display name, for the route-task datalist — shipping moves
 // goods, not buildings. Regions merged: Rum is Rum.
 const GOOD_NAMES = [...new Set(Object.values(GOODS).map((g) => g.name))].sort();
@@ -424,6 +427,21 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
   const visDone = effFilter
     ? doneQuests.filter((x) => questIsland(x.q.t, islands) === effFilter)
     : doneQuests;
+  // 📈 goals pertain to the regions you actually play: the filtered island's
+  // region when one is set, else the union of your islands' 🌍 tags. No tags
+  // anywhere → the full list.
+  const growthTiers = (() => {
+    const regs = new Set<number>();
+    const fr = effFilter ? REGION_NUM[(data.islandRegions || {})[effFilter]] : undefined;
+    if (fr) regs.add(fr);
+    else
+      for (const isle of islands) {
+        const r = REGION_NUM[(data.islandRegions || {})[isle]];
+        if (r) regs.add(r);
+      }
+    return regs.size ? GROWTH_TIERS.filter((t) => regs.has(t.region)) : GROWTH_TIERS;
+  })();
+  const growthRegions = new Set(growthTiers.map((t) => t.region));
   // Route task builder ("from, to, what"), collapsed until asked for.
   const [routeOpen, setRouteOpen] = useState(false);
   const [routeFrom, setRouteFrom] = useState("");
@@ -483,7 +501,7 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
           <div className="plrow">
             <select
               aria-label="Add a population growth goal"
-              title="Growth milestones from the game's own need tables — each is the point a new need unlocks. 'Custom…' asks for any number."
+              title="Growth milestones from the game's own need tables — each is the point a new need unlocks. 'Custom…' asks for any number. Scoped to your islands' 🌍 regions (or the filtered island's)."
               value=""
               onChange={(e) => {
                 const [tid, mark] = e.target.value.split(":");
@@ -511,8 +529,11 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
               }}
             >
               <option value="">📈 Add a population growth goal…</option>
-              {GROWTH_TIERS.map((t) => (
-                <optgroup key={t.tid} label={`${t.lbl} · ${REGIONS[t.region]}`}>
+              {growthTiers.map((t) => (
+                <optgroup
+                  key={t.tid}
+                  label={growthRegions.size > 1 ? `${t.lbl} · ${REGIONS[t.region]}` : t.lbl}
+                >
                   {t.marks.map(([target, goods]) => (
                     <option key={target} value={`${t.tid}:${target}`}>
                       Grow to {target} {t.lbl} → {goods.join(" + ")}

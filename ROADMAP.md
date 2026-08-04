@@ -130,6 +130,12 @@ is in CLAUDE.md.
   island filter catches it. From/to stay filled after add (several goods
   often ride one route); from = to disables Add.
 
+- **Growth goals fit your regions** (build 52): "I don't need all those
+  dropdowns" — the 📈 picker no longer lists every region's tiers. It scopes
+  to the union of your islands' 🌍 regions (island filter active → just that
+  island's region); no region tags anywhere → full list. Single-region lists
+  drop the "· Region" suffix from group labels.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)
