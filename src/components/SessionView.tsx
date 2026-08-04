@@ -106,23 +106,43 @@ const STORYLINES: [string, StoryEntry[]][] = [
     ],
   ],
   [
-    "Add-on setup goals (feature DLCs, no real storyline)",
+    "Add-on milestones (roughly in the order you meet them)",
     [
+      {
+        t: "Fit silos on animal farms",
+        note: "Bright Harvest: silo module for livestock farms, fed with grain, doubles output — usually the first DLC content you meet (Workers-tier pig farms). The calculator's silo toggle models exactly this.",
+      },
       {
         t: "Open the Botanical Garden",
         note: "Botanica: garden modules that boost attractiveness, plus the music pavilion.",
       },
       {
-        t: "Build the Palace",
-        note: "Seat of Power: palace with ministry policy buffs; short intro quest only.",
-      },
-      {
-        t: "Mechanise farms with tractors",
-        note: "Bright Harvest: tractor barns and fuel stations for Old World farms.",
-      },
-      {
         t: "Set up a Docklands harbour",
         note: "Docklands: modular port and export/import contracts with Captain Tobias.",
+      },
+      {
+        t: "Settle Cape Trelawney",
+        note: "Sunken Treasures: the giant Crown Falls island — room for the endgame city (Playbook phases 2–3).",
+      },
+      {
+        t: "Host tourists",
+        note: "Tourist Season: hotels, bus routes and restaurants once attractiveness runs high.",
+      },
+      {
+        t: "Roll out tractors",
+        note: "Bright Harvest: tractor barns for crop farms plus fuel stations — needs an oil supply, so this lands in the Engineers era.",
+      },
+      {
+        t: "Build the Palace",
+        note: "Seat of Power: palace whose ministries buff whole districts; short intro quest only.",
+      },
+      {
+        t: "Settle Enbesa",
+        note: "Land of Lions: new session with irrigation farming and the Research Institute (Playbook phase 6).",
+      },
+      {
+        t: "Establish the Arctic outpost",
+        note: "The Passage: heaters against the cold, gas mining for airships (Playbook phase 6).",
       },
       {
         t: "Take residents high-rise",
@@ -217,7 +237,10 @@ export function SessionView() {
     removeQuest,
     moveQuest,
     clearDoneQuests,
+    addIsland,
+    removeIsland,
   } = useCompanion();
+  const islands = data.islands || [];
   const [draft, setDraft] = useState("");
   const [questDraft, setQuestDraft] = useState("");
   const quests = data.quests || [];
@@ -322,6 +345,37 @@ export function SessionView() {
             </select>
           </div>
           <div className="plrow">
+            <select
+              className="qisle"
+              aria-label="Tag with one of your islands"
+              value=""
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === "__add") {
+                  const name = window.prompt("Island name to add:");
+                  if (name?.trim()) {
+                    addIsland(name);
+                    setQuestDraft((d) => `${name.trim()}: ${d}`);
+                  }
+                } else if (v === "__del") {
+                  const name = window.prompt(
+                    "Remove which island?\n" + islands.join(", ")
+                  );
+                  if (name?.trim()) removeIsland(name);
+                } else if (v) {
+                  setQuestDraft((d) => `${v}: ${d}`);
+                }
+              }}
+            >
+              <option value="">🏝 Island…</option>
+              {islands.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+              <option value="__add">＋ Add island…</option>
+              {islands.length > 0 && <option value="__del">− Remove island…</option>}
+            </select>
             <input
               placeholder="Quest or goal… (type for suggestions, Enter to add)"
               list="questSuggest"

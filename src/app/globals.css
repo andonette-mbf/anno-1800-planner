@@ -17,3 +17,4 @@ a.plx:hover{color:var(--accent)}
 .qmain{display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0;cursor:pointer}
 .questrow input[type=checkbox]{width:18px;height:18px}
 .qnote{display:block;color:var(--muted);font-size:11px;line-height:1.35;margin-top:2px}
+.qisle{width:auto;flex:0 0 auto;max-width:38%}

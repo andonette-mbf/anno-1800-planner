@@ -57,6 +57,8 @@ export interface CompanionData {
   // Play sessions completed so far; a session "ends" when the Shutdown Check
   // is fully ticked. Quest age = sessions - quest.sess.
   sessions: number;
+  // The player's island names, for tagging quests with a location.
+  islands: string[];
 }
 
 function loadLocal(): CompanionData {
@@ -76,6 +78,11 @@ function loadLocal(): CompanionData {
     if (Array.isArray(p)) parkinglot = p.map(String);
   } catch {}
   const sessions = Math.max(0, Math.floor(Number(ls.get("anno_sessions")) || 0));
+  let islands: string[] = [];
+  try {
+    const il = JSON.parse(ls.get("anno_islands") || "[]");
+    if (Array.isArray(il)) islands = il.map(String).filter(Boolean);
+  } catch {}
   try {
     const q = JSON.parse(ls.get("anno_quests") || "[]");
     if (Array.isArray(q))
@@ -90,7 +97,7 @@ function loadLocal(): CompanionData {
         }))
         .filter((x) => x.t);
   } catch {}
-  return { openq, focus, shutdown, parkinglot, quests, sessions };
+  return { openq, focus, shutdown, parkinglot, quests, sessions, islands };
 }
 
 function saveLocal(d: CompanionData) {
@@ -100,6 +107,7 @@ function saveLocal(d: CompanionData) {
   ls.set("anno_parkinglot", JSON.stringify(d.parkinglot));
   ls.set("anno_quests", JSON.stringify(d.quests));
   ls.set("anno_sessions", String(d.sessions || 0));
+  ls.set("anno_islands", JSON.stringify(d.islands || []));
 }
 
 // ---------- auth ----------
@@ -140,6 +148,8 @@ interface CompanionCtx {
   removeQuest: (i: number) => void;
   moveQuest: (i: number, dir: -1 | 1) => void;
   clearDoneQuests: () => void;
+  addIsland: (name: string) => void;
+  removeIsland: (name: string) => void;
 }
 
 const CompanionContext = createContext<CompanionCtx | null>(null);
@@ -160,6 +170,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     parkinglot: [],
     quests: [],
     sessions: 0,
+    islands: [],
   });
   const [sync, setSync] = useState<CompanionCtx["sync"]>("local");
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -306,6 +317,22 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         }),
       clearDoneQuests: () =>
         update((d) => ({ ...d, quests: d.quests.filter((q) => !q.done) })),
+      addIsland: (name) => {
+        const n = name.trim();
+        if (!n) return;
+        update((d) =>
+          (d.islands || []).some((x) => x.toLowerCase() === n.toLowerCase())
+            ? d
+            : { ...d, islands: [...(d.islands || []), n] }
+        );
+      },
+      removeIsland: (name) =>
+        update((d) => ({
+          ...d,
+          islands: (d.islands || []).filter(
+            (x) => x.toLowerCase() !== name.trim().toLowerCase()
+          ),
+        })),
     }),
     [data, sync, update]
   );
