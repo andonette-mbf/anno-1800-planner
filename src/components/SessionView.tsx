@@ -43,22 +43,77 @@ const QUEST_SUGGESTIONS = [
   "Emperor Ketema: ",
   "Queen Margaret: ",
   "Captain Tobias: ",
-  "Delivery quest: ",
-  "Escort quest: ",
-  "Salvage flotsam: ",
-  "Photographic excursion: ",
-  "Find the person: ",
-  "Buried treasure: ",
   "Expedition: Zoological",
   "Expedition: Botanical",
   "Expedition: Archaeological",
   "Expedition: Rescue",
 ];
 
+// Named story content: campaign chapters, DLC storylines by season, scenarios.
+// Names verified against the Anno 1800 wiki / official sources. Parentheticals
+// are stripped before the wiki search so lookups stay clean.
+const STORYLINES: [string, string[]][] = [
+  [
+    "Campaign",
+    [
+      "Campaign 1: A Tale of Two Brothers",
+      "Campaign 2: A Sign of Fire",
+      "Campaign 3: Prosperity",
+      "Campaign 4: The Torch Passes",
+    ],
+  ],
+  [
+    "Season 1",
+    [
+      "Sunken Treasures (Old Nate, Cape Trelawney)",
+      "Botanica (botanical garden)",
+      "The Passage (Arctic)",
+    ],
+  ],
+  [
+    "Season 2",
+    [
+      "Seat of Power (palace)",
+      "Bright Harvest (tractors)",
+      "Land of Lions (Enbesa, Emperor Ketema)",
+    ],
+  ],
+  [
+    "Season 3",
+    [
+      "Docklands (Captain Tobias)",
+      "Tourist Season (hotel & visitors)",
+      "The High Life (skyscrapers)",
+    ],
+  ],
+  [
+    "Season 4",
+    [
+      "Seeds of Change (hacienda)",
+      "Empire of the Skies (airships)",
+      "New World Rising (New World story)",
+    ],
+  ],
+  [
+    "Scenarios",
+    [
+      "Scenario: Eden Burning",
+      "Scenario: Seasons of Silver",
+      "Scenario: A Clash of Couriers",
+      "Scenario: Pride and Peddlers",
+    ],
+  ],
+  ["Character DLC", ["The Anarchist (Dr. Hugo Mercier)"]],
+];
+
 const WIKI_SEARCH = "https://anno1800.fandom.com/wiki/Special:Search?query=";
 
 function wikiUrl(t: string) {
-  const q = t.replace(/https?:\/\/\S+/g, "").trim() || t;
+  const q =
+    t
+      .replace(/https?:\/\/\S+/g, "")
+      .replace(/\([^)]*\)/g, "")
+      .trim() || t;
   return WIKI_SEARCH + encodeURIComponent(q);
 }
 
@@ -168,9 +223,29 @@ export function SessionView() {
         </div>
         <div className="bd doc">
           <p className="lead">
-            Accepted quests, expeditions and self-set goals. Tick them off as they finish so
-            nothing quietly expires between sessions.
+            Campaign chapters, DLC storylines and self-set goals — pick from the list or type
+            your own. Tick them off as they finish; ↗ looks a quest up on the wiki.
           </p>
+          <div className="plrow">
+            <select
+              aria-label="Add a story or DLC questline"
+              value=""
+              onChange={(e) => {
+                if (e.target.value) addQuest(e.target.value);
+              }}
+            >
+              <option value="">＋ Add a story / DLC questline…</option>
+              {STORYLINES.map(([group, items]) => (
+                <optgroup key={group} label={group}>
+                  {items.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
           <div className="plrow">
             <input
               placeholder="Quest or goal… (type for suggestions, Enter to add)"
