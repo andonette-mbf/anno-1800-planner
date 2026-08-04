@@ -30,6 +30,10 @@ is in CLAUDE.md.
   dangling "see playbook" references cleaned from Session prose + docs,
   `openq` state kept in the store/sync schema for old blobs. The wording
   survives in `anno-1800-lean-playbook.md` and `/legacy.html`.
+- **Anno light theme** (build 37): dark blue palette replaced with a light
+  Anno-flavoured one — parchment/cream surfaces, sepia ink, brass gold,
+  sea-teal, terracotta. Colours only (CSS vars + the hardcoded hexes);
+  selectors and layout untouched. `/legacy.html` keeps the dark original.
 
 ## Next (tentative order — confirm with the user before starting each)
 
