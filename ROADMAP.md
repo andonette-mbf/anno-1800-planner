@@ -73,6 +73,14 @@ is in CLAUDE.md.
   the visible subset; Clear-all hidden while filtered (it clears everything).
   Chips only render when a tag exists — no empty chrome.
 
+- **Contrast pass** (build 45): user-reported red-on-brass silo chip —
+  `.questrow.gap span` painted every span in an unticked row red, including
+  the silo counter chip (1.3:1 on the gold gradient); scoped to
+  `.qmain>span`. WCAG audit of the palette: `--gold` #9c6f1c → #8a6218
+  (cream-on-brass chips and gold text now ≥4.6:1 everywhere, was 3.8–4.4),
+  `--dim` #a5926f → #97835d (icon buttons 3.6:1, was 2.97). Same brass look,
+  slightly deeper.
+
 ## Next (tentative order — confirm with the user before starting each)
 
 - **M6** — backup & restore: one-button JSON export/import of all companion
