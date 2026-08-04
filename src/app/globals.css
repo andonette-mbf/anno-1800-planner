@@ -14,3 +14,5 @@ a.plx:hover{color:var(--accent)}
 .qmove{font-size:10px;padding:2px 3px}
 .qmove:disabled{opacity:.25;cursor:default}
 .qmove:hover:not(:disabled){color:var(--gold)}
+.qmain{display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0;cursor:pointer}
+.questrow input[type=checkbox]{width:18px;height:18px}

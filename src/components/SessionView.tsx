@@ -294,12 +294,14 @@ export function SessionView() {
                 const age = q.done ? null : questAge(q.added);
                 return (
                   <div className={"plitem questrow" + (q.done ? " done" : "")} key={`${i}:${q.t}`}>
-                    <input
-                      type="checkbox"
-                      checked={q.done}
-                      onChange={(e) => toggleQuest(i, e.target.checked)}
-                    />
-                    <span style={{ flex: 1 }}>{linkify(q.t)}</span>
+                    <label className="qmain" title="Tap to tick off">
+                      <input
+                        type="checkbox"
+                        checked={q.done}
+                        onChange={(e) => toggleQuest(i, e.target.checked)}
+                      />
+                      <span style={{ flex: 1 }}>{linkify(q.t)}</span>
+                    </label>
                     {age && (
                       <span className={"qage" + age.cls} title="How long this has been tracked">
                         {age.label}
