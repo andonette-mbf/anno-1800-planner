@@ -15,6 +15,7 @@ import {
   targets,
   wholeTotalStat,
 } from "@/lib/engine";
+import { GoodIcon } from "../GoodIcon";
 import { CatPill, FinalPill } from "./CatPill";
 
 interface Props {
@@ -99,10 +100,11 @@ export function Results({ st, patch }: Props) {
         of output; building ratios come from each building&apos;s production time.
         <br />
         Base data: production times &amp; chains from the open-source Anno 1800 calculator community
-        data, cross-checked against the Anno&nbsp;1800 Wiki. Late-game / DLC recipes may vary by
-        patch — every rate is editable in the model. Not affiliated with Ubisoft.
+        data, cross-checked against the Anno&nbsp;1800 Wiki. Goods pictures from the Anno&nbsp;1800
+        Wiki (game art © Ubisoft). Late-game / DLC recipes may vary by patch — every rate is
+        editable in the model. Not affiliated with Ubisoft.
         <br />
-        <span style={{ opacity: 0.55 }}>build 56 · Anno 117 switcher + Rome tracker</span>
+        <span style={{ opacity: 0.55 }}>build 57 · square corners + goods pictures</span>
       </div>
     </section>
   );
@@ -145,7 +147,12 @@ function Bld({ st, id, extra }: { st: CalcState; id: string; extra?: React.React
     <div className="bld">
       <span className="dot" style={{ background: regionColor(g.region) }} />
       <div>
-        <b>{buildingName(st, id)}</b> <span className="muted">→ {g.name}</span> {extra}
+        <b>{buildingName(st, id)}</b>{" "}
+        <span className="muted">
+          → <GoodIcon name={g.name} />
+          {g.name}
+        </span>{" "}
+        {extra}
       </div>
     </div>
   );
@@ -285,8 +292,8 @@ function SharedPane({ st, R }: { st: CalcState; R: ReturnType<typeof buildingRow
                 className="dot"
                 style={{ background: regionColor(g.region), display: "inline-block" }}
               />{" "}
-              {buildingName(st, id)} → {g.name}{" "}
-              <span className="muted">· {fmt(o.er)}/min each</span>
+              {buildingName(st, id)} → <GoodIcon name={g.name} />
+              {g.name} <span className="muted">· {fmt(o.er)}/min each</span>
             </h3>
             <div className="flow">
               <span className="tag">
@@ -506,7 +513,8 @@ function TreeNode({ st, id, tpm }: { st: CalcState; id: string; tpm: number }) {
       <span className="row">
         <span className="cnt">{fmt(cnt, st.round ? 0 : 1)}×</span> <b>{buildingName(st, id)}</b>{" "}
         <span className="muted">
-          → {g.name} · {fmt(tpm)} t/min
+          → <GoodIcon name={g.name} />
+          {g.name} · {fmt(tpm)} t/min
         </span>
       </span>
       {kids.length > 0 && (

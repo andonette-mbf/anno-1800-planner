@@ -16,6 +16,7 @@ import {
   buildingName,
   needActive,
 } from "@/lib/engine";
+import { GoodIcon } from "../GoodIcon";
 import { CatPill } from "./CatPill";
 import { SavedPlans } from "./SavedPlans";
 
@@ -161,6 +162,7 @@ function GoodsPanel({
               >
                 <div className="optlbl">
                   <b>
+                    <GoodIcon name={g.name} />
                     {g.name} <CatPill st={st} id={g.id} />
                   </b>
                   <span>
@@ -225,7 +227,10 @@ function SelRow({
     <div className="sel">
       <span className="dot" style={{ background: regionColor(g.region) }} />
       <div className="nm">
-        <b title={g.name}>{g.name}</b>
+        <b title={g.name}>
+          <GoodIcon name={g.name} />
+          {g.name}
+        </b>
         <span>
           {buildingName(st, id)} · {g.regionName}
         </span>

@@ -161,6 +161,17 @@ is in CLAUDE.md.
   Nothing already listed is touched. Quick fries not taken: island reorder,
   editable quest notes.
 
+- **Square corners + goods pictures** (build 57): "solid look not wishy
+  washy" — every border-radius set to 0 (`--r`, pills, chips, inputs, cards,
+  dots). Goods pictures fetched from the Anno 1800 Wiki's image server into
+  `public/icons/goods/` by `scripts/fetch-good-icons.mjs` (MediaWiki md5
+  path trick; wiki blocks page fetches but not the image host; misses listed
+  in the script — 134/162, the rest are add-on goods with no wiki icon).
+  `GoodIcon` (keyed by display name via `src/lib/goodIcons.json`) shown in
+  the calculator: good picker, selected rows, Buildings/Shared/Optimal
+  tables, chain tree. Footer credits the wiki/Ubisoft. Tracker rows can get
+  them later once the 117 work settles.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)
