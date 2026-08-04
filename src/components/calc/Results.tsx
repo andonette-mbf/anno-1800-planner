@@ -102,7 +102,7 @@ export function Results({ st, patch }: Props) {
         data, cross-checked against the Anno&nbsp;1800 Wiki. Late-game / DLC recipes may vary by
         patch — every rate is editable in the model. Not affiliated with Ubisoft.
         <br />
-        <span style={{ opacity: 0.55 }}>build 31 · milestones + islands</span>
+        <span style={{ opacity: 0.55 }}>build 32 · M-ladder + inventory</span>
       </div>
     </section>
   );

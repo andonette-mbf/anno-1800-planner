@@ -185,6 +185,25 @@ const STORYLINES: [string, StoryEntry[]][] = [
   ],
 ];
 
+// One-tap chips for the island inventory — the usual "does this island have
+// it yet?" facilities. A chip disappears once the island has the item.
+const ISLAND_SUGGESTIONS = [
+  "Silos on animal farms",
+  "Electricity",
+  "Tractors + fuel",
+  "Oil harbour",
+  "Docklands harbour",
+  "Commuter pier",
+  "Fire · police · hospital coverage",
+  "Zoo",
+  "Museum",
+  "Botanical Garden",
+  "Palace",
+  "Airship platform",
+  "Research Institute",
+  "Hacienda",
+];
+
 const WIKI_SEARCH = "https://anno1800.fandom.com/wiki/Special:Search?query=";
 
 function wikiUrl(t: string) {
@@ -239,8 +258,21 @@ export function SessionView() {
     clearDoneQuests,
     addIsland,
     removeIsland,
+    addMilestone,
+    toggleMilestone,
+    moveMilestone,
+    removeMilestone,
+    seedMilestones,
+    addIslandCheck,
+    toggleIslandCheck,
+    removeIslandCheck,
   } = useCompanion();
   const islands = data.islands || [];
+  const milestones = data.milestones || [];
+  const currentMs = milestones.findIndex((m) => !m.done);
+  const [msDraft, setMsDraft] = useState("");
+  const [isleDraft, setIsleDraft] = useState("");
+  const [itemDrafts, setItemDrafts] = useState<Record<string, string>>({});
   const [draft, setDraft] = useState("");
   const [questDraft, setQuestDraft] = useState("");
   const quests = data.quests || [];
@@ -301,6 +333,85 @@ export function SessionView() {
               onChange={(e) => setFocus("balance", e.target.value)}
             />
           </div>
+        </div>
+      </div>
+      <div className="card">
+        <div className="hd">
+          <h2>🏁 Milestones</h2>
+          <span className="muted">{savedLabel}</span>
+        </div>
+        <div className="bd doc">
+          <p className="lead">
+            The save&apos;s ladder, M1 onward — tap a row to tick it off. The first open one is
+            what you&apos;re playing toward; numbers follow the order, so ▲▼ re-plans the ladder.
+          </p>
+          <div className="plrow">
+            <input
+              placeholder="Next milestone… (Enter to add)"
+              value={msDraft}
+              onChange={(e) => setMsDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  addMilestone(msDraft);
+                  setMsDraft("");
+                }
+              }}
+            />
+            <button
+              className="linkbtn"
+              onClick={() => {
+                addMilestone(msDraft);
+                setMsDraft("");
+              }}
+            >
+              ＋ Add
+            </button>
+          </div>
+          {milestones.length ? (
+            milestones.map((m, i) => (
+              <div className={"plitem questrow" + (m.done ? " done" : "")} key={`${i}:${m.t}`}>
+                <span className="qage mnum">M{i + 1}</span>
+                <label className="qmain" title="Tap to tick off">
+                  <input
+                    type="checkbox"
+                    checked={m.done}
+                    onChange={(e) => toggleMilestone(i, e.target.checked)}
+                  />
+                  <span style={{ flex: 1 }}>{m.t}</span>
+                </label>
+                {i === currentMs && <span className="qage warn">current</span>}
+                <button
+                  className="plx qmove"
+                  title="Move up"
+                  disabled={i === 0}
+                  onClick={() => moveMilestone(i, -1)}
+                >
+                  ▲
+                </button>
+                <button
+                  className="plx qmove"
+                  title="Move down"
+                  disabled={i === milestones.length - 1}
+                  onClick={() => moveMilestone(i, 1)}
+                >
+                  ▼
+                </button>
+                <button className="plx" title="Remove milestone" onClick={() => removeMilestone(i)}>
+                  ✕
+                </button>
+              </div>
+            ))
+          ) : (
+            <div className="empty">
+              No milestones yet.{" "}
+              <button
+                className="linkbtn"
+                onClick={() => seedMilestones(PHASES.map(([, label]) => label.replace(/^\d+ — /, "")))}
+              >
+                Seed M1–M6 from the playbook phases
+              </button>
+            </div>
+          )}
         </div>
       </div>
       <div className="card">
@@ -465,13 +576,128 @@ export function SessionView() {
           </div>
         </div>
       </div>
+      <div className="card">
+        <div className="hd">
+          <h2>🏝 Island Inventory</h2>
+          <span className="muted">{savedLabel}</span>
+        </div>
+        <div className="bd doc">
+          <p className="lead">
+            What each island already has. Tap a chip to record it in one go (it lands ticked);
+            untick anything that&apos;s missing or broken so gaps stay visible. Same island list
+            as the quest 🏝 dropdown.
+          </p>
+          <div className="plrow">
+            <input
+              placeholder="Add island… (Enter to add)"
+              value={isleDraft}
+              onChange={(e) => setIsleDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  addIsland(isleDraft);
+                  setIsleDraft("");
+                }
+              }}
+            />
+            <button
+              className="linkbtn"
+              onClick={() => {
+                addIsland(isleDraft);
+                setIsleDraft("");
+              }}
+            >
+              ＋ Add
+            </button>
+          </div>
+          {islands.length ? (
+            islands.map((name) => {
+              const items = (data.islandChecks || {})[name] || [];
+              const have = items.filter((c) => c.done).length;
+              const chips = ISLAND_SUGGESTIONS.filter(
+                (s) => !items.some((c) => c.t.toLowerCase() === s.toLowerCase())
+              );
+              return (
+                <div className="isleblk" key={name}>
+                  <div className="islehd">
+                    <h4>🏝 {name}</h4>
+                    <span className="muted">
+                      {have}/{items.length}
+                    </span>
+                    <button
+                      className="plx"
+                      title="Remove island and its checklist"
+                      onClick={() => {
+                        if (window.confirm(`Remove ${name} and its checklist?`))
+                          removeIsland(name);
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  {items.map((c, i) => (
+                    <div className={"plitem questrow" + (c.done ? "" : " gap")} key={`${i}:${c.t}`}>
+                      <label className="qmain" title="Tap to toggle">
+                        <input
+                          type="checkbox"
+                          checked={c.done}
+                          onChange={(e) => toggleIslandCheck(name, i, e.target.checked)}
+                        />
+                        <span style={{ flex: 1 }}>{c.t}</span>
+                      </label>
+                      <button
+                        className="plx"
+                        title="Remove item"
+                        onClick={() => removeIslandCheck(name, i)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  <div className="plrow">
+                    <input
+                      placeholder="It has… (Enter to add)"
+                      value={itemDrafts[name] || ""}
+                      onChange={(e) => setItemDrafts((s) => ({ ...s, [name]: e.target.value }))}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          addIslandCheck(name, itemDrafts[name] || "");
+                          setItemDrafts((s) => ({ ...s, [name]: "" }));
+                        }
+                      }}
+                    />
+                  </div>
+                  {chips.length > 0 && (
+                    <div className="ichips">
+                      {chips.map((s) => (
+                        <button
+                          key={s}
+                          className="chip"
+                          title={`One tap: ${name} has ${s}`}
+                          onClick={() => addIslandCheck(name, s)}
+                        >
+                          ＋ {s}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          ) : (
+            <div className="empty">
+              No islands yet — add your first above. The quest tracker&apos;s 🏝 dropdown shares
+              this list.
+            </div>
+          )}
+        </div>
+      </div>
       <Prose html={SESSION_HOW_IT_WORKS} />
       <Prose html={SESSION_TYPES} />
       <div className="card">
         <div className="hd">
           <h2>✅ Shutdown Check</h2>
-          <button className="linkbtn" onClick={resetShutdown}>
-            ↺ Reset checklist
+          <button className="linkbtn" title="Completing all six ends a session (quest ages tick)" onClick={resetShutdown}>
+            ▶ New session — reset checklist
           </button>
         </div>
         <div className="bd doc">

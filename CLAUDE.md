@@ -33,7 +33,7 @@ An Anno 1800 production calculator + strategy companion (Playbook/Session tabs),
 
 **URL hash** (`src/lib/hash.ts`): the calculator's full state is base64-JSON in the hash, **same wire format as the legacy app** so old shared links load. This, not the DB, is how plans are shared.
 
-**Companion state** (`src/lib/store.tsx`): Playbook/Session fields live in React context, persisted to the **same localStorage keys as the legacy app** (`anno_openq_*`, `anno_focus_*`, `anno_shutdown_checks`, `anno_parkinglot`) so per-browser values survive the rewrite and `/legacy.html` shares them. When signed in with a DB configured, state syncs via `PUT /api/state` (debounced; dirty-local-wins, else newer-server-wins).
+**Companion state** (`src/lib/store.tsx`): Playbook/Session fields live in React context, persisted to the **same localStorage keys as the legacy app** (`anno_openq_*`, `anno_focus_*`, `anno_shutdown_checks`, `anno_parkinglot`) so per-browser values survive the rewrite and `/legacy.html` shares them. Post-rewrite additions (no legacy counterpart): `anno_quests`, `anno_sessions` (play-session counter, ticked when the Shutdown Check completes), `anno_islands`, `anno_milestones`, `anno_island_checks`, and `anno_view` (last active tab, AppShell). When signed in with a DB configured, state syncs via `PUT /api/state` (debounced; dirty-local-wins, else newer-server-wins).
 
 **Server** (`src/app/api/*` + `src/lib/{db,auth}.ts`): passphrase auth — `POST /api/auth` compares against `APP_PASSWORD` (timing-safe) and sets an HMAC cookie; `getDb()` returns null without `DATABASE_URL` and endpoints then 503, which the client treats as "sync off". Prisma models: `CompanionState` (single row id=1, JSON blob) and `Plan` (named calculator states).
 
