@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { fmt } from "@/lib/data";
+import { GOODS, POP, REGIONS, TIER_ORDER, fmt } from "@/lib/data";
 import { CalcState, DEFAULT_STATE } from "@/lib/engine";
 import { buildingOptionsFor, islandLedger, siloCapable } from "@/lib/ledger";
 import { planCheck } from "@/lib/plancheck";
@@ -260,6 +260,41 @@ const ISLAND_STARTERS: { key: string; label: string; items: string[] }[] = [
   { key: "none", label: "Blank island", items: [] },
 ];
 
+// Growth goals, generated from the calculator's own POP data: each resident
+// tier's need-unlock thresholds are the real "you can grow when…" milestones
+// ("Bread unlocks at 150 Workers"). fh = residents per fully-upgraded house,
+// so a target converts to a residence count.
+interface GrowthTier {
+  tid: string;
+  lbl: string;
+  region: number;
+  fh: number;
+  marks: [number, string[]][]; // threshold → goods it unlocks
+}
+
+const GROWTH_TIERS: GrowthTier[] = Object.keys(POP)
+  .sort((a, b) => POP[a].r - POP[b].r || (TIER_ORDER[a] ?? 99) - (TIER_ORDER[b] ?? 99))
+  .map((tid) => {
+    const t = POP[tid];
+    const marks = new Map<number, string[]>();
+    for (const gid in t.n) {
+      const [, , unlockTier, threshold] = t.n[gid];
+      if (unlockTier !== tid || !threshold) continue;
+      marks.set(threshold, [...(marks.get(threshold) || []), GOODS[gid]?.name || gid]);
+    }
+    return {
+      tid,
+      lbl: t.lbl,
+      region: t.r,
+      fh: t.fh,
+      marks: [...marks.entries()].sort((a, b) => a[0] - b[0]),
+    };
+  });
+
+function houses(residents: number, fh: number) {
+  return Math.ceil(residents / fh);
+}
+
 // Region key → data.json region number (for the datalist filter) and the
 // short labels the island-header amend selector uses.
 const REGION_NUM: Record<string, number> = { ow: 1, nw: 2, ar: 4, en: 5 };
@@ -399,8 +434,9 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
         </div>
         <div className="bd doc">
           <p className="lead">
-            Pick a storyline / add-on goal or type your own — top of the list = do next. Ticked
-            quests tuck away below.
+            Pick a storyline, a growth goal (📈 — real unlock thresholds, with the residence
+            count) or type your own — top of the list = do next. ⤓ sends one to the bottom;
+            ticked quests tuck away below.
           </p>
           <div className="plrow">
             <select
@@ -421,6 +457,49 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                       {s.t}
                     </option>
                   ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+          <div className="plrow">
+            <select
+              aria-label="Add a population growth goal"
+              title="Growth milestones from the game's own need tables — each is the point a new need unlocks. 'Custom…' asks for any number."
+              value=""
+              onChange={(e) => {
+                const [tid, mark] = e.target.value.split(":");
+                const t = GROWTH_TIERS.find((x) => x.tid === tid);
+                if (!t) return;
+                if (mark === "custom") {
+                  const n = Math.floor(
+                    Number(window.prompt(`How many ${t.lbl} to add?`, "100"))
+                  );
+                  if (n > 0)
+                    addQuest(
+                      `Add ${n} ${t.lbl}`,
+                      `≈${houses(n, t.fh)} residences at ${t.fh} per house.`
+                    );
+                  return;
+                }
+                const target = Number(mark);
+                const goods = t.marks.find(([v]) => v === target)?.[1] || [];
+                addQuest(
+                  `Grow to ${target} ${t.lbl} — unlocks ${goods.join(" + ")}`,
+                  `${houses(target, t.fh)} residences at ${t.fh} per house. New ${
+                    goods.length > 1 ? "needs" : "need"
+                  }: ${goods.join(", ")} — size the farms in the calculator's population mode.`
+                );
+              }}
+            >
+              <option value="">📈 Add a population growth goal…</option>
+              {GROWTH_TIERS.map((t) => (
+                <optgroup key={t.tid} label={`${t.lbl} · ${REGIONS[t.region]}`}>
+                  {t.marks.map(([target, goods]) => (
+                    <option key={target} value={`${t.tid}:${target}`}>
+                      Grow to {target} {t.lbl} → {goods.join(" + ")}
+                    </option>
+                  ))}
+                  <option value={`${t.tid}:custom`}>Add a custom number of {t.lbl}…</option>
                 </optgroup>
               ))}
             </select>

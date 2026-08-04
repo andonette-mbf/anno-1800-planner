@@ -114,6 +114,16 @@ is in CLAUDE.md.
   Respects the island filter (hidden rows keep their places) and lands above
   the completed block.
 
+- **Population growth goals** (build 50): 📈 picker in the quest tracker,
+  generated from the calculator's own `POP` need tables — every tier's
+  need-unlock thresholds are the real growth milestones ("Grow to 150
+  Workers → unlocks Bread"), grouped by tier · region and sorted by
+  threshold. Each goal's note converts residents to residences via `fh`
+  (residents per fully-upgraded house) and points at the calculator's
+  population mode for the farms. "Add a custom number of X…" prompts for
+  any figure ("Add 250 Jornaleros" → ≈25 residences). No hand-written
+  numbers — all derived from `data.json`.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M8 → M9, M6 slots
 ## anywhere as a low-risk session)
 
