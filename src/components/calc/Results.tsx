@@ -127,7 +127,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 70 · a task can wait on several</span>
+      <span style={{ opacity: 0.55 }}>build 71 · waiting on a material</span>
     </div>
   );
 }

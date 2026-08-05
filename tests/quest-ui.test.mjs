@@ -235,6 +235,33 @@ check(
     waitRows()[0].querySelector(".wnote")?.value === "marble",
   waitRows()[0].querySelector(".wnote")?.value
 );
+// --- a wait is usually for a material (build 71) --------------------------
+const waitBox = waitRows()[0].querySelector(".wnote");
+const goods = [...document.querySelectorAll(`#${waitBox.getAttribute("list")} option`)].map(
+  (o) => o.value
+);
+check(
+  "the box suggests the game's goods",
+  goods.includes("Bricks") && goods.includes("Timber"),
+  `${goods.length} offered`
+);
+waitBox.value = "Bricks";
+await fire(waitBox, "focusout");
+check(
+  "a material wait shows its picture",
+  !!waitRows()[0].querySelector("img.gicon"),
+  waitRows()[0].querySelector(".wnote")?.value
+);
+check(
+  "…and it is still just a note, not a blocker",
+  !waitRows()[0].querySelector(".wqchip") &&
+    JSON.parse(localStorage.getItem("anno_quests") || "[]").some((q) => q.wn === "Bricks"),
+  String(localStorage.getItem("anno_quests"))
+);
+// Put the note back for the timer checks below.
+waitBox.value = "marble";
+await fire(waitBox, "focusout");
+
 check(
   "and nothing claims to be queued behind anything",
   $(".qdep").length === 0,

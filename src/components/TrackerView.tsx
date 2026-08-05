@@ -919,18 +919,13 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                   />
                   <input
                     placeholder="What… e.g. Rum (Enter to add)"
-                    list="goodSuggest"
+                    list="waitGoods"
                     value={routeWhat}
                     onChange={(e) => setRouteWhat(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") addRoute();
                     }}
                   />
-                  <datalist id="goodSuggest">
-                    {GOOD_NAMES.map((g) => (
-                      <option key={g} value={g} />
-                    ))}
-                  </datalist>
                   <button
                     className="linkbtn"
                     disabled={!canAddRoute}
@@ -1017,6 +1012,13 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
               ))}
             </div>
           )}
+          {/* Shared by the 🚢 route row and every parked task's "waiting on"
+              box — both are asking which good you mean. */}
+          <datalist id="waitGoods">
+            {GOOD_NAMES.map((g) => (
+              <option key={g} value={g} />
+            ))}
+          </datalist>
           <div id="questList">
             {visOpen.length ? (
               visOpen.map(({ q, i }, k) => (
@@ -1170,10 +1172,16 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                           />
                         ) : null;
                       })()}
+                      {/* Most waits are for a material, so the box suggests the
+                          game's goods (build 71) — and shows the picture once
+                          the note names one. Still free text: "a ship", "the
+                          next region" and the like are just as valid. */}
+                      <GoodIcon name={q.wn} />
                       <input
                         className="wnote"
-                        placeholder="waiting on…"
-                        title="Anything that isn't a task on this list — bricks, a ship, an unlock. Use ⛓ to wait on another task instead."
+                        placeholder="waiting on… e.g. Bricks"
+                        title="What you're short of. Type any good for the list to suggest it, or anything else — a ship, an unlock. Use ⛓ to wait on another task instead."
+                        list="waitGoods"
                         defaultValue={q.wn || ""}
                         onBlur={(e) => setQuestWaitNote(i, e.target.value)}
                         onKeyDown={(e) => {

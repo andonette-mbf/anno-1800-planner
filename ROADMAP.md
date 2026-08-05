@@ -280,6 +280,14 @@ is in CLAUDE.md.
   covers two blockers, ticking one leaving it parked, the last one promoting it,
   and the open-row entry point.
 
+- **Waiting on a material** (build 71): "can waiting on maybe show materials?"
+  Most waits are for a good, so the parked row's "waiting on…" box now suggests
+  the current game's goods (the same list the 🚢 route row uses — one shared
+  `waitGoods` datalist now, instead of one per row block) and shows the good's
+  picture beside the box once the note names one. Still free text: "a ship",
+  "the next region" are as valid as ever, and a material stays a NOTE rather
+  than becoming a blocker — only tasks can free a task.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)
