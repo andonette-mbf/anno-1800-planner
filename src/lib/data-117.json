@@ -1,6 +1,6 @@
 {
  "_C": {
-  "version": "117 pack 1",
+  "version": "117 pack 2",
   "game": "anno117",
   "g": [
    [
@@ -1031,34 +1031,43 @@
     "n": {
      "sardines": [
       0.01785,
-      0
+      0,
+      1
      ],
      "porridge": [
       0.01388,
-      0
+      0,
+      2
      ],
      "tunics": [
       0.01785,
+      0,
       0
      ],
      "pileus": [
       0.01666,
+      0,
       0
      ],
      "beer": [
       0.01428,
+      1,
       1
      ]
     },
     "services": [
-     [
-      "market",
-      0
-     ],
-     [
-      "tavern",
-      0
-     ]
+     {
+      "id": "market",
+      "lbl": "Market",
+      "cat": 0,
+      "pop": 1
+     },
+     {
+      "id": "tavern",
+      "lbl": "Tavern",
+      "cat": 0,
+      "pop": 1
+     }
     ]
    },
    "waders": {
@@ -1069,34 +1078,43 @@
     "n": {
      "cockles": [
       0.02,
-      0
+      0,
+      1
      ],
      "eels": [
       0.01785,
-      0
+      0,
+      1
      ],
      "reed_shoes": [
       0.00847,
+      0,
       0
      ],
      "tunics": [
       0.01785,
+      0,
       0
      ],
      "garum": [
       0.01111,
-      1
+      1,
+      0
      ]
     },
     "services": [
-     [
-      "market",
-      0
-     ],
-     [
-      "bardic_hearth",
-      0
-     ]
+     {
+      "id": "market",
+      "lbl": "Market",
+      "cat": 0,
+      "pop": 1
+     },
+     {
+      "id": "bardic_hearth",
+      "lbl": "Bardic Hearth",
+      "cat": 0,
+      "pop": 1
+     }
     ]
    },
    "plebeians": {
@@ -1107,66 +1125,85 @@
     "n": {
      "sardines": [
       0.01376,
-      0
+      0,
+      1
      ],
      "porridge": [
       0.01136,
-      0
+      0,
+      2
      ],
      "tunics": [
       0.01376,
+      0,
       0
      ],
      "pileus": [
       0.01303,
+      0,
       0
      ],
      "beer": [
       0.01154,
+      1,
       1
      ],
      "bread": [
       0.01079,
-      1
+      1,
+      2
      ],
      "garum": [
       0.0087,
-      1
+      1,
+      0
      ],
      "sandals": [
       0.006504,
+      1,
       1
      ],
      "soap": [
       0.01425,
+      1,
       1
      ],
      "amphorae": [
       0.012,
-      1
+      1,
+      2
      ],
      "olive_oil": [
       0.007353,
+      1,
       1
      ]
     },
     "services": [
-     [
-      "market",
-      0
-     ],
-     [
-      "tavern",
-      0
-     ],
-     [
-      "sanctuary",
-      1
-     ],
-     [
-      "grammaticus",
-      1
-     ]
+     {
+      "id": "market",
+      "lbl": "Market",
+      "cat": 0,
+      "pop": 1
+     },
+     {
+      "id": "tavern",
+      "lbl": "Tavern",
+      "cat": 0,
+      "pop": 1
+     },
+     {
+      "id": "sanctuary",
+      "lbl": "Sanctuary",
+      "cat": 1,
+      "pop": 0
+     },
+     {
+      "id": "grammaticus",
+      "lbl": "Grammaticus",
+      "cat": 1,
+      "pop": 0
+     }
     ]
    },
    "smiths": {
@@ -1177,66 +1214,85 @@
     "n": {
      "cockles": [
       0.0158,
-      0
+      0,
+      1
      ],
      "eels": [
       0.013756,
-      0
+      0,
+      1
      ],
      "reed_shoes": [
       0.006601,
+      0,
       0
      ],
      "tunics": [
       0.01376,
+      0,
       0
      ],
      "garum": [
       0.0087,
-      1
+      1,
+      0
      ],
      "cheese": [
       0.00635,
-      1
+      1,
+      2
      ],
      "beer": [
       0.01153,
+      1,
       1
      ],
      "trousers": [
       0.00905,
+      1,
       1
      ],
      "torcs": [
       0.00909,
-      1
+      1,
+      0
      ],
      "drinking_horns": [
       0.006,
+      1,
       1
      ],
      "clan_shields": [
       0.00695,
-      1
+      1,
+      0
      ]
     },
     "services": [
-     [
-      "market",
-      0
-     ],
-     [
-      "bardic_hearth",
-      0
-     ],
-     [
-      "recreation_ground",
-      1
-     ],
-     [
-      "fanum",
-      1
-     ]
+     {
+      "id": "market",
+      "lbl": "Market",
+      "cat": 0,
+      "pop": 1
+     },
+     {
+      "id": "bardic_hearth",
+      "lbl": "Bardic Hearth",
+      "cat": 0,
+      "pop": 1
+     },
+     {
+      "id": "recreation_ground",
+      "lbl": "Recreation Ground",
+      "cat": 1,
+      "pop": 0
+     },
+     {
+      "id": "fanum",
+      "lbl": "Fanum",
+      "cat": 1,
+      "pop": 0
+     }
     ]
    },
    "equites": {
@@ -1247,114 +1303,152 @@
     "n": {
      "sardines": [
       0.0112,
-      0
+      0,
+      1
      ],
      "porridge": [
       0.00962,
-      0
+      0,
+      2
      ],
      "tunics": [
       0.01119,
+      0,
       0
      ],
      "pileus": [
       0.01072,
+      0,
       0
      ],
      "beer": [
       0.00968,
+      1,
       1
      ],
      "bread": [
       0.00915,
-      1
+      1,
+      2
      ],
      "garum": [
       0.00714,
-      1
+      1,
+      0
      ],
      "sandals": [
       0.005343,
+      1,
       1
      ],
      "soap": [
       0.01151,
+      1,
       1
      ],
      "amphorae": [
       0.00994,
-      1
+      1,
+      2
      ],
      "olive_oil": [
       0.006215,
+      1,
       1
      ],
      "wine": [
       0.012902,
-      2
+      2,
+      0
      ],
      "cheese": [
       0.005725,
+      2,
       2
      ],
      "togas": [
       0.01,
+      2,
       2
      ],
      "brooches": [
       0.005669,
-      2
+      2,
+      0
      ],
      "writing_tablets": [
       0.005001,
-      2
+      2,
+      0
      ],
      "fine_glass": [
       0.004922,
-      2
+      2,
+      0
      ],
      "statuettes": [
       0.003529,
-      2
+      2,
+      1
      ]
     },
     "services": [
-     [
-      "market",
-      0
-     ],
-     [
-      "tavern",
-      0
-     ],
-     [
-      "sanctuary",
-      1
-     ],
-     [
-      "grammaticus",
-      1
-     ],
-     [
-      "aqueduct_cistern",
-      2
-     ],
-     [
-      "theatre",
-      2
-     ],
-     [
-      "gambling_house",
-      2
-     ],
-     [
-      "forum",
-      2
-     ],
-     [
-      "baths",
-      2
-     ]
+     {
+      "id": "market",
+      "lbl": "Market",
+      "cat": 0,
+      "pop": 1
+     },
+     {
+      "id": "tavern",
+      "lbl": "Tavern",
+      "cat": 0,
+      "pop": 1
+     },
+     {
+      "id": "sanctuary",
+      "lbl": "Sanctuary",
+      "cat": 1,
+      "pop": 0
+     },
+     {
+      "id": "grammaticus",
+      "lbl": "Grammaticus",
+      "cat": 1,
+      "pop": 0
+     },
+     {
+      "id": "aqueduct_cistern",
+      "lbl": "Aqueduct Cistern",
+      "cat": 2,
+      "pop": 0
+     },
+     {
+      "id": "theatre",
+      "lbl": "Theatre",
+      "cat": 2,
+      "pop": 0
+     },
+     {
+      "id": "gambling_house",
+      "lbl": "Gambling House",
+      "cat": 2,
+      "pop": 2
+     },
+     {
+      "id": "forum",
+      "lbl": "Forum",
+      "cat": 2,
+      "pop": 2,
+      "wonder": true
+     },
+     {
+      "id": "baths",
+      "lbl": "Baths",
+      "cat": 2,
+      "pop": 2,
+      "wonder": true
+     }
     ]
    },
    "aldermen": {
@@ -1365,114 +1459,152 @@
     "n": {
      "cockles": [
       0.0132,
-      0
+      0,
+      1
      ],
      "eels": [
       0.0112,
-      0
+      0,
+      1
      ],
      "reed_shoes": [
       0.00542,
+      0,
       0
      ],
      "tunics": [
       0.01119,
+      0,
       0
      ],
      "garum": [
       0.00606,
-      1
+      1,
+      0
      ],
      "cheese": [
       0.005245,
-      1
+      1,
+      2
      ],
      "beer": [
       0.00968,
+      1,
       1
      ],
      "trousers": [
       0.00738,
+      1,
       1
      ],
      "torcs": [
       0.007405,
-      1
+      1,
+      0
      ],
      "drinking_horns": [
       0.005,
+      1,
       1
      ],
      "clan_shields": [
       0.0059,
-      1
+      1,
+      0
      ],
      "roast_beef": [
       0.00519,
-      2
+      2,
+      3
      ],
      "wine": [
       0.012902,
-      2
+      2,
+      0
      ],
      "cloaks": [
       0.008745,
+      2,
       2
      ],
      "fur_hats": [
       0.00532,
-      2
+      2,
+      0
      ],
      "chariots": [
       0.005102,
-      2
+      2,
+      0
      ],
      "fine_glass": [
       0.005303,
-      2
+      2,
+      0
      ],
      "latrunculi_sets": [
       0.005333,
-      2
+      2,
+      0
      ]
     },
     "services": [
-     [
-      "market",
-      0
-     ],
-     [
-      "bardic_hearth",
-      0
-     ],
-     [
-      "recreation_ground",
-      1
-     ],
-     [
-      "fanum",
-      1
-     ],
-     [
-      "alder_council",
-      2
-     ],
-     [
-      "theatre",
-      2
-     ],
-     [
-      "gambling_house",
-      2
-     ],
-     [
-      "barrow",
-      2
-     ],
-     [
-      "sacred_grove",
-      2
-     ]
+     {
+      "id": "market",
+      "lbl": "Market",
+      "cat": 0,
+      "pop": 1
+     },
+     {
+      "id": "bardic_hearth",
+      "lbl": "Bardic Hearth",
+      "cat": 0,
+      "pop": 1
+     },
+     {
+      "id": "recreation_ground",
+      "lbl": "Recreation Ground",
+      "cat": 1,
+      "pop": 0
+     },
+     {
+      "id": "fanum",
+      "lbl": "Fanum",
+      "cat": 1,
+      "pop": 0
+     },
+     {
+      "id": "alder_council",
+      "lbl": "Alder Council",
+      "cat": 2,
+      "pop": 2
+     },
+     {
+      "id": "theatre",
+      "lbl": "Theatre",
+      "cat": 2,
+      "pop": 0
+     },
+     {
+      "id": "gambling_house",
+      "lbl": "Gambling House",
+      "cat": 2,
+      "pop": 2
+     },
+     {
+      "id": "barrow",
+      "lbl": "Barrow",
+      "cat": 2,
+      "pop": 0,
+      "wonder": true
+     },
+     {
+      "id": "sacred_grove",
+      "lbl": "Sacred Grove",
+      "cat": 2,
+      "pop": 0,
+      "wonder": true
+     }
     ]
    },
    "patricians": {
@@ -1483,162 +1615,216 @@
     "n": {
      "sardines": [
       0.00943,
-      0
+      0,
+      1
      ],
      "porridge": [
       0.00833,
-      0
+      0,
+      2
      ],
      "tunics": [
       0.009433,
+      0,
       0
      ],
      "pileus": [
       0.00909,
+      0,
       0
      ],
      "beer": [
       0.00833,
+      1,
       1
      ],
      "bread": [
       0.007935,
-      1
+      1,
+      2
      ],
      "garum": [
       0.00606,
-      1
+      1,
+      0
      ],
      "sandals": [
       0.004535,
+      1,
       1
      ],
      "soap": [
       0.00966,
+      1,
       1
      ],
      "amphorae": [
       0.00848,
-      1
+      1,
+      2
      ],
      "olive_oil": [
       0.005375,
+      1,
       1
      ],
      "wine": [
       0.01111,
-      2
+      2,
+      0
      ],
      "cheese": [
       0.004808,
+      2,
       2
      ],
      "togas": [
       0.0085,
+      2,
       2
      ],
      "brooches": [
       0.004768,
-      2
+      2,
+      0
      ],
      "writing_tablets": [
       0.004288,
-      2
+      2,
+      0
      ],
      "fine_glass": [
       0.004228,
-      2
+      2,
+      0
      ],
      "statuettes": [
       0.003,
-      2
+      2,
+      1
      ],
      "oysters_with_caviar": [
       0.007528,
+      3,
       3
      ],
      "bird_tongues_in_aspic": [
       0.006012,
-      3
+      3,
+      0
      ],
      "necklaces": [
       0.0054645,
-      3
+      3,
+      0
      ],
      "cloaks": [
       0.008658,
-      3
+      3,
+      2
      ],
      "loungers": [
       0.0043745,
-      3
+      3,
+      1
      ],
      "handmirrors": [
       0.004474,
-      3
+      3,
+      0
      ],
      "standing_lyres": [
       0.006814,
-      3
+      3,
+      0
      ],
      "chariots": [
       0.004596,
-      3
+      3,
+      0
      ],
      "latrunculi_sets": [
       0.005333,
-      3
+      3,
+      0
      ]
     },
     "services": [
-     [
-      "market",
-      0
-     ],
-     [
-      "tavern",
-      0
-     ],
-     [
-      "sanctuary",
-      1
-     ],
-     [
-      "grammaticus",
-      1
-     ],
-     [
-      "aqueduct_cistern",
-      2
-     ],
-     [
-      "theatre",
-      2
-     ],
-     [
-      "gambling_house",
-      2
-     ],
-     [
-      "forum",
-      2
-     ],
-     [
-      "baths",
-      2
-     ],
-     [
-      "temple",
-      3
-     ],
-     [
-      "library",
-      3
-     ],
-     [
-      "amphitheatre",
-      3
-     ]
+     {
+      "id": "market",
+      "lbl": "Market",
+      "cat": 0,
+      "pop": 1
+     },
+     {
+      "id": "tavern",
+      "lbl": "Tavern",
+      "cat": 0,
+      "pop": 1
+     },
+     {
+      "id": "sanctuary",
+      "lbl": "Sanctuary",
+      "cat": 1,
+      "pop": 0
+     },
+     {
+      "id": "grammaticus",
+      "lbl": "Grammaticus",
+      "cat": 1,
+      "pop": 0
+     },
+     {
+      "id": "aqueduct_cistern",
+      "lbl": "Aqueduct Cistern",
+      "cat": 2,
+      "pop": 0
+     },
+     {
+      "id": "theatre",
+      "lbl": "Theatre",
+      "cat": 2,
+      "pop": 0
+     },
+     {
+      "id": "gambling_house",
+      "lbl": "Gambling House",
+      "cat": 2,
+      "pop": 2
+     },
+     {
+      "id": "forum",
+      "lbl": "Forum",
+      "cat": 2,
+      "pop": 2,
+      "wonder": true
+     },
+     {
+      "id": "baths",
+      "lbl": "Baths",
+      "cat": 2,
+      "pop": 2,
+      "wonder": true
+     },
+     {
+      "id": "temple",
+      "lbl": "Temple",
+      "cat": 3,
+      "pop": 2
+     },
+     {
+      "id": "library",
+      "lbl": "Library",
+      "cat": 3,
+      "pop": 0
+     },
+     {
+      "id": "amphitheatre",
+      "lbl": "Amphitheatre",
+      "cat": 3,
+      "pop": 3,
+      "wonder": true
+     }
     ]
    },
    "mercators": {
@@ -1649,70 +1835,90 @@
     "n": {
      "cockles": [
       0.0158,
-      0
+      0,
+      1
      ],
      "eels": [
       0.013756,
-      0
+      0,
+      1
      ],
      "reed_shoes": [
       0.006601,
+      0,
       0
      ],
      "tunics": [
       0.01376,
+      0,
       0
      ],
      "garum": [
       0.0087,
-      1
+      1,
+      0
      ],
      "bread": [
       0.01034,
-      1
+      1,
+      2
      ],
      "sausages": [
       0.0105,
-      1
+      1,
+      2
      ],
      "brooches": [
       0.006543,
-      1
+      1,
+      0
      ],
      "soap": [
       0.01425,
+      1,
       1
      ],
      "amphorae": [
       0.012,
-      1
+      1,
+      2
      ],
      "olive_oil": [
       0.00893,
+      1,
       1
      ],
      "statuettes": [
       0.003529,
+      1,
       1
      ]
     },
     "services": [
-     [
-      "market",
-      0
-     ],
-     [
-      "bardic_hearth",
-      0
-     ],
-     [
-      "grammaticus",
-      1
-     ],
-     [
-      "fanum",
-      1
-     ]
+     {
+      "id": "market",
+      "lbl": "Market",
+      "cat": 0,
+      "pop": 1
+     },
+     {
+      "id": "bardic_hearth",
+      "lbl": "Bardic Hearth",
+      "cat": 0,
+      "pop": 1
+     },
+     {
+      "id": "grammaticus",
+      "lbl": "Grammaticus",
+      "cat": 1,
+      "pop": 0
+     },
+     {
+      "id": "fanum",
+      "lbl": "Fanum",
+      "cat": 1,
+      "pop": 0
+     }
     ]
    },
    "nobles": {
@@ -1723,114 +1929,152 @@
     "n": {
      "cockles": [
       0.0132,
-      0
+      0,
+      1
      ],
      "eels": [
       0.0112,
-      0
+      0,
+      1
      ],
      "reed_shoes": [
       0.00542,
+      0,
       0
      ],
      "tunics": [
       0.01119,
+      0,
       0
      ],
      "garum": [
       0.00606,
-      1
+      1,
+      0
      ],
      "bread": [
       0.00883,
-      1
+      1,
+      2
      ],
      "sausages": [
       0.0089,
-      1
+      1,
+      2
      ],
      "brooches": [
       0.00537,
-      1
+      1,
+      0
      ],
      "soap": [
       0.01151,
+      1,
       1
      ],
      "amphorae": [
       0.00994,
-      1
+      1,
+      2
      ],
      "olive_oil": [
       0.0073,
+      1,
       1
      ],
      "statuettes": [
       0.003,
+      1,
       1
      ],
      "bird_tongues_in_aspic": [
       0.00669,
-      2
+      2,
+      0
      ],
      "wine": [
       0.012902,
-      2
+      2,
+      0
      ],
      "wigs": [
       0.00637,
-      2
+      2,
+      0
      ],
      "togas": [
       0.01,
+      2,
       2
      ],
      "handmirrors": [
       0.00468,
-      2
+      2,
+      0
      ],
      "fine_glass": [
       0.005303,
-      2
+      2,
+      0
      ]
     },
     "services": [
-     [
-      "market",
-      0
-     ],
-     [
-      "bardic_hearth",
-      0
-     ],
-     [
-      "grammaticus",
-      1
-     ],
-     [
-      "fanum",
-      1
-     ],
-     [
-      "aqueduct_cistern",
-      2
-     ],
-     [
-      "theatre",
-      2
-     ],
-     [
-      "gambling_house",
-      2
-     ],
-     [
-      "temple",
-      2
-     ],
-     [
-      "baths",
-      2
-     ]
+     {
+      "id": "market",
+      "lbl": "Market",
+      "cat": 0,
+      "pop": 1
+     },
+     {
+      "id": "bardic_hearth",
+      "lbl": "Bardic Hearth",
+      "cat": 0,
+      "pop": 1
+     },
+     {
+      "id": "grammaticus",
+      "lbl": "Grammaticus",
+      "cat": 1,
+      "pop": 0
+     },
+     {
+      "id": "fanum",
+      "lbl": "Fanum",
+      "cat": 1,
+      "pop": 0
+     },
+     {
+      "id": "aqueduct_cistern",
+      "lbl": "Aqueduct Cistern",
+      "cat": 2,
+      "pop": 0
+     },
+     {
+      "id": "theatre",
+      "lbl": "Theatre",
+      "cat": 2,
+      "pop": 0
+     },
+     {
+      "id": "gambling_house",
+      "lbl": "Gambling House",
+      "cat": 2,
+      "pop": 2
+     },
+     {
+      "id": "temple",
+      "lbl": "Temple",
+      "cat": 2,
+      "pop": 2,
+      "wonder": true
+     },
+     {
+      "id": "baths",
+      "lbl": "Baths",
+      "cat": 2,
+      "pop": 2,
+      "wonder": true
+     }
     ]
    }
   },

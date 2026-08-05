@@ -121,6 +121,59 @@ const splitInputs = (s) => (s || "").split("|").filter(Boolean);
   if (!bad) ok(`tiers — ${Object.keys(D._C.POP).length} tiers, every need rated and categorised`);
 }
 
+// --- population per need (pack 2) ----------------------------------------
+// 117 has no residents-per-house constant: a residence's capacity is the sum
+// of the `pop` its supplied needs grant. These numbers drive every figure on
+// the growth-goals panel, so a re-extraction that moves them must fail loudly
+// rather than silently restating how big everyone's town is.
+{
+  let bad = 0;
+  const intPop = (p) => Number.isInteger(p) && p >= 0 && p <= 3;
+  for (const [tid, tier] of Object.entries(D._C.POP)) {
+    for (const [gid, need] of Object.entries(tier.n)) {
+      if (need.length !== 3) fail(`${tid}/${gid} need tuple has ${need.length} parts, want 3`), bad++;
+      else if (!intPop(need[2])) fail(`${tid}/${gid} pop ${need[2]} out of range`), bad++;
+    }
+    if (!Array.isArray(tier.services)) fail(`tier ${tid} has no services array`), bad++;
+    for (const s of tier.services || []) {
+      if (!s || typeof s !== "object") fail(`${tid} service is not an object (pack 1 shape?)`), bad++;
+      else if (!s.id || !s.lbl) fail(`${tid} service ${s.id || "?"} missing id/label`), bad++;
+      else if (!intPop(s.pop)) fail(`${tid}/${s.id} service pop ${s.pop} out of range`), bad++;
+      else if (!(s.cat >= 0 && s.cat < D._C.catLabels.length))
+        fail(`${tid}/${s.id} service category ${s.cat} out of range`), bad++;
+    }
+  }
+  if (!bad) ok("population — every need and service carries a 0..3 resident value");
+}
+
+// --- the wiki cross-check ------------------------------------------------
+// The Anno 117 wiki states that supplying a Liberti residence BOTH sardines
+// and porridge "nets you +3 population and +1 income from the food category
+// per residence". Porridge 2 + Sardines 1 is that +3, and it is the only
+// independent confirmation we have that `needAttributes.Population` means
+// residents per house. Pin it: if upstream re-tunes these, the panel's whole
+// premise needs re-checking against the wiki again, not silently updating.
+{
+  const lib = D._C.POP.liberti;
+  const pop = (gid) => lib?.n?.[gid]?.[2];
+  let bad = 0;
+  if (pop("porridge") !== 2) fail(`Liberti porridge is +${pop("porridge")}, wiki says +2`), bad++;
+  if (pop("sardines") !== 1) fail(`Liberti sardines is +${pop("sardines")}, wiki says +1`), bad++;
+  // …and the pair sums to the +3 the wiki quotes.
+  if (!bad && pop("porridge") + pop("sardines") !== 3) fail("Liberti food pair is not +3"), bad++;
+  // A tier's capacity must be positive and never shrink as bands are added.
+  for (const [tid, tier] of Object.entries(D._C.POP)) {
+    const cap = (band) =>
+      Object.values(tier.n).reduce((n, [, c, p]) => n + (c <= band ? p : 0), 0) +
+      (tier.services || []).reduce((n, s) => n + (!s.wonder && s.cat <= band ? s.pop : 0), 0);
+    if (!(cap(3) > 0)) fail(`tier ${tid} has zero house capacity — goals would divide by zero`), bad++;
+    for (let b = 1; b < 4; b++)
+      if (cap(b) < cap(b - 1)) fail(`tier ${tid} capacity shrinks from band ${b - 1} to ${b}`), bad++;
+  }
+  if (!bad)
+    ok("population — Liberti porridge+sardines = +3/house (matches the wiki); capacity rises with band");
+}
+
 // --- modifier references point at real goods -----------------------------
 {
   let bad = 0;

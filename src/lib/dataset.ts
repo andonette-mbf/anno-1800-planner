@@ -233,10 +233,18 @@ for (const tid in POP_117)
   POP_TIERS_117[tid] = {
     lbl: POP_117[tid].lbl,
     region: POP_117[tid].region,
-    // Residents-per-house is absent upstream, so 117 plans run on resident
-    // counts alone. This is also what blocks 117's growth goals (/rome-growth).
+    // Still null, but no longer because the number is unknown: 117 residences
+    // have no fixed capacity, so residents-per-house is a function of how many
+    // needs you supply (`houseCapacity117`, pack 2). A single static figure
+    // here would be wrong at every band but one, so the growth panel — which
+    // knows the player's band — is where the number is shown instead.
     housed: null,
-    n: POP_117[tid].n as Record<string, NeedDef>,
+    // Only positions 0 and 1 (rate, category band) are the shared contract the
+    // engine reads. Everything after is game-private and is only ever unpacked
+    // by that game's `needActive`: 1800 keeps [unlockTier, threshold], 117 has
+    // [residents granted per house]. The tails genuinely disagree in type, so
+    // this is a deliberate reinterpretation rather than a structural cast.
+    n: POP_117[tid].n as unknown as Record<string, NeedDef>,
   };
 
 /** Which region a 117 plan is being built in. The region chips carry it (there

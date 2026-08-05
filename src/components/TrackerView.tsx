@@ -1,7 +1,14 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { GOODS, POP, REGIONS, TIER_ORDER, fmt } from "@/lib/data";
-import { GOODS_117 } from "@/lib/data117";
+import {
+  GOODS_117,
+  POP_117,
+  TIER_ORDER_117,
+  houseCapacity117,
+  popSources117,
+  type PopSource117,
+} from "@/lib/data117";
 import { CalcState, DEFAULT_STATE } from "@/lib/engine";
 import { GAME_CONTENT, type Game } from "@/lib/games";
 import { buildingOptionsFor, elecCapable, islandLedger, siloCapable } from "@/lib/ledger";
@@ -175,8 +182,19 @@ interface GrowthTier {
   tid: string;
   lbl: string;
   region: number;
+  /** Residents per fully-supplied house. 1800 reads it straight off the tier;
+   *  117 has no such constant and derives it from the needs (see below). */
   fh: number;
-  marks: [number, string[]][]; // threshold → goods it unlocks
+  /** Residents per house on basic needs alone — 117 only, where it is well
+   *  below `fh`. Undefined for 1800, whose houses have a fixed capacity. */
+  fhBasic?: number;
+  marks: [number, string[]][]; // 1800: threshold → goods it unlocks
+  /** 117: what this tier can be supplied and what each is worth in residents.
+   *  Listed under the first tier that asks for it, so a need appears once. */
+  gains?: PopSource117[];
+  /** 117: needs of this tier worth no residents at all — worth naming, since
+   *  supplying them grows nothing. */
+  noGain?: string[];
 }
 
 const GROWTH_TIERS_1800: GrowthTier[] = Object.keys(POP)
@@ -202,12 +220,56 @@ function houses(residents: number, fh: number) {
   return Math.ceil(residents / fh);
 }
 
-// Growth goals need residents-per-house (`fh`) to turn a target into a
-// residence count, and the 117 pack has no such number upstream — 117 plans
-// are driven by resident counts. So the 📈 goals panel is 1800-only for now.
+// 117's goals are a different shape, because 117 grows differently. There are
+// no unlock thresholds to hit — needs are banded, not gated on a headcount —
+// and no residents-per-house constant, because a residence has no fixed
+// capacity: it holds the SUM of the residents its supplied needs grant
+// (`pop`, pack 2). So a 117 goal is "supply this and every house of the tier
+// gains N residents", which is the actual growth lever, and it also exposes
+// the needs worth nothing (39 of 81) that look like progress but aren't.
+//
+// Each need is listed under the FIRST tier of its province that asks for it,
+// so Bread is a Plebeian goal rather than repeating under every tier above.
+const GROWTH_TIERS_117: GrowthTier[] = (() => {
+  const order = Object.keys(POP_117).sort(
+    (a, b) =>
+      POP_117[a].region - POP_117[b].region ||
+      (TIER_ORDER_117[a] ?? 99) - (TIER_ORDER_117[b] ?? 99)
+  );
+  // Region-major, so walking in order lets each province claim its own needs.
+  const claimed: Record<number, Set<string>> = {};
+  return order.map((tid) => {
+    const t = POP_117[tid];
+    const seen = (claimed[t.region] ||= new Set());
+    const all = popSources117(tid);
+    const fresh = all.filter((s) => !seen.has(s.id));
+    all.forEach((s) => seen.add(s.id));
+    return {
+      tid,
+      lbl: t.lbl,
+      region: t.region,
+      // Wonders are excluded: one Colosseum serves an island, not each
+      // settlement, so it would overstate what a house holds.
+      fh: houseCapacity117(tid),
+      fhBasic: houseCapacity117(tid, 0),
+      marks: [],
+      gains: fresh.filter((s) => s.pop > 0),
+      noGain: fresh.filter((s) => s.pop === 0).map((s) => s.lbl),
+    };
+  });
+})();
+
+/** "Serve Bread" / "Build a Market" / "Build the Colosseum" — a 117 goal is an
+ *  instruction, and goods are supplied where buildings are put up. */
+function growthVerb(s: PopSource117): string {
+  if (s.kind === "good") return "Serve";
+  if (s.kind === "wonder") return "Build the";
+  return /^[aeiou]/i.test(s.lbl) ? "Build an" : "Build a"; // an Alder Council
+}
+
 const GROWTH_TIERS_BY_GAME: Record<Game, GrowthTier[]> = {
   anno1800: GROWTH_TIERS_1800,
-  anno117: [],
+  anno117: GROWTH_TIERS_117,
 };
 
 // Every good display name, for the route-task datalist — shipping moves
@@ -411,6 +473,14 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
     return regs.size ? GROWTH_TIERS.filter((t) => regs.has(t.region)) : GROWTH_TIERS;
   })();
   const growthRegions = new Set(growthTiers.map((t) => t.region));
+  // Both games number their regions from 1, so a region number alone is
+  // ambiguous — 1 is the Old World in 1800 and Latium in 117. 1800 keeps
+  // data.ts's own wording ("The Arctic"); 117 reads the game content.
+  const REGION_LABEL = (n: number) => {
+    if (game === "anno1800") return REGIONS[n];
+    const key = Object.keys(REGION_NUM).find((k) => REGION_NUM[k] === n);
+    return (key && REGION_LABELS[key]) || String(n);
+  };
   // Custom growth goal: an inline row (number + island), no window.prompt.
   // Opens when "Add a custom number of X…" is picked; island defaults to the
   // filtered island (or your only island).
@@ -423,7 +493,14 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
     if (!t || !(n > 0)) return;
     addQuest(
       `${growthIsle ? `${growthIsle}: ` : ""}Add ${n} ${t.lbl}`,
-      `≈${houses(n, t.fh)} residences at ${t.fh} per house.`
+      // In 117 the house count depends on how well you feed them, so quote
+      // both ends rather than a single figure that is only true at one band.
+      t.fhBasic && t.fhBasic !== t.fh
+        ? `≈${houses(n, t.fh)} residences fully supplied (${t.fh} per house), or ${houses(
+            n,
+            t.fhBasic
+          )} on basic needs alone (${t.fhBasic} per house).`
+        : `≈${houses(n, t.fh)} residences at ${t.fh} per house.`
     );
     setGrowthTid(null);
     setGrowthN("");
@@ -457,9 +534,12 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
         </div>
         <div className="bd doc">
           <p className="lead">
-            Pick a storyline, a growth goal (📈 — real unlock thresholds, with the residence
-            count), a route task (🚢 from → to → what) or type your own — top of the list =
-            do next. ⤓ sends one to the bottom; ticked quests tuck away below.
+            Pick a storyline, a growth goal (📈 —{" "}
+            {game === "anno117"
+              ? "what each need is worth in residents per house"
+              : "real unlock thresholds, with the residence count"}
+            ), a route task (🚢 from → to → what) or type your own — top of the list = do next.
+            ⤓ sends one to the bottom; ticked quests tuck away below.
           </p>
           <div className="plrow">
             <select
@@ -487,10 +567,14 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
           <div className="plrow">
             <select
               aria-label="Add a population growth goal"
-              title="Growth milestones from the game's own need tables — each is the point a new need unlocks. 'Custom…' asks for any number. Scoped to your islands' 🌍 regions (or the filtered island's)."
+              title={
+                game === "anno117"
+                  ? "A 117 residence has no fixed size — it holds the sum of what its supplied needs are worth, so each goal is a need and the residents it adds to every house of that tier. Needs worth nothing are named, not offered. 'Custom…' asks for any number. Scoped to your islands' 🌍 regions (or the filtered island's)."
+                  : "Growth milestones from the game's own need tables — each is the point a new need unlocks. 'Custom…' asks for any number. Scoped to your islands' 🌍 regions (or the filtered island's)."
+              }
               value=""
               onChange={(e) => {
-                const [tid, mark] = e.target.value.split(":");
+                const [tid, mark, srcId] = e.target.value.split(":");
                 const t = GROWTH_TIERS.find((x) => x.tid === tid);
                 if (!t) return;
                 // The island that grows: the filtered one, else an island in
@@ -506,6 +590,32 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                   return;
                 }
                 const isle = effFilter || (inRegion.length === 1 ? inRegion[0] : "");
+                // 117: a need-value goal — supply this, every house of the
+                // tier gains residents. No thresholds exist in 117 to hit.
+                if (mark === "g") {
+                  const s = t.gains?.find((x) => x.id === srcId);
+                  if (!s) return;
+                  const gain = `${s.pop} resident${s.pop > 1 ? "s" : ""}`;
+                  const holds =
+                    s.kind === "wonder"
+                      ? `Counts on top of the ${t.fh} a fully-supplied ${t.lbl} house holds — a Wonder is one per island, so it lifts every settlement on it.`
+                      : `A fully-supplied ${t.lbl} house holds ${t.fh}${
+                          t.fhBasic && t.fhBasic !== t.fh
+                            ? ` (basic needs alone: ${t.fhBasic})`
+                            : ""
+                        }.`;
+                  addQuest(
+                    `${isle ? `${isle}: ` : ""}${growthVerb(s)} ${s.lbl} ${
+                      s.kind === "good" ? "to" : "for"
+                    } your ${t.lbl} — +${gain} per house`,
+                    `+${gain} in every ${t.lbl} house. ${holds} ${
+                      s.kind === "good"
+                        ? "Size the chain in the calculator's population mode."
+                        : "A building, not a chain — nothing to produce for it."
+                    }`
+                  );
+                  return;
+                }
                 const target = Number(mark);
                 const goods = t.marks.find(([v]) => v === target)?.[1] || [];
                 addQuest(
@@ -520,13 +630,34 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
               {growthTiers.map((t) => (
                 <optgroup
                   key={t.tid}
-                  label={growthRegions.size > 1 ? `${t.lbl} · ${REGIONS[t.region]}` : t.lbl}
+                  label={
+                    (growthRegions.size > 1 ? `${t.lbl} · ${REGION_LABEL(t.region)}` : t.lbl) +
+                    // 117 houses have no fixed size, so say what this tier's
+                    // holds when fed — it is the number the goals build toward.
+                    (t.gains ? ` · up to ${t.fh} per house` : "")
+                  }
                 >
                   {t.marks.map(([target, goods]) => (
                     <option key={target} value={`${t.tid}:${target}`}>
                       Grow to {target} {t.lbl} → {goods.join(" + ")}
                     </option>
                   ))}
+                  {(t.gains || []).map((s) => (
+                    <option key={s.id} value={`${t.tid}:g:${s.id}`}>
+                      {`${growthVerb(s)} ${s.lbl} → +${s.pop} per house${
+                        s.kind === "wonder" ? " (Wonder)" : ""
+                      }`}
+                    </option>
+                  ))}
+                  {/* Named, not offered: supplying these grows nothing, which
+                      is the trap worth flagging where the choice is made. */}
+                  {!!t.noGain?.length && (
+                    <option disabled value="">
+                      {"— no residents: " +
+                        t.noGain.slice(0, 4).join(", ") +
+                        (t.noGain.length > 4 ? ` +${t.noGain.length - 4} more` : "")}
+                    </option>
+                  )}
                   <option value={`${t.tid}:custom`}>Add a custom number of {t.lbl}…</option>
                 </optgroup>
               ))}

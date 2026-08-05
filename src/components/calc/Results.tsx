@@ -127,7 +127,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 59 · Rome calculator</span>
+      <span style={{ opacity: 0.55 }}>build 60 · Rome growth goals</span>
     </div>
   );
 }

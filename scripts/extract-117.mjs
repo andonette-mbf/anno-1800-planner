@@ -20,7 +20,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 // Bump when re-extracting from a newer upstream — the pack version is what the
 // app shows and what a saved 117 plan is pinned to.
-const PACK = 1;
+const PACK = 2;
 // anno-mods/anno-117-calculator @ v2.1, the commit this pack was cut from.
 const PINNED_SHA = "c6a6e7525d16927f74d4f554dde5831b84fa287c";
 const RAW = (sha) =>
@@ -37,6 +37,15 @@ const REGION_NAME = { 1: "Latium", 2: "Albion" };
 // bands, so they get their own labels rather than being squeezed into three.
 const WEIGHT_CAT = { 1: 0, 2: 1, 4: 2, 8: 3 };
 const CAT_LABELS = ["basic", "wanted", "refined", "luxury"];
+
+// 117 has no residents-per-house constant because a residence has no fixed
+// capacity: its population is the SUM of the `Population` attribute of every
+// need it is actually supplied (`needs[].needAttributes`, 0..3 residents each).
+// Verified against the wiki's Liberti example — Porridge +2 and Sardines +1
+// are quoted there as "+3 population from the food category per residence".
+// 39 of the 81 needs grant 0 population and pay happiness/money instead, which
+// is exactly the thing worth surfacing to a player. `pop` is pack 2's addition.
+const popOf = (need) => need.needAttributes?.Population ?? 0;
 
 const args = process.argv.slice(2);
 const arg = (n) => {
@@ -142,12 +151,23 @@ for (const rb of residences) {
     const cat = WEIGHT_CAT[need.supplyWeight] ?? 0;
     if (need.isBuilding || entry.needConsumptionRate == null) {
       const svc = products.get(need.needProduct);
-      if (svc) services.push([slug(en(svc)), cat]);
+      // Wonders are flagged, not dropped: they grant population like any other
+      // need (the Colosseum is +3/house) but they are one-per-island
+      // megaprojects rather than per-settlement infrastructure, so the UI
+      // counts them separately from markets and taverns.
+      if (svc)
+        services.push({
+          id: slug(en(svc)),
+          lbl: en(svc),
+          cat,
+          pop: popOf(need),
+          ...(need.needCategory === "Wonders" ? { wonder: true } : {}),
+        });
       continue;
     }
     const gid = idFor.get(need.needProduct);
     if (!gid) continue;
-    n[gid] = [entry.needConsumptionRate, cat];
+    n[gid] = [entry.needConsumptionRate, cat, popOf(need)];
     const rank = levelOrder.get(rb.populationLevel) ?? 99;
     const prev = firstNeedOf.get(gid);
     if (!prev || rank < prev.rank) firstNeedOf.set(gid, { tid, rank });
@@ -155,8 +175,10 @@ for (const rb of residences) {
   POP[tid] = {
     lbl: en(lvl),
     region,
-    // Residents-per-house is not in the upstream pack — 117 plans are driven by
-    // resident counts, and a house count would need a number we do not have.
+    // There is deliberately no residents-per-house field: in 117 a residence
+    // has no fixed capacity, so it is the sum of `pop` over the needs actually
+    // supplied (see popOf above). Deriving it in the app keeps one source of
+    // truth and lets the figure follow the player's needs band.
     workforceFactor: lvl.populationToWorkforceFactor ?? null,
     workforce: lvl.connectedWorkforce ?? null,
     n,

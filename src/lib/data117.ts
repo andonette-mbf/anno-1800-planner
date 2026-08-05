@@ -8,8 +8,15 @@ import raw from "./data-117.json";
 /** [id, name, regionMask, tier, building, cycleTime, "input|input"] */
 export type GoodTuple117 = [string, string, number, string, string | null, number, string];
 
-/** [tons/min per resident, category band 0..3 (see CAT_LABELS_117)] */
-export type NeedDef117 = [number, number];
+/** [tons/min per resident, category band 0..3 (see CAT_LABELS_117), residents
+ *  this need adds to every house of the tier that is supplied it].
+ *
+ *  That third number is 117's answer to 1800's `fh`. A 117 residence has no
+ *  fixed capacity: its population is the sum of `pop` over the needs it is
+ *  actually served (0..3 residents each), which is why no residents-per-house
+ *  constant exists upstream. 39 of the 81 needs are worth 0 — they pay
+ *  happiness/money instead, and supplying them grows nothing. Pack 2+. */
+export type NeedDef117 = [number, number, number];
 
 /** One way to make a good. A good can have several: the same building in both
  *  regions, a different building per region (Flour: Grain Mill in Latium,
@@ -34,6 +41,18 @@ export interface Producer117 {
   fertility?: string | boolean;
 }
 
+/** A public-service building or Wonder a residence asks for. */
+export interface Service117 {
+  id: string;
+  lbl: string;
+  /** Category band 0..3, same axis as a good's need. */
+  cat: number;
+  /** Residents it adds to every house of the tier once built. */
+  pop: number;
+  /** One per island (Forum, Colosseum, Barrow) rather than per settlement. */
+  wonder?: boolean;
+}
+
 export interface PopTier117 {
   lbl: string;
   /** 1 Latium or 2 Albion — a tier belongs to exactly one region. */
@@ -41,8 +60,11 @@ export interface PopTier117 {
   workforceFactor: number | null;
   workforce: number | null;
   n: Record<string, NeedDef117>;
-  /** Public-service buildings the tier needs: [name, category band]. */
-  services: [string, number][];
+  /** Public-service buildings and Wonders the tier needs. These grant
+   *  population exactly like a good does (a Tavern is +1/house, the Colosseum
+   *  +3), so they count toward capacity — but a Wonder is one per island
+   *  rather than per settlement, hence the flag. Objects since pack 2. */
+  services: Service117[];
 }
 
 export interface Good117 {
@@ -165,4 +187,47 @@ export function importsFor117(tierId: string): string[] {
 
 export function tierName117(t: string | null | undefined): string {
   return t ? TIER_LABELS_117[t] || t : "—";
+}
+
+/** One thing a tier can be supplied, and what it is worth in residents. */
+export interface PopSource117 {
+  /** Good id, or the service/wonder id. */
+  id: string;
+  lbl: string;
+  kind: "good" | "service" | "wonder";
+  /** Category band 0..3. */
+  cat: number;
+  /** Residents added to every house of the tier. Often 0. */
+  pop: number;
+}
+
+/** Everything a tier's residence can be served, richest first.
+ *
+ *  This is 117's replacement for 1800's `fh`: rather than a fixed
+ *  residents-per-house, capacity is assembled from these. Callers decide which
+ *  bands to count and whether to include wonders (one per island, so they are
+ *  kept out of a per-settlement headline). Order is by residents gained, so the
+ *  list doubles as "what should I supply next".
+ */
+export function popSources117(tierId: string): PopSource117[] {
+  const t = POP_117[tierId];
+  if (!t) return [];
+  const out: PopSource117[] = [];
+  for (const gid in t.n) {
+    const [, cat, pop] = t.n[gid];
+    out.push({ id: gid, lbl: GOODS_117[gid]?.name ?? gid, kind: "good", cat, pop });
+  }
+  for (const s of t.services)
+    out.push({ id: s.id, lbl: s.lbl, kind: s.wonder ? "wonder" : "service", cat: s.cat, pop: s.pop });
+  // Richest first, then band, then name — a stable order for the goals list.
+  return out.sort((a, b) => b.pop - a.pop || a.cat - b.cat || a.lbl.localeCompare(b.lbl));
+}
+
+/** Residents per fully-supplied house of a tier, counting needs up to `band`
+ *  (0..3). Wonders are excluded unless asked for, since one Colosseum serves an
+ *  island rather than each settlement. Returns 0 for an unknown tier. */
+export function houseCapacity117(tierId: string, band = 3, withWonders = false): number {
+  return popSources117(tierId)
+    .filter((s) => s.cat <= band && (withWonders || s.kind !== "wonder"))
+    .reduce((n, s) => n + s.pop, 0);
 }

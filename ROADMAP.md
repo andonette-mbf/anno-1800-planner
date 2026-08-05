@@ -172,6 +172,20 @@ is in CLAUDE.md.
   tables, chain tree. Footer credits the wiki/Ubisoft. Tracker rows can get
   them later once the 117 work settles.
 
+- **Rome growth goals** (build 60): the 📈 picker now works in Anno 117. It
+  was blocked on "residents per fully-upgraded house", which does not exist in
+  117 — a residence there holds the sum of what its supplied needs are worth
+  (0–3 residents each), so capacity is something you build up, not a constant.
+  That number was already in the pinned upstream commit (`needAttributes.
+  Population`); pack 2 takes it, purely additively — every rate and band
+  byte-identical. So a 117 goal is "Serve Porridge to your Liberti — +2
+  residents per house" instead of 1800's unlock thresholds (117 has none),
+  each need filed under the first tier that asks for it. The 39 needs worth no
+  population are named but not offered, wonders are flagged as one-per-island,
+  and a custom target quotes both ends of the band spread (250 Patricians ≈ 9
+  residences fully supplied, or 50 on basic needs). Verified against the wiki's
+  own Liberti example and pinned in the pack test.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)
@@ -206,10 +220,11 @@ is in CLAUDE.md.
      invariant that matters: building a Rome list never touches the 1800 save.
      Per-game content (region tags, starter kits, inventory chips, wiki base)
      lives in `src/lib/games.ts`; the ledger keeps one index per game.
-     Deliberately deferred: 📈 growth goals are 1800-only (the 117 pack has no
-     residents-per-house). The Silo/fuel gap is now closed for the ledger in
-     build 58; the calculator still needs its own pass in phase 3.
-  2. **DATA PACK — DONE** (`src/lib/data-117.json`, pack 1). Extracted by
+     Deliberately deferred: 📈 growth goals were 1800-only (the pack had no
+     residents-per-house) — resolved in phase 4. The Silo/fuel gap is now
+     closed for the ledger in build 58; the calculator gets its own pass in
+     phase 3.
+  2. **DATA PACK — DONE** (`src/lib/data-117.json`, pack 2). Extracted by
      `npm run extract:117` from anno-mods/anno-117-calculator @ c6a6e75
      (v2.1, MIT tooling; values © Ubisoft, same provenance as data.json).
      113 goods (Latium 70, Albion 72, 29 in both), 118 producers, 9 tiers,
@@ -219,6 +234,10 @@ is in CLAUDE.md.
      from a newer upstream: bump `PACK` in the script. `src/lib/data117.ts`
      is the typed view (mirrors data.ts). Remaining for this phase: the 117
      building list + ledger UI on top of the pack.
+     **Pack 2** (build 60) added the per-need `Population` attribute from the
+     same pinned commit — purely additive, every rate and band byte-identical.
+     Needs became `[rate, band, pop]` and `services` became objects
+     (`{id, lbl, cat, pop, wonder?}`).
   3. **117 CALCULATOR — DONE** (build 59). The Calculator tab now works in
      both games; `calcReady` is gone. The seam is `src/lib/dataset.ts`: a
      `Dataset` bundles one game's tables with the rules that differ, and
@@ -262,5 +281,38 @@ is in CLAUDE.md.
        future extraction picks up per-building workforce.
      - Still open: fertility gates 27 buildings and is unmodelled; 117 goods
        borrow 1800's wiki pictures where the display names happen to collide
-       (decorative only); residents-per-house is still absent upstream, which
-       is what blocks `/rome-growth`.
+       (decorative only).
+  4. **117 GROWTH GOALS — DONE** (build 60). The 📈 panel works in both games.
+     The blocker turned out to be a wrong premise, not missing data:
+     - **117 has no residents-per-house because a residence has no fixed
+       capacity.** Its population is the SUM of what its supplied needs are
+       worth — `needs[].needAttributes.Population` in the upstream params,
+       0–3 residents each. It was in the pinned commit all along; the pack 1
+       extractor simply didn't take it. Upstream had NOT moved (`c6a6e75` is
+       still HEAD), and `residenceBuildings`/`populationLevels`/`constants`
+       carry no capacity field — so no amount of re-extraction would have
+       produced an `fh`. The question was mis-framed, not unanswerable.
+     - **Cross-checked against the wiki**, which is why we can trust it:
+       Porridge is +2 and Sardines +1, and the wiki states supplying a Liberti
+       residence both "nets you +3 population … per residence". Pinned in
+       `tests/pack117.test.cjs` so a re-tune upstream fails loudly rather than
+       silently restating everyone's town size.
+     - **So a 117 goal is a need, not a threshold** (117 has no unlock
+       thresholds — needs are banded, not gated on a headcount): "Serve
+       Porridge to your Liberti — +2 residents per house". Each need is listed
+       under the first tier of its province that asks for it, so Bread is a
+       Plebeian goal rather than repeating up the tiers: ~21 options per
+       province, 4–6 per tier.
+     - **The zero-value needs are named, not offered.** 39 of 81 needs grant
+       no population at all (they pay happiness/money/prestige), so the picker
+       ends each tier with "— no residents: Pileus, Tunics" — the trap is
+       flagged where the choice is made.
+     - **Wonders are flagged, not folded in.** They grant population like any
+       need (Amphitheatre +3) but are one per island, so they sit outside the
+       per-house headline and say so in the note.
+     - Capacity is band-dependent, so the custom goal quotes both ends: 250
+       Patricians is ≈9 residences fully supplied (28/house) or 50 on basic
+       needs alone (5/house). That spread IS the 117 growth lever.
+     - `TierView.housed` stays null for 117 on purpose — a single static
+       figure would be wrong at every band but one, so the number lives on the
+       growth panel, which knows the player's band.
