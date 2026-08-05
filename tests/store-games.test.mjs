@@ -93,6 +93,56 @@ check(
   JSON.stringify((api.data.islandChecks?.Roma || []).map((c) => c.t))
 );
 
+// --- waiting quests (build 60) -------------------------------------------
+// A blocked task sinks below the open ones and above the completed ones, so
+// the order you built survives; unblocking puts it back on top.
+const order = () => api.data.quests.map((q) => q.t).join(" | ");
+await act(async () => api.addQuest("Build a forum"));
+await act(async () => api.addQuest("Ship marble"));
+await act(async () => api.setQuestWaiting(0, true)); // Settle Latium: no bricks
+check(
+  "waiting quest sinks below the open ones",
+  order() === "Build a forum | Ship marble | Settle Latium" && api.data.quests[2].w === true,
+  order()
+);
+await act(async () => api.setQuestWaitNote(2, "bricks"));
+check("waiting reason stored", api.data.quests[2].wn === "bricks", api.data.quests[2].wn);
+check(
+  "waiting flag persisted to 117's namespace",
+  !!localStorage.getItem("anno117_quests")?.includes('"wn":"bricks"'),
+  String(localStorage.getItem("anno117_quests"))
+);
+await act(async () => api.toggleQuest(0, true)); // finish "Build a forum"
+check(
+  "completed sinks below waiting",
+  order() === "Ship marble | Settle Latium | Build a forum",
+  order()
+);
+await act(async () => api.setQuestWaiting(1, false)); // bricks arrived
+check(
+  "unblocked quest returns to the top, block cleared",
+  order() === "Settle Latium | Ship marble | Build a forum" &&
+    !api.data.quests[0].w &&
+    !api.data.quests[0].wn,
+  order()
+);
+await act(async () => api.setQuestWaiting(1, true)); // Ship marble: no ship
+await act(async () => api.toggleQuest(2, false)); // reopen "Build a forum"
+check(
+  "reopened quest lands above the waiting block",
+  order() === "Settle Latium | Build a forum | Ship marble",
+  order()
+);
+await act(async () => api.toggleQuest(2, true)); // tick the waiting one off
+check(
+  "ticking a waiting quest clears the block",
+  !api.data.quests[2].w && !api.data.quests[2].wn && api.data.quests[2].done,
+  JSON.stringify(api.data.quests[2])
+);
+// Tidy up so the round-trip checks below see the list they expect.
+await act(async () => api.removeQuest(2));
+await act(async () => api.removeQuest(1));
+
 // --- the invariant -------------------------------------------------------
 check("anno_quests untouched", localStorage.getItem("anno_quests") === before.quests);
 check("anno_islands untouched", localStorage.getItem("anno_islands") === before.islands);

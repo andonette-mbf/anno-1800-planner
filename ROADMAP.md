@@ -186,6 +186,18 @@ is in CLAUDE.md.
   residences fully supplied, or 50 on basic needs). Verified against the wiki's
   own Liberti example and pinned in the pack test.
 
+- **Waiting tasks** (build 61): "sometimes I go to a task and I can't do it
+  because I need more bricks, and moving it up and down is tedious." ⏳ on any
+  open quest parks it in a "⏳ N waiting" block between the open list and the
+  completed fold, with a free-text "waiting on…" box (bricks, a ship, an
+  unlock) so you know what unblocks it; ⤒ puts it back at the *top* — the
+  thing you were just unblocked on is the thing to go and do. The quest array
+  is now partitioned open → waiting → done (`QuestItem.w`/`wn`,
+  `setQuestWaiting`/`setQuestWaitNote`; ticking a waiting quest clears the
+  block), so the hand-built order survives untouched and the ▲▼⤓ buttons only
+  ever see actionable rows. Island filter chips count them apart ("🏝 Ditchwater
+  · 3 ⏳2"). Ordering pinned in `npm run test:games`.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)

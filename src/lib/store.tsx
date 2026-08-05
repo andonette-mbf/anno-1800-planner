@@ -84,6 +84,11 @@ export interface QuestItem {
   added: number; // epoch ms when tracked; 0 = unknown (pre-build-28 items)
   sess: number; // play-session counter value when tracked
   note?: string; // context line (storyline picker entries)
+  // Blocked, not abandoned: you reached this task and couldn't do it yet (no
+  // bricks, no ship, region not unlocked). Waiting quests sink below the open
+  // list and out of the way, keeping the order you built. Absent = actionable.
+  w?: boolean;
+  wn?: string; // what it's waiting on, free text ("bricks")
 }
 
 export interface CompanionData {
@@ -104,6 +109,13 @@ export interface CompanionData {
   // Which world each island is in ("ow"|"nw"|"ar"|"en"), keyed by island
   // name; absent = unknown (pre-build-47 islands) → no datalist filtering.
   islandRegions: Record<string, string>;
+}
+
+// findIndex, but "no match" means "the end" — the insertion point that keeps
+// the quest array partitioned open → waiting → done.
+function firstIndexOf(quests: QuestItem[], pred: (q: QuestItem) => boolean): number {
+  const f = quests.findIndex(pred);
+  return f < 0 ? quests.length : f;
 }
 
 function parseChecks(raw: unknown): CheckItem[] {
@@ -199,6 +211,8 @@ function loadLocal(game: Game = "anno1800"): CompanionData {
           // Items from before session-aging start aging from now.
           sess: Number.isFinite(Number(x?.sess)) ? Number(x.sess) : sessions,
           ...(x?.note ? { note: String(x.note) } : {}),
+          ...(x?.w && !x?.done ? { w: true } : {}),
+          ...(x?.wn ? { wn: String(x.wn) } : {}),
         }))
         .filter((x) => x.t);
   } catch {}
@@ -305,6 +319,8 @@ interface CompanionCtx {
   removeParking: (i: number) => void;
   addQuest: (t: string, note?: string) => void;
   toggleQuest: (i: number, done: boolean) => void;
+  setQuestWaiting: (i: number, w: boolean) => void;
+  setQuestWaitNote: (i: number, wn: string) => void;
   removeQuest: (i: number) => void;
   swapQuests: (i: number, j: number) => void;
   moveQuestAfter: (from: number, to: number) => void;
@@ -485,18 +501,48 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
       toggleQuest: (i, done) =>
         update((d) => {
           if (i < 0 || i >= d.quests.length) return d;
-          // Keep the array partitioned open-first: ticking sinks the quest to
-          // the bottom (out of the way, completions read in order), unticking
-          // re-surfaces it at the end of the open list.
+          // Keep the array partitioned open → waiting → done: ticking sinks the
+          // quest to the bottom (out of the way, completions read in order),
+          // unticking re-surfaces it at the end of the open list, above the
+          // waiting block. Ticking also clears the block — it can't still be
+          // waiting on bricks once it's built.
           const quests = d.quests.slice();
           const [q] = quests.splice(i, 1);
-          const at = done
-            ? quests.length
-            : (() => {
-                const f = quests.findIndex((x) => x.done);
-                return f < 0 ? quests.length : f;
-              })();
-          quests.splice(at, 0, { ...q, done });
+          const at = done ? quests.length : firstIndexOf(quests, (x) => !!x.w || x.done);
+          const next = { ...q, done };
+          if (done) {
+            delete next.w;
+            delete next.wn;
+          }
+          quests.splice(at, 0, next);
+          return { ...d, quests };
+        }),
+      // Park a quest you can't do yet (build 60). Waiting sinks it to the
+      // bottom of the waiting block — below everything actionable, above the
+      // completed ones — and unblocking puts it back on top, because the thing
+      // you were just unblocked on is the thing to go and do.
+      setQuestWaiting: (i, w) =>
+        update((d) => {
+          if (i < 0 || i >= d.quests.length || d.quests[i].done) return d;
+          const quests = d.quests.slice();
+          const [q] = quests.splice(i, 1);
+          const next = { ...q };
+          if (w) next.w = true;
+          else {
+            delete next.w;
+            delete next.wn;
+          }
+          quests.splice(w ? firstIndexOf(quests, (x) => x.done) : 0, 0, next);
+          return { ...d, quests };
+        }),
+      setQuestWaitNote: (i, wn) =>
+        update((d) => {
+          if (i < 0 || i >= d.quests.length) return d;
+          const quests = d.quests.slice();
+          const next = { ...quests[i] };
+          if (wn.trim()) next.wn = wn.trim();
+          else delete next.wn;
+          quests[i] = next;
           return { ...d, quests };
         }),
       removeQuest: (i) =>

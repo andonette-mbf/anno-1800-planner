@@ -13,7 +13,7 @@ import { CalcState, DEFAULT_STATE } from "@/lib/engine";
 import { GAME_CONTENT, type Game } from "@/lib/games";
 import { buildingOptionsFor, elecCapable, islandLedger, siloCapable } from "@/lib/ledger";
 import { planCheck, planSeed } from "@/lib/plancheck";
-import { useAuth, useCompanion } from "@/lib/store";
+import { useAuth, useCompanion, type QuestItem } from "@/lib/store";
 
 // Anno 1800 quests are mostly procedurally generated, so a complete built-in
 // quest list isn't feasible — these are just high-confidence quest givers and
@@ -368,6 +368,8 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
     sync,
     addQuest,
     toggleQuest,
+    setQuestWaiting,
+    setQuestWaitNote,
     removeQuest,
     swapQuests,
     moveQuestAfter,
@@ -436,28 +438,36 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
   // Done quests hide behind a "N completed" toggle instead of cluttering the
   // list; rows keep their index in the raw array so actions line up.
   const indexed = quests.map((q, i) => ({ q, i }));
-  const openQuests = indexed.filter((x) => !x.q.done);
+  // Three blocks, in the order you meet them: what you can do now, what's
+  // blocked (build 61 — ⏳, waiting on bricks and the like), what's finished.
+  const openQuests = indexed.filter((x) => !x.q.done && !x.q.w);
+  const waitQuests = indexed.filter((x) => !x.q.done && x.q.w);
   const doneQuests = indexed.filter((x) => x.q.done);
   const [showDone, setShowDone] = useState(false);
+  const [showWait, setShowWait] = useState(true);
   // M5 — filter the quest list by island tag. Chips appear for islands with
-  // at least one tagged quest; the count on a chip is its open quests.
+  // at least one tagged quest; the count on a chip is its actionable quests,
+  // with waiting ones counted separately — the point of the number is "how
+  // much can I get on with here".
   const [isleFilter, setIsleFilter] = useState<string | null>(null);
   const openCounts = new Map<string, number>();
+  const waitCounts = new Map<string, number>();
   const anyTagged = new Set<string>();
   for (const { q } of indexed) {
     const isle = questIsland(q.t, islands);
     if (!isle) continue;
     anyTagged.add(isle);
-    if (!q.done) openCounts.set(isle, (openCounts.get(isle) || 0) + 1);
+    if (q.done) continue;
+    const m = q.w ? waitCounts : openCounts;
+    m.set(isle, (m.get(isle) || 0) + 1);
   }
   const filterIslands = islands.filter((n) => anyTagged.has(n));
   const effFilter = isleFilter && anyTagged.has(isleFilter) ? isleFilter : null;
-  const visOpen = effFilter
-    ? openQuests.filter((x) => questIsland(x.q.t, islands) === effFilter)
-    : openQuests;
-  const visDone = effFilter
-    ? doneQuests.filter((x) => questIsland(x.q.t, islands) === effFilter)
-    : doneQuests;
+  const onIsland = <T extends { q: QuestItem }>(rows: T[]) =>
+    effFilter ? rows.filter((x) => questIsland(x.q.t, islands) === effFilter) : rows;
+  const visOpen = onIsland(openQuests);
+  const visWait = onIsland(waitQuests);
+  const visDone = onIsland(doneQuests);
   // 📈 goals pertain to the regions you actually play: the filtered island's
   // region when one is set, else the union of your islands' 🌍 tags. No tags
   // anywhere → the full list.
@@ -539,7 +549,8 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
               ? "what each need is worth in residents per house"
               : "real unlock thresholds, with the residence count"}
             ), a route task (🚢 from → to → what) or type your own — top of the list = do next.
-            ⤓ sends one to the bottom; ticked quests tuck away below.
+            ⤓ sends one to the bottom, ⏳ parks one you can&apos;t do yet (say what you&apos;re
+            waiting on; ⤒ brings it back to the top); ticked quests tuck away below.
           </p>
           <div className="plrow">
             <select
@@ -868,6 +879,7 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                 >
                   🏝 {n}
                   {(openCounts.get(n) || 0) > 0 && <> · {openCounts.get(n)}</>}
+                  {(waitCounts.get(n) || 0) > 0 && <> ⏳{waitCounts.get(n)}</>}
                 </button>
               ))}
             </div>
@@ -911,6 +923,13 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                   >
                     ⤓
                   </button>
+                  <button
+                    className="plx qmove qwait"
+                    title="Can't do it yet — park it under Waiting"
+                    onClick={() => setQuestWaiting(i, true)}
+                  >
+                    ⏳
+                  </button>
                   <a
                     className="plx"
                     href={wikiUrl(q.t, game)}
@@ -927,11 +946,56 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
               ))
             ) : (
               <div className="empty">
-                {effFilter
-                  ? `Nothing open for ${effFilter}.`
-                  : visDone.length
-                    ? "All caught up — nothing open."
-                    : "No quests tracked — add one above."}
+                {visWait.length
+                  ? `Nothing you can do yet — ${visWait.length} waiting below.`
+                  : effFilter
+                    ? `Nothing open for ${effFilter}.`
+                    : visDone.length
+                      ? "All caught up — nothing open."
+                      : "No quests tracked — add one above."}
+              </div>
+            )}
+            {visWait.length > 0 && (
+              <div className="waitblk">
+                <button className="linkbtn" onClick={() => setShowWait((v) => !v)}>
+                  {showWait ? "▾" : "▸"} ⏳ {visWait.length} waiting
+                </button>
+                {showWait &&
+                  visWait.map(({ q, i }) => (
+                    <div className="plitem questrow waiting" key={`${i}:${q.t}`}>
+                      <label className="qmain" title="Tap to tick off">
+                        <input
+                          type="checkbox"
+                          checked={q.done}
+                          onChange={(e) => toggleQuest(i, e.target.checked)}
+                        />
+                        <span style={{ flex: 1 }}>
+                          {linkify(q.t)}
+                          {q.note && <small className="qnote">{q.note}</small>}
+                        </span>
+                      </label>
+                      <input
+                        className="wnote"
+                        placeholder="waiting on…"
+                        title="What has to happen first — bricks, a ship, an unlock"
+                        defaultValue={q.wn || ""}
+                        onBlur={(e) => setQuestWaitNote(i, e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") e.currentTarget.blur();
+                        }}
+                      />
+                      <button
+                        className="plx qmove qwait"
+                        title="Unblocked — back to the top of the list"
+                        onClick={() => setQuestWaiting(i, false)}
+                      >
+                        ⤒
+                      </button>
+                      <button className="plx" title="Remove quest" onClick={() => removeQuest(i)}>
+                        ✕
+                      </button>
+                    </div>
+                  ))}
               </div>
             )}
             {visDone.length > 0 && (
