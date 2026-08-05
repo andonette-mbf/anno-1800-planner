@@ -682,9 +682,10 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
             or type your own — top of the list = do next.
             ⤓ sends one to the bottom. ⛓ makes a task wait for others — add as many as you like,
             and it comes back to the top on its own once the last of them is ticked off. ⏳ parks
-            one you can&apos;t do yet (say what you&apos;re waiting on), and ⏱ sets a timer for a
-            wait that&apos;s only time passing, like a ship crossing (⤒ brings one back by hand);
-            ticked quests tuck away below.
+            one you can&apos;t do yet, and asks straight away what for: a good you&apos;re short
+            of, or a stretch of time for a wait that&apos;s only time passing, like a ship
+            crossing. Parked rows take free text (⏱ and the note box are there too), and ⤒ brings
+            one back by hand; ticked quests tuck away below.
           </p>
           <div className="plrow">
             <Dropdown
@@ -1116,13 +1117,38 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                       />
                     ) : null;
                   })()}
-                  <button
-                    className="plx qmove qwait"
-                    title="Can't do it yet — park it under Waiting"
-                    onClick={() => setQuestWaiting(i, true)}
-                  >
-                    ⏳
-                  </button>
+                  {/* The rest of "waiting on…" reaches the open list too (build
+                      73): a good you're short of or a stretch of time, answered
+                      where the task already is. Before this you had to park the
+                      task first and then find its row in the fold, which is a
+                      lot of ceremony for "no bricks yet". Anything else it might
+                      be waiting on is still free text on the parked row. */}
+                  <Dropdown
+                    className="wpick"
+                    ariaLabel={`Park ${q.t}`}
+                    title="Can't do it yet? Park it — and say what you're short of, or how long it needs, without leaving the list."
+                    placeholder="⏳"
+                    value=""
+                    onChange={(v) => {
+                      if (v === "park") setQuestWaiting(i, true);
+                      else if (v.startsWith("t:")) setQuestTimer(i, Number(v.slice(2)));
+                      else if (v.startsWith("g:")) setQuestWaitNote(i, v.slice(2));
+                    }}
+                    options={[
+                      { value: "park", label: "⏳ Park it — I'll say why later" },
+                      {
+                        group: "Waiting on a good",
+                        options: GOOD_NAMES.map((g) => ({ value: `g:${g}`, label: g })),
+                      },
+                      {
+                        group: "Waiting on the clock",
+                        options: TIMER_MINS.map((m) => ({
+                          value: `t:${m}`,
+                          label: m === 60 ? "1 hour" : `${m} min`,
+                        })),
+                      },
+                    ]}
+                  />
                   <a
                     className="plx"
                     href={wikiUrl(q.t, game)}

@@ -78,8 +78,19 @@ const fire = async (el, type) => {
     );
   });
 };
-// The one button in a row whose glyph is `g` (⏳ park, ⤒ unblock).
+// The one button in a row whose glyph is `g` (⤒ unblock, ✕ remove).
 const btn = (row, g) => [...row.querySelectorAll("button")].find((b) => b.textContent.trim() === g);
+// ⏳ on an open row is a menu (build 73): park it plainly, or park it AND say
+// what for — a good you're short of, or a stretch of time.
+const wait = async (row, label) => {
+  await fire(row.querySelector(".wpick"), "click");
+  const opt = [...document.querySelectorAll(".ddpop .ddopt")].find(
+    (el) => el.textContent.trim() === label
+  );
+  if (!opt) throw new Error(`no ⏳ option "${label}"`);
+  await fire(opt, "click");
+};
+const PARK = "⏳ Park it — I'll say why later";
 const rowFor = (t) => openRows().find((el) => rowText(el).startsWith(t));
 
 // --- the list starts as the player left it -------------------------------
@@ -87,7 +98,7 @@ check("three open tasks, in order", openRows().length === 3, String(openRows().l
 check("nothing parked yet", $(".waitblk").length === 0);
 
 // --- ⏳ parks the middle one ---------------------------------------------
-await fire(btn(rowFor("Raise the basilica"), "⏳"), "click");
+await wait(rowFor("Raise the basilica"), PARK);
 check(
   "⏳ moves it out of the open list",
   openRows().length === 2 && !openRows().some((el) => rowText(el).startsWith("Raise the basilica")),
@@ -225,7 +236,7 @@ await fire(openRows()[0].querySelector(".qrang"), "click");
 // --- free text is still just a note --------------------------------------
 // Both of the other tasks went into the completed fold above, so this one
 // carries the rest of the run.
-await fire(btn(rowFor("Raise the basilica"), "⏳"), "click");
+await wait(rowFor("Raise the basilica"), PARK);
 const box2 = waitRows()[0].querySelector(".wnote");
 box2.value = "marble";
 await fire(box2, "focusout");
@@ -408,6 +419,69 @@ check(
   rowFor("Sail to La Isla")?.querySelector(".qdep")?.textContent.includes("1 task queued behind"),
   rowFor("Sail to La Isla")?.querySelector(".qdep")?.textContent
 );
+
+// --- and the rest of "waiting on" from an open row (build 73) --------------
+// Same complaint as ⛓ had: you shouldn't have to demote a task before you can
+// say what it's stuck on. The ⏳ menu answers it where the task already is.
+const isle = rowFor("Sail to La Isla");
+await fire(isle.querySelector(".wpick"), "click");
+const offers = [...document.querySelectorAll(".ddpop .ddopt")].map((el) => el.textContent.trim());
+check(
+  "⏳ offers goods and lengths of time, not just 'park it'",
+  offers.includes(PARK) && offers.includes("Bricks") && offers.includes("10 min"),
+  `${offers.length} offered`
+);
+const bricks = [...document.querySelectorAll(".ddpop .ddopt")].find(
+  (el) => el.textContent.trim() === "Bricks"
+);
+await fire(bricks, "click");
+check(
+  "naming a good from the open list parks the task with that note",
+  waitRows().some(
+    (el) => rowText(el).startsWith("Sail to La Isla") && el.querySelector(".wnote")?.value === "Bricks"
+  ),
+  waitRows().map((el) => rowText(el).split("\n")[0]).join(" | ")
+);
+check(
+  "…picture and all, exactly as if it had been typed on the parked row",
+  !!waitRows()
+    .find((el) => rowText(el).startsWith("Sail to La Isla"))
+    ?.querySelector("img.gicon"),
+  String(waitRows().length)
+);
+check(
+  "…and it's saved as a note, not a blocker",
+  JSON.parse(localStorage.getItem("anno_quests") || "[]").some(
+    (q) => q.t === "Sail to La Isla" && q.wn === "Bricks" && q.w && !q.wq
+  ),
+  String(localStorage.getItem("anno_quests"))
+);
+
+// Same task back on the open list (⤒ clears the note with it), now put on the
+// clock from there instead.
+await fire(
+  btn(
+    waitRows().find((el) => rowText(el).startsWith("Sail to La Isla")),
+    "⤒"
+  ),
+  "click"
+);
+await wait(rowFor("Sail to La Isla"), "20 min");
+check(
+  "picking a length parks it and starts the countdown",
+  waitRows().some(
+    (el) =>
+      rowText(el).startsWith("Sail to La Isla") &&
+      /^⏱ (19|20):\d\d$/.test(el.querySelector(".qtimer")?.textContent.trim() || "")
+  ),
+  waitRows()
+    .map((el) => `${rowText(el).split("\n")[0]} ${el.querySelector(".qtimer")?.textContent || ""}`)
+    .join(" | ")
+);
+
+// A running countdown means a live interval, which would keep node alive after
+// the last check — the run ends by tearing the tracker down.
+await act(async () => r3.unmount());
 
 let bad = 0;
 for (const x of results) {

@@ -127,7 +127,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 72 · fold an island away</span>
+      <span style={{ opacity: 0.55 }}>build 73 · say what you&apos;re waiting on, sooner</span>
     </div>
   );
 }

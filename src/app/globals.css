@@ -83,6 +83,13 @@ a.plx:hover{color:var(--accent)}
    list of task titles is long, so the button stays narrow and the menu widens
    itself. */
 .bpick{width:auto;flex:0 0 auto;font-size:11px;padding:4px 8px;gap:5px;color:var(--muted)}
+/* The ⏳ park menu on an open row (build 73). Sized like the row's other
+   glyph buttons rather than the pickers above, because it replaced one — no
+   caret, so ⏳ ⤓ ↗ ✕ still read as one row of taps. */
+.wpick{width:auto;flex:0 0 auto;font-size:12px;padding:2px 4px;gap:0;border:0;background:0 0;color:var(--dim)}
+.wpick:hover{color:var(--gold);border:0;background:0 0}
+.wpick.open{border:0;color:var(--gold)}
+.wpick .ddcar{display:none}
 .qtimer{cursor:pointer;color:var(--gold);border-color:var(--gold2);font-variant-numeric:tabular-nums}
 .qrang{cursor:pointer;color:var(--gold);border-color:var(--gold2);font-weight:700}
 /* Culture collections (build 64): zoo/museum/garden set tracking under an

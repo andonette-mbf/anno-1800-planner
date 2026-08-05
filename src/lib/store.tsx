@@ -961,7 +961,18 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             const on = blockersOf(next);
             if (!on.some((b) => qkey(b) === qkey(blocker.t))) next.wq = [...on, blocker.t];
           } else if (s) next.wn = s;
-          quests[i] = next;
+          // Saying what you're short of parks the task, so the answer can be
+          // given from the open list rather than only after demoting it there
+          // (build 73) — same rule as adding a blocker. Clearing the box just
+          // clears the note: a parked row stays parked, ⤒ is right there.
+          if (!s || next.done || quests[i].w) {
+            quests[i] = next;
+            return { ...d, quests };
+          }
+          delete next.wr;
+          next.w = true;
+          quests.splice(i, 1);
+          quests.splice(firstIndexOf(quests, (x) => x.done), 0, next);
           return { ...d, quests };
         }),
       // Link/unlink one blocker directly (build 70) — what the ⛓ picker and the
