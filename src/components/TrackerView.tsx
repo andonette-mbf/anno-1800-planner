@@ -11,8 +11,9 @@ import {
 } from "@/lib/data117";
 import { CalcState, DEFAULT_STATE } from "@/lib/engine";
 import { GAME_CONTENT, type Game } from "@/lib/games";
-import { buildingOptionsFor, elecCapable, islandLedger, siloCapable } from "@/lib/ledger";
+import { buildingOptionsFor, elecCapable, islandLedger, itemGood, siloCapable } from "@/lib/ledger";
 import { planCheck, planSeed } from "@/lib/plancheck";
+import { GoodIcon } from "./GoodIcon";
 import { useAuth, useCompanion, type QuestItem } from "@/lib/store";
 
 // Anno 1800 quests are mostly procedurally generated, so a complete built-in
@@ -218,6 +219,15 @@ const GROWTH_TIERS_1800: GrowthTier[] = Object.keys(POP)
 
 function houses(residents: number, fh: number) {
   return Math.ceil(residents / fh);
+}
+
+// Display name of the good an inventory item makes, for its picture.
+// Non-building items (landmarks, free text) have none; 117 goods have no
+// picture set yet, so GoodIcon just renders nothing for them.
+function iconGoodName(itemName: string, game: Game): string | null {
+  const gid = itemGood(itemName, game);
+  if (!gid) return null;
+  return (game === "anno117" ? GOODS_117[gid] : GOODS[gid])?.name ?? null;
 }
 
 // 117's goals are a different shape, because 117 grows differently. There are
@@ -1262,6 +1272,7 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                           onChange={(e) => toggleIslandCheck(name, i, e.target.checked)}
                         />
                         <span style={{ flex: 1 }}>
+                          <GoodIcon name={iconGoodName(c.t, game)} />
                           {c.t}
                           {(c.n || 1) > 1 && <b> ×{c.n}</b>}
                         </span>
@@ -1351,7 +1362,10 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                       </div>
                       {ledger.map((r) => (
                         <div className="iledgrow" key={r.name}>
-                          <span>{r.name}</span>
+                          <span>
+                            <GoodIcon name={r.name} />
+                            {r.name}
+                          </span>
                           <span className="num muted">
                             {r.produced > 0 ? `+${fmt(r.produced)}` : ""}
                           </span>
@@ -1395,7 +1409,10 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                             const d = r.built - r.planned;
                             return (
                               <div className="iledgrow" key={r.good}>
-                                <span>{r.building}</span>
+                                <span>
+                                  <GoodIcon name={r.good} />
+                                  {r.building}
+                                </span>
                                 <span className="num muted">{r.built}</span>
                                 <span className="num muted">{r.planned}</span>
                                 <span className={"num net" + (d < 0 ? " neg" : "")}>

@@ -169,8 +169,11 @@ is in CLAUDE.md.
   in the script — 134/162, the rest are add-on goods with no wiki icon).
   `GoodIcon` (keyed by display name via `src/lib/goodIcons.json`) shown in
   the calculator: good picker, selected rows, Buildings/Shared/Optimal
-  tables, chain tree. Footer credits the wiki/Ubisoft. Tracker rows can get
-  them later once the 117 work settles.
+  tables, chain tree. Footer credits the wiki/Ubisoft. Build 63 added them
+  to the Tracker: inventory item rows (via `itemGood` → the produced good's
+  picture), ledger rows and plan-check rows. 117 goods have no picture set
+  yet — `GoodIcon` renders nothing for unknown names, so Rome rows are
+  simply picture-less until a 117 icon source is found.
 
 - **Rome growth goals** (build 60): the 📈 picker now works in Anno 117. It
   was blocked on "residents per fully-upgraded house", which does not exist in
