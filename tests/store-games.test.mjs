@@ -152,12 +152,12 @@ await act(async () => api.setQuestWaiting(2, true)); // basilica: no bricks
 await act(async () => api.setQuestWaitNote(2, "  build a BRICKWORKS ")); // sloppy typing
 check(
   "naming another task links to it, canonically",
-  api.data.quests[2].wq === "Build a brickworks" && !api.data.quests[2].wn,
+  api.data.quests[2].wq?.join("|") === "Build a brickworks" && !api.data.quests[2].wn,
   JSON.stringify(api.data.quests[2])
 );
 check(
   "the link persists",
-  !!localStorage.getItem("anno117_quests")?.includes('"wq":"Build a brickworks"'),
+  !!localStorage.getItem("anno117_quests")?.includes('"wq":["Build a brickworks"]'),
   String(localStorage.getItem("anno117_quests"))
 );
 await act(async () => api.toggleQuest(1, true)); // brickworks built
@@ -165,27 +165,27 @@ check(
   "finishing the blocker frees the waiter, to the top",
   order() === "Raise the basilica | Settle Latium | Build a brickworks" &&
     !api.data.quests[0].w &&
-    !api.data.quests[0].wq,
+    !api.data.quests[0].wq?.length,
   order()
 );
 await act(async () => api.setQuestWaiting(0, true)); // basilica blocked again
 await act(async () => api.setQuestWaitNote(1, "marble"));
 check(
   "free text stays a plain note",
-  api.data.quests[1].wn === "marble" && !api.data.quests[1].wq,
+  api.data.quests[1].wn === "marble" && !api.data.quests[1].wq?.length,
   JSON.stringify(api.data.quests[1])
 );
 await act(async () => api.setQuestWaitNote(1, "Build a brickworks")); // already done
 check(
   "a finished task can't be a blocker",
-  api.data.quests[1].wn === "Build a brickworks" && !api.data.quests[1].wq,
+  api.data.quests[1].wn === "Build a brickworks" && !api.data.quests[1].wq?.length,
   JSON.stringify(api.data.quests[1])
 );
 await act(async () => api.toggleQuest(2, false)); // reopen the brickworks
 await act(async () => api.setQuestWaitNote(2, "Build a brickworks"));
 check(
   "switching a note to a task link clears the note",
-  api.data.quests[2].wq === "Build a brickworks" && !api.data.quests[2].wn,
+  api.data.quests[2].wq?.join("|") === "Build a brickworks" && !api.data.quests[2].wn,
   JSON.stringify(api.data.quests[2])
 );
 await act(async () => api.removeQuest(1)); // delete the blocker outright
@@ -193,7 +193,7 @@ check(
   "deleting the blocker frees what was queued behind it",
   order() === "Raise the basilica | Settle Latium" &&
     !api.data.quests[0].w &&
-    !api.data.quests[0].wq,
+    !api.data.quests[0].wq?.length,
   order()
 );
 await act(async () => api.removeQuest(0));

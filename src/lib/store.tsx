@@ -109,21 +109,24 @@ export interface QuestItem {
   // list and out of the way, keeping the order you built. Absent = actionable.
   w?: boolean;
   wn?: string; // what it's waiting on, free text ("bricks")
-  // …or another task in the list, by its text (build 66). Quests have no ids —
-  // they're identified by position, which every reorder changes — so the
-  // blocker's own text is the only stable handle. Ticking or deleting that
-  // task frees this one automatically. Mutually exclusive with `wn`.
-  wq?: string;
+  // …or on OTHER TASKS in the list, by their text (build 66; a list since build
+  // 70, because a task usually needs several things first). Quests have no ids —
+  // they're identified by position, which every reorder changes — so a blocker's
+  // own text is the only stable handle. Ticking or deleting a blocker drops it
+  // from here, and emptying the list frees the task. Written as an array; a bare
+  // string from before build 70 parses as a list of one.
+  wq?: string[];
   // …or on the clock (build 68): epoch ms at which the wait is up. Some waits
   // are only time passing — a clipper crossing to the New World, a build
   // finishing — so park the task with a timer and it frees itself. Independent
   // of `wn`/`wq`: whichever comes first frees the task.
   wt?: number;
-  // A timer rang and freed this task. Kept until you clear it (or tick the task
-  // off), because the ring almost always lands while you're in the game rather
-  // than looking at this list — without the mark the task would just be quietly
-  // sitting at the top next time you glanced over.
-  wr?: boolean;
+  // Why this task came back on its own — a timer rang, or its last blocker was
+  // ticked off. Kept until you clear it (or tick the task off), because it
+  // almost always happens while you're in the game rather than looking at this
+  // list; without the mark the task would just be quietly sitting at the top
+  // next time you glanced over. `true` from before build 70 means a timer.
+  wr?: "timer" | "deps";
 }
 
 export interface CompanionData {
@@ -159,24 +162,63 @@ function firstIndexOf(quests: QuestItem[], pred: (q: QuestItem) => boolean): num
 
 const qkey = (t: string) => t.trim().toLowerCase();
 
-// Release every quest waiting on `blocker` (build 66) — called when that task
-// is ticked off or deleted. Freed quests go to the top of the open list, same
-// as unblocking one by hand: what just came free is what to go and do.
+/** Blocker texts out of stored data: an array, or the pre-build-70 single
+ *  string. Trimmed, de-duplicated, empties dropped. */
+function parseBlockers(raw: unknown): string[] {
+  const list = Array.isArray(raw) ? raw : typeof raw === "string" ? [raw] : [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const x of list) {
+    const s = typeof x === "string" ? x.trim() : "";
+    if (!s || seen.has(s.toLowerCase())) continue;
+    seen.add(s.toLowerCase());
+    out.push(s);
+  }
+  return out;
+}
+
+/** A quest's blockers, tolerating the pre-build-70 single string. */
+export function blockersOf(q: QuestItem): string[] {
+  return parseBlockers(q.wq);
+}
+
+// Everything a freed task drops on its way back to the open list: it is out of
+// the waiting block now, and these fields only mean anything in there.
+function clearWait(q: QuestItem, why: "timer" | "deps"): QuestItem {
+  const n = { ...q, wr: why };
+  delete n.w;
+  delete n.wt;
+  delete n.wq;
+  delete n.wn;
+  return n;
+}
+
+// Drop `blocker` from every waiting quest (build 66) — called when that task is
+// ticked off or deleted. A quest with other blockers left keeps waiting; one
+// that just lost its LAST is free, and goes to the top of the open list with
+// the ⛓ mark, exactly as a rung timer does (build 70). What has just come free
+// is what to go and do.
 function freeBlockedBy(quests: QuestItem[], blocker: string): QuestItem[] {
   const key = qkey(blocker);
   if (!key) return quests;
   const freed: QuestItem[] = [];
   const rest: QuestItem[] = [];
+  let touched = false;
   for (const q of quests) {
-    if (!q.done && q.w && qkey(q.wq || "") === key) {
-      const n = { ...q };
-      delete n.w;
-      delete n.wq;
-      delete n.wn;
-      freed.push(n);
-    } else rest.push(q);
+    const on = blockersOf(q);
+    if (q.done || !q.w || !on.some((b) => qkey(b) === key)) {
+      rest.push(q);
+      continue;
+    }
+    touched = true;
+    const left = on.filter((b) => qkey(b) !== key);
+    if (left.length) {
+      const n = { ...q, wq: left };
+      rest.push(n);
+    } else freed.push(clearWait(q, "deps"));
   }
-  return freed.length ? [...freed, ...rest] : quests;
+  if (!touched) return quests;
+  return [...freed, ...rest];
 }
 
 // Free every waiting task whose timer has run out (build 68). Same landing spot
@@ -193,30 +235,39 @@ function ringTimers(quests: QuestItem[], now: number = Date.now()): QuestItem[] 
       rest.push(q);
       continue;
     }
-    // Whatever else it was waiting on goes with the timer: the task is out of
-    // the waiting block now, and those fields only mean anything in there.
-    const n = { ...q, wr: true };
-    delete n.w;
-    delete n.wt;
-    delete n.wq;
-    delete n.wn;
-    rung.push(n);
+    // Whatever else it was waiting on goes with the timer — whichever comes
+    // first frees the task.
+    rung.push(clearWait(q, "timer"));
   }
   return [...rung, ...rest];
 }
 
-// A task waiting on one that is no longer open — ticked or deleted on another
-// device, or dropped by /legacy.html, which doesn't know these fields — has
-// nothing left to wait for, so free it on the way in rather than stranding it.
+// Blockers that are no longer open — ticked or deleted on another device, or
+// dropped by /legacy.html, which doesn't know these fields — are gone as far as
+// this task is concerned. Drop them on the way in, and free the task if that
+// empties the list, rather than stranding it in the waiting block forever. It
+// arrives marked, since the blocker was finished somewhere you couldn't see.
 function healBlockers(quests: QuestItem[]): QuestItem[] {
   const open = new Set(quests.filter((q) => !q.done).map((q) => qkey(q.t)));
-  return quests.map((q) => {
-    if (!q.w || !q.wq || open.has(qkey(q.wq))) return q;
-    const n = { ...q };
-    delete n.w;
-    delete n.wq;
-    return n;
-  });
+  const freed: QuestItem[] = [];
+  const rest: QuestItem[] = [];
+  let touched = false;
+  for (const q of quests) {
+    const on = blockersOf(q);
+    if (!q.w || !on.length) {
+      rest.push(q);
+      continue;
+    }
+    const left = on.filter((b) => open.has(qkey(b)));
+    if (left.length === on.length) {
+      rest.push(q);
+      continue;
+    }
+    touched = true;
+    if (left.length) rest.push({ ...q, wq: left });
+    else freed.push(clearWait(q, "deps"));
+  }
+  return touched ? [...freed, ...rest] : quests;
 }
 
 function parseChecks(raw: unknown): CheckItem[] {
@@ -346,9 +397,15 @@ function loadLocal(game: Game = "anno1800", id = ""): CompanionData {
           ...(x?.note ? { note: String(x.note) } : {}),
           ...(x?.w && !x?.done ? { w: true } : {}),
           ...(x?.wn ? { wn: String(x.wn) } : {}),
-          ...(x?.wq ? { wq: String(x.wq) } : {}),
+          // A bare string is a pre-build-70 single blocker.
+          ...(() => {
+            const on = parseBlockers(x?.wq);
+            return on.length && !x?.done ? { wq: on } : {};
+          })(),
           ...(Number(x?.wt) > 0 && !x?.done ? { wt: Number(x.wt) } : {}),
-          ...(x?.wr && !x?.done ? { wr: true } : {}),
+          ...(x?.wr && !x?.done
+            ? { wr: (x.wr === "deps" ? "deps" : "timer") as "timer" | "deps" }
+            : {}),
         }))
         .filter((x) => x.t);
     // Timers that ran out while the app was shut ring on the way in — the point
@@ -565,6 +622,9 @@ interface CompanionCtx {
   toggleQuest: (i: number, done: boolean) => void;
   setQuestWaiting: (i: number, w: boolean) => void;
   setQuestWaitNote: (i: number, wn: string) => void;
+  /** Wait on another task by its text. Parks the quest if it wasn't already. */
+  addQuestBlocker: (i: number, blocker: string) => void;
+  removeQuestBlocker: (i: number, blocker: string) => void;
   /** Park a task on the clock: `minutes` from now, or null to cancel. */
   setQuestTimer: (i: number, minutes: number | null) => void;
   /** Drop the ⏰ mark left by a timer that rang. */
@@ -894,9 +954,53 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             ? quests.find((x, j) => j !== i && !x.done && qkey(x.t) === qkey(s))
             : undefined;
           delete next.wn;
-          delete next.wq;
-          if (blocker) next.wq = blocker.t;
-          else if (s) next.wn = s;
+          // Naming a task adds it to the blockers rather than replacing them —
+          // several things can stand in the way at once (build 70). Clearing the
+          // box only clears the note; blockers have their own ✕ on each chip.
+          if (blocker) {
+            const on = blockersOf(next);
+            if (!on.some((b) => qkey(b) === qkey(blocker.t))) next.wq = [...on, blocker.t];
+          } else if (s) next.wn = s;
+          quests[i] = next;
+          return { ...d, quests };
+        }),
+      // Link/unlink one blocker directly (build 70) — what the ⛓ picker and the
+      // ✕ on each chip call. Adding one to a task that is still open parks it:
+      // something has to happen first, so it isn't actionable now.
+      addQuestBlocker: (i, blocker) =>
+        update((d) => {
+          if (i < 0 || i >= d.quests.length || d.quests[i].done) return d;
+          const b = d.quests.find((x, j) => j !== i && !x.done && qkey(x.t) === qkey(blocker));
+          if (!b) return d;
+          const quests = d.quests.slice();
+          const cur = quests[i];
+          const on = blockersOf(cur);
+          if (on.some((x) => qkey(x) === qkey(b.t))) return d;
+          const next = { ...cur, wq: [...on, b.t] };
+          delete next.wr;
+          if (cur.w) {
+            quests[i] = next;
+            return { ...d, quests };
+          }
+          next.w = true;
+          quests.splice(i, 1);
+          quests.splice(firstIndexOf(quests, (x) => x.done), 0, next);
+          return { ...d, quests };
+        }),
+      // Unlinking by hand leaves the task parked even if that was its last
+      // blocker: the row shouldn't jump out from under the tap, and ⤒ is right
+      // there. Only a blocker being TICKED OFF promotes it automatically.
+      removeQuestBlocker: (i, blocker) =>
+        update((d) => {
+          if (i < 0 || i >= d.quests.length) return d;
+          const cur = d.quests[i];
+          const on = blockersOf(cur);
+          if (!on.some((b) => qkey(b) === qkey(blocker))) return d;
+          const left = on.filter((b) => qkey(b) !== qkey(blocker));
+          const quests = d.quests.slice();
+          const next = { ...cur };
+          if (left.length) next.wq = left;
+          else delete next.wq;
           quests[i] = next;
           return { ...d, quests };
         }),

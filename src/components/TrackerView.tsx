@@ -16,7 +16,7 @@ import { planCheck, planSeed } from "@/lib/plancheck";
 import CultureBlock from "./CultureBlock";
 import { GoodIcon } from "./GoodIcon";
 import { Dropdown } from "./ui/Dropdown";
-import { useAuth, useCompanion, type QuestItem } from "@/lib/store";
+import { blockersOf, useAuth, useCompanion, type QuestItem } from "@/lib/store";
 
 // Anno 1800 quests are mostly procedurally generated, so a complete built-in
 // quest list isn't feasible — these are just high-confidence quest givers and
@@ -397,6 +397,8 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
     toggleQuest,
     setQuestWaiting,
     setQuestWaitNote,
+    addQuestBlocker,
+    removeQuestBlocker,
     setQuestTimer,
     clearQuestRang,
     removeQuest,
@@ -528,10 +530,11 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
   // count ignores the island filter: a task on one island can block another's.
   const behind = new Map<string, number>();
   for (const { q } of indexed)
-    if (!q.done && q.w && q.wq) {
-      const k = q.wq.trim().toLowerCase();
-      behind.set(k, (behind.get(k) || 0) + 1);
-    }
+    if (!q.done && q.w)
+      for (const b of blockersOf(q)) {
+        const k = b.trim().toLowerCase();
+        behind.set(k, (behind.get(k) || 0) + 1);
+      }
   // The label half of a quest row, shared by the open and waiting lists.
   const questBody = (q: QuestItem) => {
     const n = behind.get(q.t.trim().toLowerCase()) || 0;
@@ -542,7 +545,7 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
         {n > 0 && (
           <small
             className="qnote qdep"
-            title="Tick this off and they free themselves, straight to the top of the list"
+            title="Tick this off and they come a step closer — anything with nothing else left to wait for jumps back to the top of the list"
           >
             ⛓ {n} task{n > 1 ? "s" : ""} queued behind this
           </small>
@@ -649,10 +652,11 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
               : "real unlock thresholds, with the residence count"}
             ), a route task (🚢 from → to → what), a check-in (👁 come back to an island later)
             or type your own — top of the list = do next.
-            ⤓ sends one to the bottom, ⏳ parks one you can&apos;t do yet — say what you&apos;re
-            waiting on, name another task and it frees itself when you tick that one off, or set
-            a ⏱ timer for a wait that&apos;s only time passing, like a ship crossing (⤒ brings one
-            back by hand); ticked quests tuck away below.
+            ⤓ sends one to the bottom. ⛓ makes a task wait for others — add as many as you like,
+            and it comes back to the top on its own once the last of them is ticked off. ⏳ parks
+            one you can&apos;t do yet (say what you&apos;re waiting on), and ⏱ sets a timer for a
+            wait that&apos;s only time passing, like a ship crossing (⤒ brings one back by hand);
+            ticked quests tuck away below.
           </p>
           <div className="plrow">
             <Dropdown
@@ -1028,10 +1032,14 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                   {q.wr && (
                     <button
                       className="chip schip qrang"
-                      title="Its timer ran out while you were playing, so it came back up here — tap to clear the mark"
+                      title={
+                        q.wr === "deps"
+                          ? "The last task it was waiting on got ticked off while you were playing, so it came back up here — tap to clear the mark"
+                          : "Its timer ran out while you were playing, so it came back up here — tap to clear the mark"
+                      }
                       onClick={() => clearQuestRang(i)}
                     >
-                      ⏰ time&apos;s up
+                      {q.wr === "deps" ? "⛓ unblocked" : "⏰ time's up"}
                     </button>
                   )}
                   <button
@@ -1058,6 +1066,26 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                   >
                     ⤓
                   </button>
+                  {/* Wait on another task without parking this one first
+                      (build 70) — picking a blocker parks it for you. Before
+                      this you had to know to press ⏳ and then find the box,
+                      which is why dependencies went unnoticed. */}
+                  {(() => {
+                    const opts = indexed
+                      .filter((x) => !x.q.done && x.i !== i)
+                      .map((x) => ({ value: x.q.t, label: x.q.t }));
+                    return opts.length ? (
+                      <Dropdown
+                        className="bpick"
+                        ariaLabel={`Wait for another task before ${q.t}`}
+                        title="Do something else first — pick the task this one has to wait for. It parks until every blocker you add is ticked off, then comes back to the top."
+                        placeholder="⛓"
+                        value=""
+                        onChange={(v) => addQuestBlocker(i, v)}
+                        options={opts}
+                      />
+                    ) : null;
+                  })()}
                   <button
                     className="plx qmove qwait"
                     title="Can't do it yet — park it under Waiting"
@@ -1106,40 +1134,52 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                         />
                         {questBody(q)}
                       </label>
-                      {q.wq ? (
-                        // Waiting on another task: no box to type in, because
-                        // the link is the answer. Tap to break it.
+                      {/* One chip per task in the way — tap to unlink. The task
+                          comes back on its own when the LAST of them is ticked
+                          off, so several can be queued up (build 70). */}
+                      {blockersOf(q).map((b) => (
                         <button
+                          key={b}
                           className="chip schip wqchip"
-                          title={`Frees itself the moment “${q.wq}” is ticked off — tap to unlink`}
-                          onClick={() => setQuestWaitNote(i, "")}
+                          title={`Waiting on “${b}” — tap to unlink. This task frees itself once every blocker is ticked off.`}
+                          onClick={() => removeQuestBlocker(i, b)}
                         >
-                          ⛓ after {q.wq}
+                          ⛓ {b} ✕
                         </button>
-                      ) : (
-                        <>
-                          <input
-                            className="wnote"
-                            placeholder="waiting on… or a task"
-                            title="What has to happen first — bricks, a ship, an unlock. Name another task in the list and this one frees itself when you tick that one off."
-                            list={`blockers${i}`}
-                            defaultValue={q.wn || ""}
-                            onBlur={(e) => setQuestWaitNote(i, e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") e.currentTarget.blur();
-                            }}
+                      ))}
+                      {(() => {
+                        // Only tasks that aren't already blocking this one, and
+                        // never itself. A menu rather than a type-in box: typing
+                        // a name that didn't match used to fail silently, and
+                        // leave a plain note where you expected a link.
+                        const on = new Set(blockersOf(q).map((b) => b.trim().toLowerCase()));
+                        const opts = indexed
+                          .filter(
+                            (x) => !x.q.done && x.i !== i && !on.has(x.q.t.trim().toLowerCase())
+                          )
+                          .map((x) => ({ value: x.q.t, label: x.q.t }));
+                        return opts.length ? (
+                          <Dropdown
+                            className="bpick"
+                            ariaLabel={`Wait for another task before ${q.t}`}
+                            title="Wait for another task on the list. Add as many as you need — this one comes back to the top when the last of them is ticked off."
+                            placeholder="⛓"
+                            value=""
+                            onChange={(v) => addQuestBlocker(i, v)}
+                            options={opts}
                           />
-                          {/* Every other unfinished task, so a blocker can be
-                              picked rather than typed out exactly. */}
-                          <datalist id={`blockers${i}`}>
-                            {indexed
-                              .filter((x) => !x.q.done && x.i !== i)
-                              .map((x) => (
-                                <option key={x.i} value={x.q.t} />
-                              ))}
-                          </datalist>
-                        </>
-                      )}
+                        ) : null;
+                      })()}
+                      <input
+                        className="wnote"
+                        placeholder="waiting on…"
+                        title="Anything that isn't a task on this list — bricks, a ship, an unlock. Use ⛓ to wait on another task instead."
+                        defaultValue={q.wn || ""}
+                        onBlur={(e) => setQuestWaitNote(i, e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") e.currentTarget.blur();
+                        }}
+                      />
                       {q.wt ? (
                         // On the clock: the countdown replaces the picker, and
                         // tapping it calls the wait off early.

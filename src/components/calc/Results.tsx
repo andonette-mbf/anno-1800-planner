@@ -127,7 +127,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 69 · hacienda, kilns &amp; the right cattle count</span>
+      <span style={{ opacity: 0.55 }}>build 70 · a task can wait on several</span>
     </div>
   );
 }

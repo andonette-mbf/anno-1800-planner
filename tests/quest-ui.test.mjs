@@ -26,6 +26,9 @@ Module._resolveFilename = function (req, ...rest) {
 
 const dom = new JSDOM("<!doctype html><div id=root></div>", { url: "https://x.test/" });
 global.IS_REACT_ACT_ENVIRONMENT = true;
+// jsdom has no layout, so it ships no scrollIntoView — the ⛓ blocker picker is
+// a real Dropdown and calls it when the menu opens.
+dom.window.Element.prototype.scrollIntoView = function () {};
 global.window = dom.window;
 global.document = dom.window.document;
 Object.defineProperty(global, "navigator", {
@@ -104,24 +107,39 @@ check(
   openRows().map(rowText).join(" | ")
 );
 
-// --- the box offers the other tasks as blockers ---------------------------
-const box = waitRows()[0].querySelector(".wnote");
-const offered = [...document.querySelectorAll(`#${box.getAttribute("list")} option`)].map(
-  (o) => o.value
-);
+// --- the ⛓ picker offers the other tasks as blockers ----------------------
+// A menu, not a type-in box (build 70): a name that didn't match used to fail
+// silently and leave a plain note where you expected a link.
+const menuOpen = () => $(".ddpop .ddopt").length > 0;
+const openPicker = async (row = 0) => {
+  if (!menuOpen()) await fire(waitRows()[row].querySelector(".bpick"), "click");
+  return $(".ddpop .ddopt").map((el) => el.textContent.trim());
+};
+const closePicker = async () => {
+  if (menuOpen()) await fire(document.querySelector(".bpick.open"), "click");
+};
+const pickBlocker = async (label, row = 0) => {
+  await openPicker(row);
+  const opt = $(".ddpop .ddopt").find((el) => el.textContent.trim().startsWith(label));
+  if (!opt) throw new Error(`no blocker option "${label}" in: ${$(".ddpop .ddopt").map((e) => e.textContent.trim()).join(" | ")}`);
+  await fire(opt, "click");
+};
+const offered = await openPicker();
 check(
   "every other unfinished task is offered",
-  offered.length === 2 && offered.includes("Build a brickworks") && offered.includes("Plant an orchard"),
+  offered.length === 2 &&
+    offered.includes("Build a brickworks") &&
+    offered.includes("Plant an orchard"),
   offered.join(" | ")
 );
 check("it isn't offered as its own blocker", !offered.includes("Raise the basilica"));
+await closePicker();
 
-// --- naming one links the two -------------------------------------------
-box.value = "  build a BRICKWORKS "; // sloppy typing, as a player would
-await fire(box, "focusout");
+// --- picking one links the two -------------------------------------------
+await pickBlocker("Build a brickworks");
 check(
   "the parked row shows the link",
-  waitRows()[0].querySelector(".wqchip")?.textContent.includes("after Build a brickworks"),
+  waitRows()[0].querySelector(".wqchip")?.textContent.includes("Build a brickworks"),
   waitRows()[0].querySelector(".wqchip")?.textContent
 );
 check(
@@ -131,11 +149,55 @@ check(
 );
 check(
   "the link is saved",
-  !!localStorage.getItem("anno_quests")?.includes('"wq":"Build a brickworks"'),
+  !!localStorage.getItem("anno_quests")?.includes('"wq":["Build a brickworks"]'),
   String(localStorage.getItem("anno_quests"))
 );
 
-// --- ticking the blocker frees it ---------------------------------------
+// --- a second blocker: it waits for BOTH (build 70) -----------------------
+await pickBlocker("Plant an orchard");
+check(
+  "both blockers show on the parked row",
+  waitRows()[0].querySelectorAll(".wqchip").length === 2 &&
+    [...waitRows()[0].querySelectorAll(".wqchip")]
+      .map((el) => el.textContent)
+      .join(" ")
+      .includes("Plant an orchard"),
+  [...waitRows()[0].querySelectorAll(".wqchip")].map((el) => el.textContent.trim()).join(" | ")
+);
+check(
+  "both are saved",
+  !!localStorage
+    .getItem("anno_quests")
+    ?.includes('"wq":["Build a brickworks","Plant an orchard"]'),
+  String(localStorage.getItem("anno_quests"))
+);
+check(
+  "each blocker's row counts it",
+  rowFor("Build a brickworks")?.querySelector(".qdep")?.textContent.includes("1 task queued") &&
+    rowFor("Plant an orchard")?.querySelector(".qdep")?.textContent.includes("1 task queued"),
+  rowFor("Plant an orchard")?.querySelector(".qdep")?.textContent
+);
+check(
+  "nothing left to offer, so the picker goes",
+  !waitRows()[0].querySelector(".bpick"),
+  String(waitRows()[0].querySelector(".bpick")?.textContent)
+);
+
+// Ticking only ONE of them leaves the task parked, minus that blocker.
+await fire(rowFor("Plant an orchard").querySelector("input[type=checkbox]"), "click");
+check(
+  "one down, still waiting",
+  waitRows().length === 1 && rowText(waitRows()[0]).startsWith("Raise the basilica"),
+  openRows().map((el) => rowText(el).split("\n")[0]).join(" | ")
+);
+check(
+  "…and the finished one is off its list",
+  waitRows()[0].querySelectorAll(".wqchip").length === 1 &&
+    waitRows()[0].querySelector(".wqchip").textContent.includes("Build a brickworks"),
+  [...waitRows()[0].querySelectorAll(".wqchip")].map((el) => el.textContent.trim()).join(" | ")
+);
+
+// --- ticking the LAST blocker frees it -----------------------------------
 await fire(rowFor("Build a brickworks").querySelector("input[type=checkbox]"), "click");
 check(
   "the parked task comes back at the top",
@@ -144,13 +206,26 @@ check(
 );
 check("nothing is left waiting", $(".waitblk").length === 0);
 check(
-  "and the blocker is in the completed fold",
-  document.querySelector(".doneblk")?.textContent.includes("1 completed"),
+  "and both blockers are in the completed fold",
+  document.querySelector(".doneblk")?.textContent.includes("2 completed"),
   document.querySelector(".doneblk")?.textContent?.slice(0, 40)
 );
+check(
+  "it says why it came back — same treatment as a rung timer",
+  openRows()[0].querySelector(".qrang")?.textContent.includes("unblocked"),
+  openRows()[0].querySelector(".qrang")?.textContent
+);
+check(
+  "…and that is what got saved",
+  !!localStorage.getItem("anno_quests")?.includes('"wr":"deps"'),
+  String(localStorage.getItem("anno_quests"))
+);
+await fire(openRows()[0].querySelector(".qrang"), "click");
 
 // --- free text is still just a note --------------------------------------
-await fire(btn(rowFor("Plant an orchard"), "⏳"), "click");
+// Both of the other tasks went into the completed fold above, so this one
+// carries the rest of the run.
+await fire(btn(rowFor("Raise the basilica"), "⏳"), "click");
 const box2 = waitRows()[0].querySelector(".wnote");
 box2.value = "marble";
 await fire(box2, "focusout");
@@ -186,7 +261,7 @@ check(
   waitRows()[0].querySelector(".wnote")?.value
 );
 const saved = JSON.parse(localStorage.getItem("anno_quests") || "[]");
-const orchard = saved.find((q) => q.t === "Plant an orchard");
+const orchard = saved.find((q) => q.t === "Raise the basilica");
 check(
   "the deadline is saved, ~10 minutes out",
   Math.abs(orchard?.wt - (Date.now() + 600000)) < 5000,
@@ -197,7 +272,7 @@ check(
 await fire(btn(waitRows()[0], "⤒"), "click");
 check(
   "⤒ brings it back to the top",
-  $(".waitblk").length === 0 && rowText(openRows()[0]).startsWith("Plant an orchard"),
+  $(".waitblk").length === 0 && rowText(openRows()[0]).startsWith("Raise the basilica"),
   openRows().map((el) => rowText(el).split("\n")[0]).join(" | ")
 );
 check(
@@ -283,8 +358,28 @@ check(
 );
 check(
   "…and it's saved that way",
-  !!localStorage.getItem("anno_quests")?.includes('"wr":true'),
+  !!localStorage.getItem("anno_quests")?.includes('"wr":"timer"'),
   String(localStorage.getItem("anno_quests"))
+);
+
+// --- ⛓ straight from an open row (build 70) -------------------------------
+// The old way in was: press ⏳, then find the box on the parked row. Now the
+// picker sits on the open row and parks the task for you.
+const target = rowFor("Build a brickworks");
+await fire(target.querySelector(".bpick"), "click");
+const opt = $(".ddpop .ddopt").find((el) => el.textContent.trim().startsWith("Sail to La Isla"));
+await fire(opt, "click");
+check(
+  "⛓ on an open row parks it behind the task you pick",
+  waitRows().length === 1 &&
+    rowText(waitRows()[0]).startsWith("Build a brickworks") &&
+    waitRows()[0].querySelector(".wqchip")?.textContent.includes("Sail to La Isla"),
+  waitRows().map((el) => rowText(el).split("\n")[0]).join(" | ")
+);
+check(
+  "…and the blocker's row says so",
+  rowFor("Sail to La Isla")?.querySelector(".qdep")?.textContent.includes("1 task queued behind"),
+  rowFor("Sail to La Isla")?.querySelector(".qdep")?.textContent
 );
 
 let bad = 0;

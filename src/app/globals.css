@@ -54,7 +54,10 @@ a.plx:hover{color:var(--accent)}
 /* Waiting block (build 61): parked, not done — dashed and dimmed, but the
    text stays readable because you still have to recognise the task. */
 .waitblk{margin-top:10px;padding-top:6px;border-top:1px dashed var(--line)}
-.questrow.waiting{border-style:dashed;background:var(--panel2)}
+/* Wraps because a task can be waiting on several others at once (build 70):
+   one ⛓ chip each, and they'd otherwise squash the row's buttons. */
+.questrow.waiting{border-style:dashed;background:var(--panel2);flex-wrap:wrap}
+.questrow.waiting .qmain{flex:1 0 60%}
 .questrow.waiting .qmain>span{color:var(--muted)}
 .qwait,.qeye{font-size:12px}
 /* An island already queued for a check-in (build 62): the button is spent,
@@ -70,6 +73,10 @@ a.plx:hover{color:var(--accent)}
    countdown that replaces it, and the ⏰ mark a rung timer leaves on the task
    it freed. Brass for all three — it's the app's "this is live" colour. */
 .tpick{width:auto;flex:0 0 auto;font-size:11px;padding:4px 8px;gap:5px;color:var(--muted)}
+/* Blocker picker, beside the ⛓ chips. Same size as the ⏱ timer picker; the
+   list of task titles is long, so the button stays narrow and the menu widens
+   itself. */
+.bpick{width:auto;flex:0 0 auto;font-size:11px;padding:4px 8px;gap:5px;color:var(--muted)}
 .qtimer{cursor:pointer;color:var(--gold);border-color:var(--gold2);font-variant-numeric:tabular-nums}
 .qrang{cursor:pointer;color:var(--gold);border-color:var(--gold2);font-weight:700}
 /* Culture collections (build 64): zoo/museum/garden set tracking under an

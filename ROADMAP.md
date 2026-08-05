@@ -262,6 +262,24 @@ is in CLAUDE.md.
   `npm run test:saves` drives the real provider in jsdom — new/switch/rename/
   duplicate/delete, saves per game, and the untouched-bytes invariant.
 
+- **A task can wait on several** (build 70): "a task might have more than one
+  dependency — once done they should automatically promote the task, same as a
+  timer running out." `QuestItem.wq` became a **list** of blocker texts (a bare
+  string from before parses as one). Ticking or deleting a blocker drops it from
+  every waiter; emptying a waiter's list frees it to the top of the open list
+  carrying a **⛓ unblocked** mark — the same treatment `wr` already gave a rung
+  timer, which is now `"timer" | "deps"` so the chip can say which. Removing a
+  blocker BY HAND leaves the task parked on purpose: the row shouldn't jump out
+  from under the tap. `healBlockers` prunes per blocker rather than all-or-
+  nothing, so a blocker finished on another device just disappears from the
+  list. Why it was reported as "not showing": the only way in was ⏳ then a
+  type-in box that fell back to a plain note whenever the text didn't match a
+  task exactly — silently. Now ⛓ sits on **open** rows too (picking a blocker
+  parks the task for you), the picker is the app's own menu rather than a
+  datalist, and each blocker is a chip you can unlink. `npm run test:quests`
+  covers two blockers, ticking one leaving it parked, the last one promoting it,
+  and the open-row entry point.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)
