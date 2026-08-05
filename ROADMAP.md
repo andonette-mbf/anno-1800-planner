@@ -211,10 +211,42 @@ is in CLAUDE.md.
   select including "(no island)" for a general one. Pure UI over `addQuest` —
   no new state, nothing to sync.
 
+- **M11a — zoo, museum & garden sets** (build 64): collection tracking under
+  the island that has the building. `scripts/extract-culture.mjs` scrapes the
+  wiki's three "Items - …" pages into `src/lib/culture-1800.json` — 44 sets,
+  338 pieces with rarity, attractiveness, DLC and the set's own effect. The
+  panel is built around the moment it gets used: an expedition ends, you are
+  holding an animal, so the filter box searches all 133 at once and auto-opens
+  the set it belongs to, and sets one piece short are called out at the top
+  ("⚑ One piece away — Cordillera: Condor (Uncommon)"). Per island, not
+  global, because a set only pays its bonus when every piece is in ONE
+  building. **1800-only**: 117 has no culture buildings and its wiki has no
+  item data, so the panel never renders there — same call as 📈 growth goals
+  being 1800-only. Two scraping gotchas are recorded in the script: the wiki
+  API is open while the rendered site is not, and Fandom 403s a default
+  user-agent. Tested by `npm run test:culture` (pack + maths) and
+  `npm run test:culture-ui` (the real panel, clicked in jsdom).
+  Deferred: item pictures (the pack records each piece's wiki icon file name
+  so a later pass can fetch them the way build 57 did for goods).
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)
 
+- **M11b — items in use** (next; the other half of the Aug 2026 ask, split off
+  so the collections half could ship on its own). Which specialist sits in
+  which Trade Union / Town Hall / Harbourmaster's Office / ship, per island —
+  the thing you forget between sessions and re-derive by clicking round the
+  map. Sources exist and are bigger than the culture pack: the wiki has
+  `Trade Union items: common…legendary` and `Town Hall items: common…
+  legendary` (five rarity pages each), plus `List of Harbourmaster's Office
+  items`, `List of Ship items` and `List of Arctic Lodge items` — reuse
+  `scripts/extract-culture.mjs`'s fetch/parse spine. Open questions for the
+  session: whether a slot is modelled per building instance ("Trade Union #3")
+  or as one pooled list per island, and how much of an item's effect text is
+  worth carrying. 117 **does** have specialists (the wiki names Epona and the
+  Arboreal Rhizome Veneration) but publishes no list, so 117 would be
+  free-text with no datalist — confirm that's wanted before building it.
 - **M8 — residents per island**: per-tier population counts on each island
   block; the ledger adds resident consumption from `POP` need rates (gated
   by unlock thresholds like `popTargets`) so net = production − chains −

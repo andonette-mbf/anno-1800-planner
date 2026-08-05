@@ -109,6 +109,10 @@ export interface CompanionData {
   // Which world each island is in ("ow"|"nw"|"ar"|"en"), keyed by island
   // name; absent = unknown (pre-build-47 islands) → no datalist filtering.
   islandRegions: Record<string, string>;
+  // What is displayed in this island's culture buildings (M11), keyed island →
+  // building id ("zoo"|"museum"|"garden") → the item names placed there. Per
+  // island because a set only pays out when it is complete in ONE building.
+  islandCulture: Record<string, Record<string, string[]>>;
 }
 
 // findIndex, but "no match" means "the end" — the insertion point that keeps
@@ -148,6 +152,34 @@ function parseChecks(raw: unknown): CheckItem[] {
       };
     })
     .filter((x) => x.t);
+}
+
+// island → building → placed item names. Names are the identity (they are what
+// the game's own item card says), so the only cleaning needed is dropping
+// blanks and duplicates; unknown building ids are kept rather than dropped, so
+// a future pack that adds a fourth culture building doesn't lose a save made
+// by a newer client.
+function parseCulture(raw: unknown): Record<string, Record<string, string[]>> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  const out: Record<string, Record<string, string[]>> = {};
+  for (const [island, byB] of Object.entries(raw as Record<string, unknown>)) {
+    if (!byB || typeof byB !== "object" || Array.isArray(byB)) continue;
+    const b: Record<string, string[]> = {};
+    for (const [bid, list] of Object.entries(byB as Record<string, unknown>)) {
+      if (!Array.isArray(list)) continue;
+      const seen = new Set<string>();
+      const items: string[] = [];
+      for (const raw of list) {
+        const s = String(raw).trim();
+        if (!s || seen.has(s.toLowerCase())) continue;
+        seen.add(s.toLowerCase());
+        items.push(s);
+      }
+      if (items.length) b[bid] = items;
+    }
+    if (Object.keys(b).length) out[island] = b;
+  }
+  return out;
 }
 
 function loadLocal(game: Game = "anno1800"): CompanionData {
@@ -200,6 +232,10 @@ function loadLocal(game: Game = "anno1800"): CompanionData {
         Object.entries(ir).filter(([, v]) => typeof v === "string" && v)
       ) as Record<string, string>;
   } catch {}
+  let islandCulture: Record<string, Record<string, string[]>> = {};
+  try {
+    islandCulture = parseCulture(JSON.parse(ls.get(k("anno_island_culture")) || "{}"));
+  } catch {}
   try {
     const q = JSON.parse(ls.get(k("anno_quests")) || "[]");
     if (Array.isArray(q))
@@ -227,6 +263,7 @@ function loadLocal(game: Game = "anno1800"): CompanionData {
     islandChecks,
     islandPlans,
     islandRegions,
+    islandCulture,
   };
 }
 
@@ -242,6 +279,7 @@ function saveLocal(d: CompanionData, game: Game = "anno1800") {
   ls.set(k("anno_island_checks"), JSON.stringify(d.islandChecks || {}));
   ls.set(k("anno_island_plans"), JSON.stringify(d.islandPlans || {}));
   ls.set(k("anno_island_regions"), JSON.stringify(d.islandRegions || {}));
+  ls.set(k("anno_island_culture"), JSON.stringify(d.islandCulture || {}));
 }
 
 const EMPTY_DATA: CompanionData = {
@@ -255,6 +293,7 @@ const EMPTY_DATA: CompanionData = {
   islandChecks: {},
   islandPlans: {},
   islandRegions: {},
+  islandCulture: {},
 };
 
 // The synced blob stays 1800-shaped at the top level — an older client (or an
@@ -274,6 +313,7 @@ function fromBlob(blob: SyncBlob, local: Record<Game, CompanionData>): Record<Ga
     islandChecks: Object.fromEntries(
       Object.entries(d.islandChecks || {}).map(([k, v]) => [k, parseChecks(v)])
     ),
+    islandCulture: parseCulture(d.islandCulture),
   });
   return {
     anno1800: norm({ ...local.anno1800, ...(rest as CompanionData) }),
@@ -336,6 +376,16 @@ interface CompanionCtx {
   setIslandElec: (island: string, i: number, count: number) => void;
   seedIslandChecks: (island: string, seed: { t: string; n: number }[]) => void;
   setIslandPlan: (island: string, plan: IslandPlan | null) => void;
+  /** Put a culture item into (or take it out of) an island's zoo/museum/
+   *  garden. `item` is the piece's display name, as the pack lists it. */
+  setIslandCulture: (
+    island: string,
+    building: string,
+    item: string,
+    on: boolean
+  ) => void;
+  /** Empty one culture building on one island. */
+  clearIslandCulture: (island: string, building: string) => void;
 }
 
 const CompanionContext = createContext<CompanionCtx | null>(null);
@@ -606,12 +656,16 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           const islandRegions = { ...(d.islandRegions || {}) };
           for (const k of Object.keys(islandRegions))
             if (k.toLowerCase() === n) delete islandRegions[k];
+          const islandCulture = { ...(d.islandCulture || {}) };
+          for (const k of Object.keys(islandCulture))
+            if (k.toLowerCase() === n) delete islandCulture[k];
           return {
             ...d,
             islands: (d.islands || []).filter((x) => x.toLowerCase() !== n),
             islandChecks,
             islandPlans,
             islandRegions,
+            islandCulture,
           };
         }),
       addIslandCheck: (island, t) => {
@@ -723,6 +777,37 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           if (plan) islandPlans[island] = plan;
           else delete islandPlans[island];
           return { ...d, islandPlans };
+        }),
+      setIslandCulture: (island, building, item, on) => {
+        const name = item.trim();
+        if (!name) return;
+        update((d) => {
+          const all = { ...(d.islandCulture || {}) };
+          const cur = all[island]?.[building] || [];
+          const has = cur.some((x) => x.toLowerCase() === name.toLowerCase());
+          if (on === has) return d;
+          const next = on
+            ? [...cur, name]
+            : cur.filter((x) => x.toLowerCase() !== name.toLowerCase());
+          const byB = { ...(all[island] || {}) };
+          // Empty lists are dropped rather than stored, so an island that owns
+          // nothing leaves no key behind in the synced blob.
+          if (next.length) byB[building] = next;
+          else delete byB[building];
+          if (Object.keys(byB).length) all[island] = byB;
+          else delete all[island];
+          return { ...d, islandCulture: all };
+        });
+      },
+      clearIslandCulture: (island, building) =>
+        update((d) => {
+          const all = { ...(d.islandCulture || {}) };
+          if (!all[island]?.[building]) return d;
+          const byB = { ...all[island] };
+          delete byB[building];
+          if (Object.keys(byB).length) all[island] = byB;
+          else delete all[island];
+          return { ...d, islandCulture: all };
         }),
     }),
     [data, game, setGame, sync, update]

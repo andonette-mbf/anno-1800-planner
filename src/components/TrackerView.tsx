@@ -13,6 +13,7 @@ import { CalcState, DEFAULT_STATE } from "@/lib/engine";
 import { GAME_CONTENT, type Game } from "@/lib/games";
 import { buildingOptionsFor, elecCapable, islandLedger, itemGood, siloCapable } from "@/lib/ledger";
 import { planCheck, planSeed } from "@/lib/plancheck";
+import CultureBlock from "./CultureBlock";
 import { GoodIcon } from "./GoodIcon";
 import { useAuth, useCompanion, type QuestItem } from "@/lib/store";
 
@@ -1453,6 +1454,7 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                         </div>
                       );
                     })()}
+                  <CultureBlock island={name} items={items} game={game} />
                   <div className="plrow">
                     <input
                       placeholder="Add building… e.g. Sheep Farm — Enter to add"

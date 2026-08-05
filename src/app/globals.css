@@ -62,3 +62,38 @@ a.plx:hover{color:var(--accent)}
 .qeye.on:disabled{opacity:.9;color:var(--gold);cursor:default}
 .wnote{width:auto;flex:0 0 auto;max-width:34%;font-size:11.5px;padding:4px 8px;color:var(--muted)}
 @media(max-width:560px){.wnote{max-width:28%}}
+/* Culture collections (build 64): zoo/museum/garden set tracking under an
+   island. Everything starts collapsed — three buildings' worth of sets is a
+   lot of rows, and the tracker's rule since build 43 is that a card earns its
+   height. Rarity rides on the chip's left border rather than a text tag, so a
+   long name still fits on a phone. */
+.cuwrap{display:flex;flex-direction:column;gap:2px}
+.cublk{border-top:1px dashed var(--line);padding-top:4px}
+.cublk:first-child{border-top:0;padding-top:0}
+.cuhd,.cusethd{display:flex;align-items:baseline;gap:7px;width:100%;background:0 0;border:0;padding:4px 2px;cursor:pointer;text-align:left;font:inherit;color:var(--ink)}
+.cuhd:hover,.cusethd:hover{color:var(--gold)}
+.cuarrow{color:var(--dim);flex:0 0 auto;font-size:10px}
+.cunm{font-weight:700}
+.cusum{flex:1;font-size:11px}
+.cubd{padding:2px 0 6px 14px}
+.cunext{margin:2px 0 6px;color:var(--gold);font-weight:600}
+.curow{display:flex;gap:6px;margin:0 0 6px}
+.cufind{padding:5px 9px;font-size:12px}
+.curow .linkbtn{padding:5px 10px;white-space:nowrap}
+.cuset{border-top:1px solid #ece2ca}
+.cuset:first-of-type{border-top:0}
+.cusetnm{flex:1;min-width:0}
+.cuset.done .cusetnm{color:var(--green)}
+.cucount{color:var(--muted);flex:0 0 auto;font-size:11px}
+.cucount.ok{color:var(--green);font-weight:700}
+.cusethd .pill{flex:0 0 auto;font-size:10px}
+.cusetbd{padding:2px 0 8px 17px}
+.cueffect{margin:0 0 6px;color:var(--muted);font-size:11.5px;line-height:1.4}
+.cuitem{font-size:11.5px;padding:4px 8px;border-left-width:3px}
+.cuitem.rarUncommon{border-left-color:var(--green)}
+.cuitem.rarRare{border-left-color:var(--accent)}
+.cuitem.rarEpic{border-left-color:#7d4796}
+.cuitem.rarLegendary{border-left-color:var(--gold2)}
+.cuitem.rarQuest{border-left-color:var(--teal)}
+.cuitem.on{border-left-color:var(--gold2)}
+.cunone{margin:4px 0}

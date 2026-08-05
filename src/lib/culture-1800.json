@@ -1,0 +1,2457 @@
+{
+ "pack": 1,
+ "source": {
+  "wiki": "https://anno1800.fandom.com",
+  "note": "Item values © Ubisoft; tables transcribed by the Anno 1800 Wiki community (CC-BY-SA).",
+  "pages": [
+   {
+    "page": "Items - zoo",
+    "revid": 19186
+   },
+   {
+    "page": "Items - museum",
+    "revid": 19187
+   },
+   {
+    "page": "Items - botanical garden",
+    "revid": 27777
+   }
+  ]
+ },
+ "rarity": [
+  "Common",
+  "Uncommon",
+  "Rare",
+  "Epic",
+  "Legendary",
+  "Quest"
+ ],
+ "buildings": [
+  {
+   "id": "zoo",
+   "label": "Zoo",
+   "noun": "animal",
+   "sets": [
+    {
+     "id": "abyssal-depths",
+     "label": "Abyssal Depths",
+     "dlc": "Sunken Treasures",
+     "effect": "Salvager get increased chance of finding Epic and Legendary animals.",
+     "items": [
+      {
+       "n": "Black Swallower",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon blackswallower 0.png"
+      },
+      {
+       "n": "Blobfish",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon blob fish 0.png"
+      },
+      {
+       "n": "Goblin Shark",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon goblinshark 0.png"
+      },
+      {
+       "n": "Helmet Jellyfish",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon helmet jellyfish 0.png"
+      },
+      {
+       "n": "Prickly Sea-Devil",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon anglerfish 0.png"
+      },
+      {
+       "n": "The Kraken",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon kraken 0.png"
+      }
+     ]
+    },
+    {
+     "id": "arctic-tundra",
+     "label": "Arctic Tundra",
+     "dlc": "The Passage",
+     "effect": "Applies to: Public Moorings +100 Increased Visits: +5% Increases the chance of specialists visiting your island",
+     "items": [
+      {
+       "n": "Arctic Wolf",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Arctic wolf 0.png"
+      },
+      {
+       "n": "Boreal Caribou",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Reindeer 0.png"
+      },
+      {
+       "n": "Musk Ox",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Musk oxen 0.png"
+      }
+     ]
+    },
+    {
+     "id": "cordillera",
+     "label": "Cordillera",
+     "effect": "+10% increased workforce and income from Farmer and Jornalero Residence.",
+     "items": [
+      {
+       "n": "Alpaca",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon alpacca 0.png"
+      },
+      {
+       "n": "Condor",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Vulture ver2 0.png"
+      },
+      {
+       "n": "Spectacled Bear",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Spectacled bear 0.png"
+      }
+     ]
+    },
+    {
+     "id": "domestic-animals",
+     "label": "Domestic Animals",
+     "effect": "Animal Farms have +5% production and -10% maintenance cost.",
+     "items": [
+      {
+       "n": "Cattle",
+       "r": "Common",
+       "a": 10,
+       "icon": "Cattle 0.png"
+      },
+      {
+       "n": "Chicken",
+       "r": "Common",
+       "a": 10,
+       "icon": "Chicken 0.png"
+      },
+      {
+       "n": "Domestic Pig",
+       "r": "Common",
+       "a": 10,
+       "icon": "Pigs.png"
+      },
+      {
+       "n": "Goat",
+       "r": "Common",
+       "a": 10,
+       "icon": "Goat 0.png"
+      },
+      {
+       "n": "Horse",
+       "r": "Common",
+       "a": 10,
+       "icon": "Horse 0.png"
+      },
+      {
+       "n": "Sheep",
+       "r": "Common",
+       "a": 10,
+       "icon": "Sheep 0.png"
+      }
+     ]
+    },
+    {
+     "id": "eastern-jungle",
+     "label": "Eastern Jungle",
+     "effect": "Harbor Activity +100%. Every time passive trade happens at the trading post, there is a chance of gaining 5t of Coffee Beans, Sugar Cane, Tobacco, Cotton, Cocoa, Plantains, Pearls, Chocolate, Coffee, Fried Plantains, Tortillas, or Sugar.",
+     "items": [
+      {
+       "n": "Eastern Elephant",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Elephant 0.png"
+      },
+      {
+       "n": "Chital",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Chital 0.png"
+      },
+      {
+       "n": "Crocodile",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Crocodile 0.png"
+      },
+      {
+       "n": "Peacock",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Peacock 0.png"
+      },
+      {
+       "n": "Tiger",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Tiger 0.png"
+      },
+      {
+       "n": "Eastern Water Buffalo",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon waterbuffalo 0.png"
+      }
+     ]
+    },
+    {
+     "id": "enbesan-highlands",
+     "label": "Enbesan Highlands",
+     "dlc": "Land of Lions",
+     "effect": "Scholar Residence Consumption of Seafood Stew : -10% Consumption of Hibiscus Tea : -10%",
+     "items": [
+      {
+       "n": "Bearded Vulture",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon bearded vulture 0.png"
+      },
+      {
+       "n": "Enbesan Wolf",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon enbesan wolf 0.png"
+      },
+      {
+       "n": "Gelada",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon gelada 0.png"
+      },
+      {
+       "n": "Mountain Nyala",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon mountain nyala 0.png"
+      },
+      {
+       "n": "Oryxe",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon oryx 0.png"
+      },
+      {
+       "n": "Two-Horned Chameleon",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon bale two horned chameleon 0.png"
+      }
+     ]
+    },
+    {
+     "id": "extinct-species",
+     "label": "Extinct Species",
+     "effect": "+10% from Zoological Gardens. Inspiration: writers from all over your city will gather around your Zoological Gardens to offer you unique quests.",
+     "items": [
+      {
+       "n": "Dire Wolf",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Dire wolf 0.png"
+      },
+      {
+       "n": "Giant Deer",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Giant deer 0.png"
+      },
+      {
+       "n": "Kolponomos",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Kolponomos 0.png"
+      }
+     ]
+    },
+    {
+     "id": "great-coral-reef",
+     "label": "Great Coral Reef",
+     "effect": "+2 Happiness and +2 (affects Worker Residence, Artisan Residence, Obrero Residence, and Hacienda Obrera Quarters).",
+     "items": [
+      {
+       "n": "Bottlenose Dolphin",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Dolphin 0.png"
+      },
+      {
+       "n": "Balloonfish",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Balloonfish 0.png"
+      },
+      {
+       "n": "Green Turtle",
+       "r": "Common",
+       "a": 10,
+       "icon": "Icon turtle 0.png"
+      },
+      {
+       "n": "Lionfish",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Lionfish 0.png"
+      },
+      {
+       "n": "Manta Ray",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Mantaray 0.png"
+      },
+      {
+       "n": "Seahorses",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Seahorses 0.png"
+      }
+     ]
+    },
+    {
+     "id": "great-desert",
+     "label": "Great Desert",
+     "dlc": "Land of Lions",
+     "effect": "Applies to: Fire Station Extinguish Speed: +30% Unit Movement Speed: +10%",
+     "items": [
+      {
+       "n": "Dromedary",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon dromedary 0.png"
+      },
+      {
+       "n": "Emperor Scorpion",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon scorpion 0.png"
+      },
+      {
+       "n": "Fennec",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon fennec 0.png"
+      }
+     ]
+    },
+    {
+     "id": "luminaries",
+     "label": "Luminaries",
+     "dlc": "Sunken Treasures",
+     "effect": "+3 from Pubs, Variety Theatres, Members Clubs, Shopping Arcades and Restaurants (non-monument).",
+     "items": [
+      {
+       "n": "Deep-Sea Dragonfish",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon glowfish 01.png"
+      },
+      {
+       "n": "Unknown Luminescent Fish",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon glowfish 02.png"
+      },
+      {
+       "n": "Firefly Squid",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon glowfish 03.png"
+      }
+     ]
+    },
+    {
+     "id": "miombo-woodlands",
+     "label": "Miombo Woodlands",
+     "dlc": "Land of Lions",
+     "effect": "Applies to: Lumberjack's Hut , Charcoal Kiln , Hunting Cabin Reduces the number of trees needed to reach optimal productivity by 10% Attractiveness : +5",
+     "items": [
+      {
+       "n": "Black Rhino",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon black rhino 0.png"
+      },
+      {
+       "n": "Caracal",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon caracal 0.png"
+      },
+      {
+       "n": "Elephant",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon elephant 0.png"
+      },
+      {
+       "n": "Giraffe",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon giraffe 0.png"
+      },
+      {
+       "n": "Impala",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon impala 0.png"
+      },
+      {
+       "n": "Wild Dog",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon wild dog 0.png"
+      }
+     ]
+    },
+    {
+     "id": "ocean-predators",
+     "label": "Ocean Predators",
+     "effect": "All Coastal Production Buildings receive +10% productivity, -10% maintenance cost, and require 5% less workforce.",
+     "items": [
+      {
+       "n": "Great White Shark",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Shark 0.png"
+      },
+      {
+       "n": "Orca",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Orca 0.png"
+      },
+      {
+       "n": "Swordfish",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Swordfish 0.png"
+      }
+     ]
+    },
+    {
+     "id": "polar-circle",
+     "label": "Polar Circle",
+     "dlc": "The Passage",
+     "effect": "All Cloth Industries have +25% production and -25% maintenance cost. (Applies to: Framework Knitters , Fur Dealer , Poncho Darner , Bombín Weaver , Tailor's Shop )",
+     "items": [
+      {
+       "n": "Arctic Fox",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon arctic fox.png"
+      },
+      {
+       "n": "Great Auk",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon great auk.png"
+      },
+      {
+       "n": "Narwhal",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon narwhale.png"
+      },
+      {
+       "n": "Polar Bear",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon polar bear.png"
+      },
+      {
+       "n": "Ringed Seal",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon sealion.png"
+      },
+      {
+       "n": "Walrus",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon walrus.png"
+      }
+     ]
+    },
+    {
+     "id": "proud-savannah",
+     "label": "Proud Savannah",
+     "dlc": "Land of Lions",
+     "effect": "Applies to: Cattle Farm , Alpaca Farm , Nandu Farm , All Powered Pastures Productivity: +25% No. of Modules: -25% Extra Goods: Occasionally produces extra output every 3rd cycle",
+     "items": [
+      {
+       "n": "Cheetah",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon cheeta 0.png"
+      },
+      {
+       "n": "Imperial Zebra",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon zebra 0.png"
+      },
+      {
+       "n": "Lion",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon lion 0.png"
+      },
+      {
+       "n": "Ostrich",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon ostrich 0.png"
+      },
+      {
+       "n": "Spotted Hyena",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon spotted hyena 0.png"
+      },
+      {
+       "n": "Wildebeest",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon wildebeest 0.png"
+      }
+     ]
+    },
+    {
+     "id": "rainforest",
+     "label": "Rainforest",
+     "effect": "+30 from all Trade Unions.",
+     "items": [
+      {
+       "n": "Black Caiman",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon black caiman 0.png"
+      },
+      {
+       "n": "Black Jaguar",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Black panther 0.png"
+      },
+      {
+       "n": "Iguaca",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Puerto rican amazon 0.png"
+      },
+      {
+       "n": "Jaguar",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Jaguar 0.png"
+      },
+      {
+       "n": "Pink River Dolphin",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Amazonas dolphin 0.png"
+      },
+      {
+       "n": "Pelican",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Pelican 0.png"
+      }
+     ]
+    },
+    {
+     "id": "snowflakes",
+     "label": "Snowflakes",
+     "effect": "-50% maintenance, +20% from Zoological Gardens",
+     "items": [
+      {
+       "n": "White Tiger",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Snow tiger 0.png"
+      },
+      {
+       "n": "Albino Fennec",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Albinos fennec 0.png"
+      },
+      {
+       "n": "Baiji",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "White flag dolphin 0.png"
+      },
+      {
+       "n": "Albino Alligator",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon albino crocodile 0.png"
+      },
+      {
+       "n": "White Peacock",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon albino peacock 0.png"
+      },
+      {
+       "n": "Albino Gorilla",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon albino gorilla 0.png"
+      }
+     ]
+    },
+    {
+     "id": "taiga-forest",
+     "label": "Taiga Forest",
+     "effect": "Residents consume 5% less Fish, Bread, Canned Food, Sausages, Chocolate, Fried Plantains, Tortillas and Seafood Stew.",
+     "items": [
+      {
+       "n": "Black Bear",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Black bear 0.png"
+      },
+      {
+       "n": "Brown Bear",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Brown bear 0.png"
+      },
+      {
+       "n": "Elk",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Elk 0.png"
+      }
+     ]
+    },
+    {
+     "id": "teeming-lakes",
+     "label": "Teeming Lakes",
+     "dlc": "Land of Lions",
+     "effect": "+20% Productivity for all Coastal Production Buildings",
+     "items": [
+      {
+       "n": "Flamingo",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon flamingo 0.png"
+      },
+      {
+       "n": "Grey Crowned Crane",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon grey crowned crane 0.png"
+      },
+      {
+       "n": "Hippopotamus",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon hippotanamus 0.png"
+      }
+     ]
+    }
+   ],
+   "loose": [
+    {
+     "n": "Alligator Gar",
+     "r": "Rare",
+     "a": 30,
+     "dlc": "Sunken Treasures",
+     "icon": "Icon aligatorgator 0.png"
+    },
+    {
+     "n": "Bat-Eared Fennec",
+     "r": "Rare",
+     "a": 30,
+     "dlc": "Land of Lions",
+     "icon": "Icon bat eared fennec 0.png"
+    },
+    {
+     "n": "Bird-of-Paradise",
+     "r": "Epic",
+     "a": 40,
+     "icon": "Peacock 0.png"
+    },
+    {
+     "n": "Bison",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Bison 0.png"
+    },
+    {
+     "n": "Butterflies",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Butterflies 0.png"
+    },
+    {
+     "n": "California Gull",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Icon california gull 0.png"
+    },
+    {
+     "n": "Coastal Leopard",
+     "r": "Legendary",
+     "a": 50,
+     "icon": "Icon zanzibar leopard 0.png"
+    },
+    {
+     "n": "Coelacanth",
+     "r": "Legendary",
+     "a": 50,
+     "dlc": "Sunken Treasures",
+     "icon": "Icon coelacanth 0.png"
+    },
+    {
+     "n": "Curly-Hair Tarantula",
+     "r": "Uncommon",
+     "a": 20,
+     "dlc": "Land of Lions",
+     "icon": "Icon spider 0.png"
+    },
+    {
+     "n": "Dog Fox",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Blanfords fox 0.png"
+    },
+    {
+     "n": "Domestic Cat",
+     "r": "Common",
+     "a": 10,
+     "icon": "Cat 0.png"
+    },
+    {
+     "n": "Domestic Dog",
+     "r": "Common",
+     "a": 10,
+     "icon": "Dog 0.png"
+    },
+    {
+     "n": "Donkey",
+     "r": "Common",
+     "a": 10,
+     "icon": "Donkey 0.png"
+    },
+    {
+     "n": "Dusky Dolphin",
+     "r": "Epic",
+     "a": 40,
+     "icon": "Dusky dolphin 0.png"
+    },
+    {
+     "n": "Eagle",
+     "r": "Common",
+     "a": 10,
+     "icon": "Eagle 0.png"
+    },
+    {
+     "n": "Eastern Giant Snail",
+     "r": "Common",
+     "a": 10,
+     "dlc": "Land of Lions",
+     "icon": "Icon gigant snail 0.png"
+    },
+    {
+     "n": "Endangered Butterflies",
+     "r": "Epic",
+     "a": 40,
+     "icon": "Butterflies 0.png"
+    },
+    {
+     "n": "False Killer Whale",
+     "r": "Epic",
+     "a": 40,
+     "icon": "False killer whale 0.png"
+    },
+    {
+     "n": "Geckos",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Lizard 0.png"
+    },
+    {
+     "n": "Glossy Black Cockatoo",
+     "r": "Rare",
+     "a": 30,
+     "icon": "Black cockatoo 0.png"
+    },
+    {
+     "n": "Gorilla",
+     "r": "Rare",
+     "a": 30,
+     "icon": "Gorilla 0.png"
+    },
+    {
+     "n": "Grey Wolf",
+     "r": "Common",
+     "a": 10,
+     "icon": "Wolf.png"
+    },
+    {
+     "n": "Ivory Gull",
+     "r": "Uncommon",
+     "a": 20,
+     "dlc": "The Passage",
+     "icon": "Icon ivory ygull 0.png"
+    },
+    {
+     "n": "Jellyfish",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Jellyfish 0.png"
+    },
+    {
+     "n": "Kingfisher",
+     "r": "Rare",
+     "a": 30,
+     "icon": "Smallbirds 0.png"
+    },
+    {
+     "n": "Lake Orangutan",
+     "r": "Legendary",
+     "a": 50,
+     "icon": "Bornean orangutan 0.png"
+    },
+    {
+     "n": "Lion's Mane Jellyfish",
+     "r": "Epic",
+     "a": 40,
+     "dlc": "Sunken Treasures",
+     "icon": "Icon gigant orange jellyfish 0.png"
+    },
+    {
+     "n": "Mathilde the parrot",
+     "r": "Epic",
+     "a": 40,
+     "icon": "Puerto rican amazon 0.png"
+    },
+    {
+     "n": "Norfolk Kaka",
+     "r": "Legendary",
+     "a": 50,
+     "icon": "Norfolk kaka 0.png"
+    },
+    {
+     "n": "Orangutan",
+     "r": "Epic",
+     "a": 40,
+     "icon": "Orangutan 0.png"
+    },
+    {
+     "n": "Ox",
+     "r": "Common",
+     "a": 10,
+     "icon": "Oxen 0.png"
+    },
+    {
+     "n": "Parrot",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Parrot 0.png"
+    },
+    {
+     "n": "Pigeon",
+     "r": "Common",
+     "a": 10,
+     "icon": "Pigeon 0.png"
+    },
+    {
+     "n": "Puma",
+     "r": "Rare",
+     "a": 30,
+     "icon": "Puma 0.png"
+    },
+    {
+     "n": "Pygmy Hedgehog",
+     "r": "Common",
+     "a": 10,
+     "dlc": "Land of Lions",
+     "icon": "Icon pygmy hedgehog 0.png"
+    },
+    {
+     "n": "Pygmy Killer Whale",
+     "r": "Epic",
+     "a": 40,
+     "icon": "Pygmy killer whale 0.png"
+    },
+    {
+     "n": "Rats",
+     "r": "Common",
+     "a": 10,
+     "icon": "Rodents 0.png"
+    },
+    {
+     "n": "Red Deer",
+     "r": "Common",
+     "a": 10,
+     "icon": "Deer 0.png"
+    },
+    {
+     "n": "Red Fox",
+     "r": "Common",
+     "a": 10,
+     "icon": "Fox 0.png"
+    },
+    {
+     "n": "Seagull",
+     "r": "Common",
+     "a": 10,
+     "icon": "Seagull 0.png"
+    },
+    {
+     "n": "Silverback Gorilla",
+     "r": "Epic",
+     "a": 40,
+     "icon": "Gorilla silverback 0.png"
+    },
+    {
+     "n": "Southern Gull",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Pacific gull 0.png"
+    },
+    {
+     "n": "Sperm Whale",
+     "r": "Epic",
+     "a": 40,
+     "icon": "Sharkwhale 0.png"
+    },
+    {
+     "n": "Spitting Cobra",
+     "r": "Rare",
+     "a": 30,
+     "dlc": "Land of Lions",
+     "icon": "Icon snake 0.png"
+    },
+    {
+     "n": "Spotted Dolphin",
+     "r": "Epic",
+     "a": 40,
+     "icon": "Spotted dolphin 0.png"
+    },
+    {
+     "n": "Stork",
+     "r": "Common",
+     "a": 10,
+     "icon": "Storck 0.png"
+    },
+    {
+     "n": "Swan",
+     "r": "Common",
+     "a": 10,
+     "icon": "Swan 0.png"
+    },
+    {
+     "n": "Swift",
+     "r": "Common",
+     "a": 10,
+     "icon": "Swift 0.png"
+    },
+    {
+     "n": "Vaquita",
+     "r": "Legendary",
+     "a": 50,
+     "icon": "Vaquita 0.png"
+    }
+   ]
+  },
+  {
+   "id": "museum",
+   "label": "Museum",
+   "noun": "artifact",
+   "sets": [
+    {
+     "id": "aegean-cultures",
+     "label": "Aegean Cultures",
+     "effect": "+5 and 20% reduced maintenance from Variety Theatres, Museums and Radio Towers. Variety Theatres have new tooltips displaying which play they are currently staging.",
+     "items": [
+      {
+       "n": "Dionysian Mosaic",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon corinthian mosaik 0.png"
+      },
+      {
+       "n": "Olympian Temple Remains",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon corinthian olympean remain 0.png"
+      },
+      {
+       "n": "Song of Ilion",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon scroll anthology myths 0.png"
+      },
+      {
+       "n": "Song of Odysseus",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon scroll odyssey 0.png"
+      },
+      {
+       "n": "Statue of Enesidaone",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon statue marble statue 0.png"
+      },
+      {
+       "n": "Temple of Enesidaone",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon corinthian temple of posseidon 0.png"
+      }
+     ]
+    },
+    {
+     "id": "atlantean",
+     "label": "Atlantean",
+     "dlc": "Sunken Treasures",
+     "effect": "Salvager get increased chance of finding Epic and Legendary artefacts.",
+     "items": [
+      {
+       "n": "Atlantean Tablet",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon tablet 1 0.png"
+      },
+      {
+       "n": "Atlantean Wall",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon atlantis wall 0.png"
+      },
+      {
+       "n": "Court of Laws",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon colums of law 0.png"
+      },
+      {
+       "n": "Orichalcum Statue",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon orichalk statue 0.png"
+      },
+      {
+       "n": "Summit of Atlantis",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon yonaguni pyramid 0.png"
+      },
+      {
+       "n": "Temple of Poseidon",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon temple of posseidon 0.png"
+      }
+     ]
+    },
+    {
+     "id": "battle-of-trelawney",
+     "label": "Battle of Trelawney",
+     "dlc": "Sunken Treasures",
+     "effect": "+20% increased damage to sailing ships Unwavering: your ship deals increased damage when its hitpoints are running low",
+     "items": [
+      {
+       "n": "Admiral Nadasky's Sabre",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon nadaskys sword.png"
+      },
+      {
+       "n": "Imperial Figurehead",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon empire figurehead.png"
+      },
+      {
+       "n": "Nadasky's Medal",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon nadaskys medal.png"
+      }
+     ]
+    },
+    {
+     "id": "bronze-age",
+     "label": "Bronze Age",
+     "effect": "Affects Lumberjacks' Huts, Hunting Cabins, Quarries and all Old and New World Orchards. +5% productivity, +5 and extra goods (extra output of the produced good: 1 extra ton per 10 cycles)",
+     "items": [
+      {
+       "n": "Brón Dolmen",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon celtic dolmen 0.png"
+      },
+      {
+       "n": "Goidelic Stone Circle",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon museum celts stonehenge 0.png"
+      },
+      {
+       "n": "Goidelic Stone Knot",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon celtic carving 0.png"
+      },
+      {
+       "n": "Menhirs",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon celtic menhirs 0.png"
+      },
+      {
+       "n": "Tara Brooch",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon necklace rare 0.PNG"
+      },
+      {
+       "n": "White Tooth, Sword of Rhydderch",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon museum celts dyrnwyn 0.png"
+      }
+     ]
+    },
+    {
+     "id": "empire-of-the-eagle",
+     "label": "Empire of the Eagle",
+     "effect": "+5% increased income from Residences. 10% reduced chance of fires, illness, riots and explosions from Residences.",
+     "items": [
+      {
+       "n": "Augustan Forum",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon roman forum remains 0.PNG"
+      },
+      {
+       "n": "Imperial Eagle Mosaic",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon corinthian mosaik 1 0.png"
+      },
+      {
+       "n": "Sanctuary of Hellebore",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon roman sanctuary 0.png"
+      }
+     ]
+    },
+    {
+     "id": "gods-of-the-delta",
+     "label": "Gods of the Delta",
+     "dlc": "Land of Lions",
+     "effect": "+30 and +10 from Town Halls & Trade Unions",
+     "items": [
+      {
+       "n": "Hor Statue",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon hor statue 0.png"
+      },
+      {
+       "n": "Statue of Anubis",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon anpu statue 0.png"
+      },
+      {
+       "n": "Temple of Nafir Diorama",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon temple of nafir 0.png"
+      }
+     ]
+    },
+    {
+     "id": "heirlooms-of-the-gold-realm",
+     "label": "Heirlooms of the Gold-Realm",
+     "dlc": "Land of Lions",
+     "effect": "Applies to: Trading Posts and Piers. Harbor Activity: 20%. Every time passive trade happens at the trading post, there is a chance of gaining 5t of Gold , Jewellery",
+     "items": [
+      {
+       "n": "Masu Masu's Trinket",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon mansa musas souvenir 0.png"
+      },
+      {
+       "n": "Masu's Mapamundi",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon mappamundi 0.png"
+      },
+      {
+       "n": "Tambacto Diorama",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon model of tambacto 0.png"
+      }
+     ]
+    },
+    {
+     "id": "icebound",
+     "label": "Icebound",
+     "dlc": "The Passage",
+     "effect": "Maintenance Cost: -20% affecting All Food Production, All Drinks Production Buildings, Chemical Plant: Lemonade, Orchard: Jam, Assembly Line: Biscuits, Artisan's Workshop: Cognac, and Chemical Plant: Chewing Gum.",
+     "items": [
+      {
+       "n": "Collection Of Lost Expedition Relics",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon security 0.png"
+      },
+      {
+       "n": "Frozen Woolly Mammoth",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon museum mammoth 0.png"
+      },
+      {
+       "n": "Wolf Pup Mummy",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon wolf mummy 0.png"
+      }
+     ]
+    },
+    {
+     "id": "jurassic",
+     "label": "Jurassic",
+     "effect": "+10% income and +10 Happiness from Residences.",
+     "items": [
+      {
+       "n": "Ammonites",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon fossils 0.png"
+      },
+      {
+       "n": "Apatosaurus",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon museum sauropodon 0.png"
+      },
+      {
+       "n": "Mosasaurus Fossil",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon museum mosasaurus 0.png"
+      },
+      {
+       "n": "Protoceratops Eggs",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon dinosaur egg 0.png"
+      },
+      {
+       "n": "Stegosaurus",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon museum stegosaurus 0.png"
+      },
+      {
+       "n": "T-Rex",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon museum t rex 0.png"
+      }
+     ]
+    },
+    {
+     "id": "lost-cities",
+     "label": "Lost Cities",
+     "effect": "Harbour Activity +100%. Every time passive trade happens at the trading post, there is a chance of gaining 5t of Gold Ore, Gold or Jewellery",
+     "items": [
+      {
+       "n": "Mesoan Calendar",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon mayan calendar 0.png"
+      },
+      {
+       "n": "Mesoan Glyphs",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon mayan glyphs 0.png"
+      },
+      {
+       "n": "Mesoan Harbour",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon mayan seaport 0.png"
+      },
+      {
+       "n": "Mesoan House",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon mayan house 0.png"
+      },
+      {
+       "n": "Mesoan Temple",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon mayan temple 0.png"
+      },
+      {
+       "n": "Takal's Necklace",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon necklace epic 0.PNG"
+      }
+     ]
+    },
+    {
+     "id": "lost-tribes",
+     "label": "Lost Tribes",
+     "dlc": "Land of Lions",
+     "effect": "Residences have -5% consumption of Sewing Machines , Canned Food and Coffee",
+     "items": [
+      {
+       "n": "Animal Figure",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon chiwara figure 0.png"
+      },
+      {
+       "n": "Bovine Ivory Ring",
+       "r": "Common",
+       "a": 10,
+       "icon": "Icon bovine ivory ring 0.png"
+      },
+      {
+       "n": "Intricate Baked Mud Tile",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon yarobu carving 0.png"
+      },
+      {
+       "n": "Mother and Child Figure",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon phemba 0.png"
+      },
+      {
+       "n": "Painted Mask",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon giwoyo mask 0.png"
+      },
+      {
+       "n": "Striking Terracotta Figure",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon nuk terracota figure 0.png"
+      }
+     ]
+    },
+    {
+     "id": "new-world-huaca",
+     "label": "New World Huaca",
+     "effect": "Increased Visits: +5%. Increases the chance of specialists visiting your island. Special Guests: Unique specialists may visit your city.",
+     "items": [
+      {
+       "n": "Juanita the Mummy",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon mummy nazcan 0.png"
+      },
+      {
+       "n": "Monkey-Tooth Amulet",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon monkey amulet 0.png"
+      },
+      {
+       "n": "Nazcan Tomb",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon nascan tomb 0.png"
+      }
+     ]
+    },
+    {
+     "id": "northern-sagas",
+     "label": "Northern Sagas",
+     "effect": "+5% maximum hitpoints and +3% increased damage for all of your warships",
+     "items": [
+      {
+       "n": "Altar of Uppsidaisi",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon viking uppsala altar 0.png"
+      },
+      {
+       "n": "Drakkar Carving",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon viking drakkar carving 0.png"
+      },
+      {
+       "n": "Heimskringla",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon ragnarsdrapa 0.PNG"
+      },
+      {
+       "n": "Lungnibbel Ring",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon museum viking nibelungen ring 0.png"
+      },
+      {
+       "n": "Sæmundar Edda",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon museum viking edda 0.png"
+      },
+      {
+       "n": "Valkyrie's Helmet",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon museum viking valkyrie helmet 0.png"
+      }
+     ]
+    },
+    {
+     "id": "origin-of-mankind",
+     "label": "Origin of Mankind",
+     "effect": "Increases productivity by 10% and -5% reduction in needed workforce and maintenance for all Fisheries, Crop Farms, Animal Farms, and Hunting Cabins",
+     "items": [
+      {
+       "n": "Neanderthal Skeleton",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon museum neanderthaler 0.png"
+      },
+      {
+       "n": "Santillana Cave Painting",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon lascaux painting 0.png"
+      },
+      {
+       "n": "Valojoulx Cave Painting",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon prehistorical painting 0.PNG"
+      }
+     ]
+    },
+    {
+     "id": "roots-of-enbesa",
+     "label": "Roots of Enbesa",
+     "dlc": "Land of Lions",
+     "effect": "Scholar Residences gain +1 research points",
+     "items": [
+      {
+       "n": "Arksum Obelisk",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon obelixo of arksam 0.png"
+      },
+      {
+       "n": "Ghebbi Diorama",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon fasil ghebbi 0.png"
+      },
+      {
+       "n": "Glory of Kings",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon kebra nagast 0.png"
+      },
+      {
+       "n": "Kidusi Church Diorama",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon church kidusi antoni 0.png"
+      },
+      {
+       "n": "Lion of Selamawi",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon lion of judah 0.png"
+      },
+      {
+       "n": "The Ark of the Covenant",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon ark of the covenant 0.png"
+      }
+     ]
+    },
+    {
+     "id": "skull-and-bones",
+     "label": "Skull and Bones",
+     "effect": "+3% increased speed, -5% maintenance cost, and 10% damage slowdown for all warships",
+     "items": [
+      {
+       "n": "Barbarossa's Bones",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon museum readbeard skeletton 0.png"
+      },
+      {
+       "n": "Brownbeard's Cutlass",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon museum sword pirate epic 0.png"
+      },
+      {
+       "n": "The Treasure of Ben Sahid",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon coin epic 0.png"
+      }
+     ]
+    },
+    {
+     "id": "thule-relics",
+     "label": "Thule Relics",
+     "dlc": "The Passage",
+     "effect": "Thematic Exhibitions +20% Increased attractiveness for cultural items that belong to the Taiga forest, polar circle, arctic tundra, northern sagas, bronze age, thule relics, icebound, and sub-alpine cultural sets.",
+     "items": [
+      {
+       "n": "Carved Stone Bear",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon flying bear 0.png"
+      },
+      {
+       "n": "Igluit",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon igluit 0.png"
+      },
+      {
+       "n": "Inunnguaq Inuksuk",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon inukshuk 0.png"
+      },
+      {
+       "n": "Pirujaqarvik Inuksuk",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon pirujaqarvik 0.png"
+      },
+      {
+       "n": "Toy Qamutiik",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon qamutiik toy 0.png"
+      },
+      {
+       "n": "Uummannaq Mummy",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon qilakitsoq mummy 0.png"
+      }
+     ]
+    }
+   ],
+   "loose": [
+    {
+     "n": "A Shimmering Stone",
+     "r": "Epic",
+     "a": 40,
+     "icon": "Icon gem diamond 0.png"
+    },
+    {
+     "n": "An Old Medallion",
+     "r": "Epic",
+     "a": 40,
+     "icon": "Icon gem pyrite 0.png"
+    },
+    {
+     "n": "Ancient Manifest",
+     "r": "Common",
+     "a": 10,
+     "icon": "Icon scroll common 0.png"
+    },
+    {
+     "n": "Ancient Tabot of Waha Desher",
+     "r": "Legendary",
+     "a": 50,
+     "dlc": "Land of Lions",
+     "icon": "Icon africa tabot 0.png"
+    },
+    {
+     "n": "Antique Novel",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Icon book uncommon 0.png"
+    },
+    {
+     "n": "Arabesque Trinkets",
+     "r": "Uncommon",
+     "a": 20,
+     "dlc": "Land of Lions",
+     "icon": "Icon necklace uncommon 0.PNG"
+    },
+    {
+     "n": "Aureus Coins",
+     "r": "Rare",
+     "a": 30,
+     "icon": "Icon coin rare 0.png"
+    },
+    {
+     "n": "Bronze Helmet",
+     "r": "Common",
+     "a": 10,
+     "icon": "Icon museum helmet common 0.png"
+    },
+    {
+     "n": "Bronze Sword",
+     "r": "Common",
+     "a": 10,
+     "icon": "Icon museum sword common 0.png"
+    },
+    {
+     "n": "Bull Head Rhyton",
+     "r": "Rare",
+     "a": 30,
+     "dlc": "Land of Lions",
+     "icon": "Icon bull head rhyton 0.png"
+    },
+    {
+     "n": "Chronicles of Enbesa",
+     "r": "Epic",
+     "a": 40,
+     "dlc": "Land of Lions",
+     "icon": "Icon kebra nagast 0.png"
+    },
+    {
+     "n": "Colourful Textiles",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Icon fabric uncommon 0.png"
+    },
+    {
+     "n": "Commodore's Medal",
+     "r": "Uncommon",
+     "a": 20,
+     "dlc": "Sunken Treasures",
+     "icon": "Icon security 0.png"
+    },
+    {
+     "n": "Copper Ring",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Icon ring uncommon 0.PNG"
+    },
+    {
+     "n": "Cursed Mummy of Cabot",
+     "r": "Epic",
+     "a": 40,
+     "icon": "Icon cursedmummy 0.png"
+    },
+    {
+     "n": "Damaged Statue",
+     "r": "Common",
+     "a": 10,
+     "icon": "Icon statue stone 0.png"
+    },
+    {
+     "n": "Decaying Mummy",
+     "r": "Rare",
+     "a": 30,
+     "icon": "Icon mummy rare 0.png"
+    },
+    {
+     "n": "Diamond",
+     "r": "Epic",
+     "a": 40,
+     "icon": "Icon gem diamond 0.png"
+    },
+    {
+     "n": "Folk Tales",
+     "r": "Common",
+     "a": 10,
+     "icon": "Icon book comon 0.png"
+    },
+    {
+     "n": "Gasparov's Chest of Shame",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Icon reward 4 0.png"
+    },
+    {
+     "n": "Golden War Helm",
+     "r": "Epic",
+     "a": 40,
+     "icon": "Icon museum helmet epic 0.png"
+    },
+    {
+     "n": "Harlow Family Heirloom",
+     "r": "Rare",
+     "a": 30,
+     "icon": "Icon necklace harlow family heirloom 0.png"
+    },
+    {
+     "n": "Herbalist's Field Journal",
+     "r": "Uncommon",
+     "a": 30,
+     "icon": "Herbarium.png"
+    },
+    {
+     "n": "HMS Hades Replica",
+     "r": "Legendary",
+     "a": 50,
+     "dlc": "The Passage",
+     "icon": "Icon hms terror 0.png"
+    },
+    {
+     "n": "Illuminated Manuscript",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Icon scroll uncommon 0.png"
+    },
+    {
+     "n": "Iron Helm",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Icon museum helmet uncommon 0.png"
+    },
+    {
+     "n": "Iron Shield",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Icon museum shield uncommon 0.png"
+    },
+    {
+     "n": "Iron Sword",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Icon museum sword uncommon 0.png"
+    },
+    {
+     "n": "Jade Pearl",
+     "r": "Rare",
+     "a": 30,
+     "icon": "Icon gem rare 0.png"
+    },
+    {
+     "n": "Mad Monkey's Incisor",
+     "r": "Epic",
+     "a": 40,
+     "icon": "Icon monkeytalisman 0.png"
+    },
+    {
+     "n": "Map of Sile'Amidos",
+     "r": "Legendary",
+     "a": 50,
+     "icon": "Item treasuremap st 03.png"
+    },
+    {
+     "n": "Morticromicron",
+     "r": "Legendary",
+     "a": 50,
+     "icon": "Icon tablet 0.png"
+    },
+    {
+     "n": "Mummy Bandages",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Icon mummy uncommon 0.png"
+    },
+    {
+     "n": "Painted Stones",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Icon lined stone 0.png"
+    },
+    {
+     "n": "Phoenix Egg",
+     "r": "Legendary",
+     "a": 50,
+     "dlc": "Land of Lions",
+     "icon": "Icon dinosaur egg 0.png"
+    },
+    {
+     "n": "Precious Royal Jewellery",
+     "r": "Epic",
+     "a": 40,
+     "icon": "Icon ring epic 0.PNG"
+    },
+    {
+     "n": "Primitive Fabrics",
+     "r": "Common",
+     "a": 10,
+     "icon": "Icon fabric comon 0.png"
+    },
+    {
+     "n": "Pyrite Crystals",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Icon gem pyrite 0.png"
+    },
+    {
+     "n": "Quartz Crystals",
+     "r": "Common",
+     "a": 10,
+     "icon": "Icon gem quartz 0.png"
+    },
+    {
+     "n": "Regal Gold Ring",
+     "r": "Epic",
+     "a": 40,
+     "icon": "Icon ring epic 0.PNG"
+    },
+    {
+     "n": "Rudimentary Necklace",
+     "r": "Common",
+     "a": 10,
+     "icon": "Icon necklace common 0.PNG"
+    },
+    {
+     "n": "Rusty Sestertius",
+     "r": "Common",
+     "a": 10,
+     "icon": "Icon coin common 0.png"
+    },
+    {
+     "n": "Shroud of the Great King",
+     "r": "Epic",
+     "a": 40,
+     "icon": "Icon fabric epic 0.png"
+    },
+    {
+     "n": "Silken Fabrics",
+     "r": "Rare",
+     "a": 30,
+     "icon": "Icon fabric rare 0.png"
+    },
+    {
+     "n": "Silver Dragon",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Silver Coins.png"
+    },
+    {
+     "n": "Silver Helmet",
+     "r": "Rare",
+     "a": 30,
+     "icon": "Icon museum helmet rare 0.png"
+    },
+    {
+     "n": "Silver Necklace",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Icon necklace uncommon 0.PNG"
+    },
+    {
+     "n": "Silver Ring",
+     "r": "Rare",
+     "a": 30,
+     "icon": "Icon ring rare 0.PNG"
+    },
+    {
+     "n": "Silver Shield",
+     "r": "Rare",
+     "a": 30,
+     "icon": "Icon museum shield rare 0.png"
+    },
+    {
+     "n": "Silver Sword",
+     "r": "Rare",
+     "a": 30,
+     "icon": "Icon museum sword rare 0.png"
+    },
+    {
+     "n": "Slave Owner's Ledger",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Icon journal.png 0.png"
+    },
+    {
+     "n": "Socialite Stamp",
+     "r": "Epic",
+     "a": 40,
+     "icon": "Icon firstclass stamp.png"
+    },
+    {
+     "n": "Spear of Selamawi",
+     "r": "Legendary",
+     "a": 50,
+     "dlc": "Land of Lions",
+     "icon": "Icon spear of the salomonids 02 0.png"
+    },
+    {
+     "n": "Stone Statue",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Icon statue broken 0.png"
+    },
+    {
+     "n": "Tarnished Silver Coins",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Icon coin uncommon 0.png"
+    },
+    {
+     "n": "The Art of Medicine",
+     "r": "Rare",
+     "a": 30,
+     "icon": "Icon book rare 0.png"
+    },
+    {
+     "n": "The Holy Book",
+     "r": "Epic",
+     "a": 40,
+     "dlc": "Land of Lions",
+     "icon": "Icon book uncommon 0.png"
+    },
+    {
+     "n": "The Rings Of The Kings",
+     "r": "Epic",
+     "a": 40,
+     "icon": "Icon salpeter 0.png"
+    },
+    {
+     "n": "The Sceptre of Capon",
+     "r": "Quest",
+     "a": 50,
+     "icon": "The Sceptre of Capon.png"
+    },
+    {
+     "n": "The Von Malching Family Pennant",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Icon fabric recolor 0.png"
+    },
+    {
+     "n": "Toy Horse",
+     "r": "Common",
+     "a": 10,
+     "icon": "Icon statue stone 0.png"
+    },
+    {
+     "n": "Treasures of Sile'Amidos",
+     "r": "Legendary",
+     "a": 50,
+     "dlc": "Land of Lions",
+     "icon": "Icon africa kidusi urn 0.png"
+    },
+    {
+     "n": "Twenty-Thousand Days Around The Centre Of The Earth",
+     "r": "Epic",
+     "a": 40,
+     "icon": "Icon book uncommon 0.png"
+    },
+    {
+     "n": "Unflattering Portrait of Artur",
+     "r": "Uncommon",
+     "a": 20,
+     "icon": "Icon gasparovs portrait 0.png"
+    },
+    {
+     "n": "Vase of Sile'Amidos",
+     "r": "Legendary",
+     "a": 50,
+     "dlc": "Land of Lions",
+     "icon": "Icon africa kidusi urn 0.png"
+    },
+    {
+     "n": "Widdershins Stamp",
+     "r": "Rare",
+     "a": 30,
+     "icon": "Icon priority stamp.png"
+    },
+    {
+     "n": "Wooden Ring",
+     "r": "Common",
+     "a": 10,
+     "icon": "Icon wooden ring 0.png"
+    },
+    {
+     "n": "Wooden Shield",
+     "r": "Common",
+     "a": 10,
+     "icon": "Icon museum shield common 0.png"
+    }
+   ]
+  },
+  {
+   "id": "garden",
+   "label": "Botanical Garden",
+   "noun": "plant",
+   "sets": [
+    {
+     "id": "amazonas",
+     "label": "Amazonas",
+     "dlc": "Botanica",
+     "effect": "Old World: Grape fertility provided and +25% productivity for Vineyards · New World: Plantain Fertility provided and +25% productivity for Plantain Plantations",
+     "items": [
+      {
+       "n": "Giant Water Lily",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon giant water lily 0.png"
+      },
+      {
+       "n": "Hevea Tree",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon hevea 0.png"
+      },
+      {
+       "n": "Metaxya Fern",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Item metaxya 0.png"
+      },
+      {
+       "n": "Purple Pitcher Plant",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon purple pitcher 0.png"
+      },
+      {
+       "n": "Sea Heart Liana",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon lianas 0.png"
+      },
+      {
+       "n": "The Brazil Nut Tree",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon brazil nut tree 0.png"
+      }
+     ]
+    },
+    {
+     "id": "andean",
+     "label": "Andean",
+     "dlc": "Botanica",
+     "effect": "Old World: Grain fertility provided and +25% productivity for Grain Farms · New World: Coffee fertility provided and +25% productivity for Coffee Plantations and Hacienda Coffee Farms",
+     "items": [
+      {
+       "n": "Espeletia",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon frailejones 0.png"
+      },
+      {
+       "n": "Guayacan de Manizales",
+       "r": "Rare",
+       "a": 20,
+       "icon": "Icon guayacan de manizales 0.png"
+      },
+      {
+       "n": "Queen of the Andes",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon queen of andes 0.png"
+      }
+     ]
+    },
+    {
+     "id": "enchanted",
+     "label": "Enchanted",
+     "dlc": "Botanica",
+     "effect": "Old World: Hops Fertility provided and +25% productivity for Hops Farms. · New World: Tobacco Fertility provided and +25% productivity for Tobacco Plantations.",
+     "items": [
+      {
+       "n": "Hemp",
+       "r": "Common",
+       "a": 10,
+       "icon": "Icon hemp 0.png"
+      },
+      {
+       "n": "Meadow Sage",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon salvia 0.png"
+      },
+      {
+       "n": "Perry's Giant Sunburst",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon perrys giant sunburst 0.png"
+      },
+      {
+       "n": "Poppy",
+       "r": "Common",
+       "a": 10,
+       "icon": "Icon poppy 0.png"
+      },
+      {
+       "n": "The Jujube Lotus",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon jujube 0.png"
+      },
+      {
+       "n": "Yellow Lotus",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon star bright lotus 0.png"
+      }
+     ]
+    },
+    {
+     "id": "marshland",
+     "label": "Marshland",
+     "dlc": "Botanica",
+     "effect": "Happiness +2, Chance of Illness -50% (affects all residences)",
+     "items": [
+      {
+       "n": "Common Reed",
+       "r": "Common",
+       "a": 10,
+       "icon": "Icon reeds 0.png"
+      },
+      {
+       "n": "Marsh-Mallow",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Item marsh mallow 0.png"
+      },
+      {
+       "n": "Water Lily",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon lilies 0.png"
+      }
+     ]
+    },
+    {
+     "id": "medicinal",
+     "label": "Medicinal",
+     "dlc": "Botanica",
+     "effect": "Unit movement for hospitals +15% and +2 doctors",
+     "items": [
+      {
+       "n": "Dandelion",
+       "r": "Common",
+       "a": 10,
+       "icon": "Icon dandelion 0.png"
+      },
+      {
+       "n": "Foxglove",
+       "r": "Common",
+       "a": 10,
+       "icon": "Icon foxglove 0.png"
+      },
+      {
+       "n": "Peppermint",
+       "r": "Common",
+       "a": 10,
+       "icon": "Icon peppermint 0.png"
+      }
+     ]
+    },
+    {
+     "id": "near-east",
+     "label": "Near East",
+     "dlc": "Botanica",
+     "effect": "Old World: Red Pepper Fertility provided and +25% productivity for Red Pepper Farms. · New World: Sugar Cane Fertility provided and +25% productivity for Sugar Cane Plantations and Hacienda Sugar Cane Farms.",
+     "items": [
+      {
+       "n": "Morning Glory",
+       "r": "Common",
+       "a": 10,
+       "icon": "Icon vines 0.png"
+      },
+      {
+       "n": "Papyrus",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Item papyrus 0.png"
+      },
+      {
+       "n": "Red Tiger Lotus",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon tiger lotus 0.png"
+      },
+      {
+       "n": "Rhododendron",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon rhododendron 0.png"
+      },
+      {
+       "n": "Sacred Blue Lily",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon blue lotus 0.png"
+      },
+      {
+       "n": "Water Hyacinth",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Item water hyacinth 0.png"
+      }
+     ]
+    },
+    {
+     "id": "sargasso-sea",
+     "label": "Sargasso Sea",
+     "dlc": "Botanica",
+     "effect": "Attractiveness of Public Mooring +50, Increased Visits +10%",
+     "items": [
+      {
+       "n": "Coconut Palm",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon coco tree 0.png"
+      },
+      {
+       "n": "Great Star Coral",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Icon great star coral 0.png"
+      },
+      {
+       "n": "Pillar Coral",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon pillar coral 0.png"
+      },
+      {
+       "n": "Royal Palm",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon palm tree 0.png"
+      },
+      {
+       "n": "Sea-lavender",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon sea lavender 0.png"
+      },
+      {
+       "n": "Staghorn Coral",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon staghorn coral 0.png"
+      }
+     ]
+    },
+    {
+     "id": "sacred",
+     "label": "Sacred",
+     "dlc": "Botanica",
+     "effect": "Harbor activity +100%, Passive Trade chance for 5t of Coffee Beans, Cocoa, Plantains, Pearls, Felt, Bread, Grapes, or Chocolate",
+     "items": [
+      {
+       "n": "Angel Wings Lotus",
+       "r": "Epic",
+       "a": 40,
+       "icon": "Icon sacred lotus 0.png"
+      },
+      {
+       "n": "Champak",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon magnolia champaca 0.png"
+      },
+      {
+       "n": "Oriental Cherry",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon cherry blossom 0.png"
+      },
+      {
+       "n": "Star Jasmine",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon downy jasmine 0.png"
+      },
+      {
+       "n": "The Banyan Tree",
+       "r": "Legendary",
+       "a": 50,
+       "icon": "Icon banyan 0.png"
+      },
+      {
+       "n": "Tulsi",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon tulsi 0.png"
+      }
+     ]
+    },
+    {
+     "id": "subalpine",
+     "label": "Subalpine",
+     "dlc": "Botanica",
+     "effect": "Old World: Fur Abundance provided and +25% productivity for Hunting Cabins · New World: Caoutchouc fertility provided and +25% productivity for Caoutchouc Plantations and Hacienda Caoutchouc Plantations",
+     "items": [
+      {
+       "n": "Purple Saxifrage",
+       "r": "Uncommon",
+       "a": 20,
+       "icon": "Icon saxifraga 0.png"
+      },
+      {
+       "n": "Snow Gum",
+       "r": "Rare",
+       "a": 30,
+       "icon": "Snow Gum.png"
+      },
+      {
+       "n": "Subalpine Fir",
+       "r": "Common",
+       "a": 10,
+       "icon": "Icon rocky mountain fir 0.png"
+      }
+     ]
+    }
+   ],
+   "loose": [
+    {
+     "n": "Bilberry",
+     "r": "Common",
+     "a": 10,
+     "dlc": "Botanica",
+     "icon": "Item blueberry 0.png"
+    },
+    {
+     "n": "Elderberry",
+     "r": "Common",
+     "a": 10,
+     "dlc": "Botanica",
+     "icon": "Icon elderberry 0.png"
+    },
+    {
+     "n": "Gungurru",
+     "r": "Rare",
+     "a": 30,
+     "dlc": "Botanica",
+     "icon": "Icon gunguru 0.png"
+    },
+    {
+     "n": "Holy Moly",
+     "r": "Legendary",
+     "a": 50,
+     "dlc": "Botanica",
+     "icon": "Icon moly 0.png"
+    },
+    {
+     "n": "Jerusalem Sage",
+     "r": "Rare",
+     "a": 30,
+     "dlc": "Botanica",
+     "icon": "Icon jerusalem sage 0.png"
+    },
+    {
+     "n": "Mezoan Horn Cone",
+     "r": "Epic",
+     "a": 40,
+     "dlc": "Botanica",
+     "icon": "Icon mexican horn cone 0.png"
+    },
+    {
+     "n": "Moon Orchid",
+     "r": "Rare",
+     "a": 30,
+     "dlc": "Botanica",
+     "icon": "Icon orchids 0.png"
+    },
+    {
+     "n": "Mother-In-Law's Tongue",
+     "r": "Epic",
+     "a": 40,
+     "dlc": "Botanica",
+     "icon": "Icon mother in law tongue 0.png"
+    },
+    {
+     "n": "Oriental Tassel Fern",
+     "r": "Rare",
+     "a": 30,
+     "dlc": "Botanica",
+     "icon": "Icon tassel ferns 0.png"
+    },
+    {
+     "n": "Pink Sugarbush",
+     "r": "Rare",
+     "a": 30,
+     "dlc": "Botanica",
+     "icon": "Icon protea 0.png"
+    },
+    {
+     "n": "Pride of Madeira",
+     "r": "Epic",
+     "a": 40,
+     "dlc": "Botanica",
+     "icon": "Icon pride of madeira 0.png"
+    },
+    {
+     "n": "Sea Thrift",
+     "r": "Uncommon",
+     "a": 20,
+     "dlc": "Botanica",
+     "icon": "Icon thrift 0.png"
+    },
+    {
+     "n": "The Elusive Fern Flower",
+     "r": "Legendary",
+     "a": 50,
+     "dlc": "Botanica",
+     "icon": "Icon fern flower 0.png"
+    },
+    {
+     "n": "The Hades Asphodel",
+     "r": "Legendary",
+     "a": 50,
+     "dlc": "Botanica",
+     "icon": "Icon underworld asphodelus 0.png"
+    },
+    {
+     "n": "Tiger-Spotted Stanhopea",
+     "r": "Epic",
+     "a": 40,
+     "dlc": "Botanica",
+     "icon": "Icon spotted stanhopea 0.png"
+    },
+    {
+     "n": "Titan Arum",
+     "r": "Legendary",
+     "a": 50,
+     "dlc": "Botanica",
+     "icon": "Icon titan arum 0.png"
+    },
+    {
+     "n": "Tower Of Jewels",
+     "r": "Legendary",
+     "a": 50,
+     "dlc": "Botanica",
+     "icon": "Icon echium wildpretii 0.png"
+    }
+   ]
+  }
+ ]
+}
