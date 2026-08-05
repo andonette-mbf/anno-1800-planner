@@ -4,10 +4,11 @@ import { datasetFor } from "@/lib/dataset";
 import { CalcState, defaultStateFor } from "@/lib/engine";
 import { GAMES, type Game } from "@/lib/games";
 import { decodeHash, encodeHash } from "@/lib/hash";
-import { useAuth, useCompanion } from "@/lib/store";
+import { DEFAULT_SAVE_NAME, useAuth, useCompanion } from "@/lib/store";
 import { LeftPanel } from "./calc/LeftPanel";
 import { Results } from "./calc/Results";
 import { TrackerView } from "./TrackerView";
+import { Dropdown } from "./ui/Dropdown";
 
 type View = "calc" | "tracker";
 
@@ -148,6 +149,9 @@ export function AppShell() {
             {label}
           </button>
         ))}
+        {/* Only on the Tracker: a save is a playthrough's quests and islands,
+            not a calculator setting. */}
+        {view === "tracker" && <SaveMenu />}
       </nav>
       <div
         className="grid"
@@ -161,6 +165,64 @@ export function AppShell() {
         <TrackerView calcState={st} />
       </div>
     </div>
+  );
+}
+
+// One save per Anno save game (build 67). Saves belong to the game you're on,
+// so an 1800 playthrough and a 117 one never appear in the same list. The
+// calculator is deliberately outside this: its plans are blueprints you reuse
+// across playthroughs, not part of one.
+function SaveMenu() {
+  const { saves, saveId, setSave, addSave, duplicateSave, renameSave, deleteSave } =
+    useCompanion();
+  const name = saves.find((s) => s.id === saveId)?.name ?? DEFAULT_SAVE_NAME;
+  const ask = (q: string, fallback: string, run: (v: string) => void) => {
+    const v = window.prompt(q, fallback);
+    if (v !== null && v.trim()) run(v);
+  };
+  return (
+    <Dropdown
+      className="savemenu"
+      ariaLabel="Which save the Tracker is showing"
+      title="One save per Anno save game — each keeps its own quests, islands and inventory. Saves belong to the game above; the calculator is shared."
+      placeholder={`📖 ${name}`}
+      value={saveId}
+      onChange={(v) => {
+        if (v === "__new") ask("Name the new save:", `Save ${saves.length + 1}`, addSave);
+        else if (v === "__dup") ask("Name the copy:", `${name} copy`, duplicateSave);
+        else if (v === "__rename")
+          ask("Rename this save:", name, (n) => renameSave(saveId, n));
+        else if (v === "__delete") {
+          if (
+            saves.length > 1 &&
+            window.confirm(
+              `Delete “${name}” — its quests, islands and inventory? This can't be undone.`
+            )
+          )
+            deleteSave(saveId);
+        } else if (v !== saveId) {
+          setSave(v);
+          window.scrollTo(0, 0);
+        }
+      }}
+      options={[
+        {
+          group: "Switch to",
+          options: saves.map((s) => ({ value: s.id, label: `📖 ${s.name}` })),
+        },
+        {
+          group: name,
+          options: [
+            { value: "__new", label: "＋ New save…", title: "An empty tracker for a new game" },
+            { value: "__dup", label: "⧉ Duplicate…", title: "Copy this save's quests and islands" },
+            { value: "__rename", label: "✎ Rename…" },
+            ...(saves.length > 1
+              ? [{ value: "__delete", label: "✕ Delete…", title: "Removes it and its contents" }]
+              : []),
+          ],
+        },
+      ]}
+    />
   );
 }
 

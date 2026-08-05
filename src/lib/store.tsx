@@ -58,6 +58,26 @@ function gkey(game: Game, base: string): string {
   return game === "anno117" ? base.replace(/^anno_/, "anno117_") : base;
 }
 
+// Saves (build 67): one Anno save game = one set of quests/islands/inventory.
+// Each game keeps its own list of them. The FIRST save has the id "" and lives
+// on the bare keys above — so everything saved before this feature simply
+// becomes "Main", nothing moves, and /legacy.html still reads it. Extra saves
+// hang off suffixed keys.
+export interface SaveMeta {
+  id: string;
+  name: string;
+}
+export const DEFAULT_SAVE_NAME = "Main";
+const savesKey = (game: Game) => gkey(game, "anno_saves");
+const curSaveKey = (game: Game) => gkey(game, "anno_save");
+function skey(game: Game, base: string, id: string): string {
+  const k = gkey(game, base);
+  return id ? `${k}__${id}` : k;
+}
+function newSaveId(): string {
+  return `s${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+}
+
 export interface CheckItem {
   t: string;
   done: boolean;
@@ -223,8 +243,8 @@ function parseCulture(raw: unknown): Record<string, Record<string, string[]>> {
   return out;
 }
 
-function loadLocal(game: Game = "anno1800"): CompanionData {
-  const k = (base: string) => gkey(game, base);
+function loadLocal(game: Game = "anno1800", id = ""): CompanionData {
+  const k = (base: string) => skey(game, base, id);
   const openq: Record<string, string> = {};
   for (const key of OQ_KEYS) openq[key] = ls.get(k("anno_openq_" + key)) || "";
   const focus: Record<string, string> = {};
@@ -310,8 +330,8 @@ function loadLocal(game: Game = "anno1800"): CompanionData {
   };
 }
 
-function saveLocal(d: CompanionData, game: Game = "anno1800") {
-  const k = (base: string) => gkey(game, base);
+function saveLocal(d: CompanionData, game: Game = "anno1800", id = "") {
+  const k = (base: string) => skey(game, base, id);
   for (const key of OQ_KEYS) ls.set(k("anno_openq_" + key), d.openq[key] || "");
   for (const key of FOCUS_KEYS) ls.set(k("anno_focus_" + key), d.focus[key] || "");
   ls.set(k("anno_shutdown_checks"), JSON.stringify(d.shutdown));
@@ -339,16 +359,82 @@ const EMPTY_DATA: CompanionData = {
   islandCulture: {},
 };
 
+/** One game's saves: the list (never empty), which one is showing, and the
+ *  data behind each. */
+export interface GameSaves {
+  list: SaveMeta[];
+  cur: string;
+  data: Record<string, CompanionData>;
+}
+
+function safeJSON(raw: string | null): unknown {
+  try {
+    return JSON.parse(raw || "null");
+  } catch {
+    return null;
+  }
+}
+
+function parseSaveList(raw: unknown): SaveMeta[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const out: SaveMeta[] = [];
+  for (const x of raw) {
+    const o = x as { id?: unknown; name?: unknown };
+    if (typeof o?.id !== "string" || seen.has(o.id)) continue;
+    seen.add(o.id);
+    out.push({ id: o.id, name: String(o?.name ?? "").trim() || DEFAULT_SAVE_NAME });
+  }
+  return out;
+}
+
+/** Read every save of one game. A browser that predates saves has no list key,
+ *  and yields the single "" save holding whatever sits on the bare keys — so an
+ *  existing playthrough becomes "Main" without anything being moved. The list
+ *  key, once written, is authoritative: a deleted "" save stays deleted. */
+function loadGame(game: Game): GameSaves {
+  const stored = parseSaveList(safeJSON(ls.get(savesKey(game))));
+  const list = stored.length ? stored : [{ id: "", name: DEFAULT_SAVE_NAME }];
+  const want = ls.get(curSaveKey(game)) ?? "";
+  const data: Record<string, CompanionData> = {};
+  for (const s of list) data[s.id] = loadLocal(game, s.id);
+  return { list, cur: list.some((s) => s.id === want) ? want : list[0].id, data };
+}
+
+function saveGameList(game: Game, g: GameSaves) {
+  ls.set(savesKey(game), JSON.stringify(g.list));
+  ls.set(curSaveKey(game), g.cur);
+}
+
+function saveGame(game: Game, g: GameSaves) {
+  saveGameList(game, g);
+  for (const s of g.list) if (g.data[s.id]) saveLocal(g.data[s.id], game, s.id);
+}
+
+const EMPTY_GAME: GameSaves = {
+  list: [{ id: "", name: DEFAULT_SAVE_NAME }],
+  cur: "",
+  data: { "": EMPTY_DATA },
+};
+
 // The synced blob stays 1800-shaped at the top level — an older client (or an
-// older blob) round-trips unchanged — with 117 hanging off `g117`.
+// older blob) round-trips unchanged — with 117 hanging off `g117`. Build 67
+// adds every save under `saves`; the top-level fields stay a mirror of the
+// first save, so a client that predates saves still finds the main playthrough.
 interface SyncBlob extends CompanionData {
   g117?: CompanionData;
+  saves?: Partial<Record<Game, GameSaves>>;
 }
-function toBlob(all: Record<Game, CompanionData>): SyncBlob {
-  return { ...all.anno1800, g117: all.anno117 };
+function toBlob(all: Record<Game, GameSaves>): SyncBlob {
+  const first = (g: GameSaves) => g.data[""] ?? g.data[g.cur] ?? EMPTY_DATA;
+  return {
+    ...first(all.anno1800),
+    g117: first(all.anno117),
+    saves: { anno1800: all.anno1800, anno117: all.anno117 },
+  };
 }
-function fromBlob(blob: SyncBlob, local: Record<Game, CompanionData>): Record<Game, CompanionData> {
-  const { g117, ...rest } = blob;
+function fromBlob(blob: SyncBlob, local: Record<Game, GameSaves>): Record<Game, GameSaves> {
+  const { g117, saves, ...rest } = blob;
   const norm = (d: CompanionData) => ({
     ...d,
     // Server blobs bypass loadLocal, so re-run item normalization (e.g. the
@@ -359,9 +445,31 @@ function fromBlob(blob: SyncBlob, local: Record<Game, CompanionData>): Record<Ga
     islandCulture: parseCulture(d.islandCulture),
     quests: healBlockers(d.quests || []),
   });
+  const forGame = (game: Game, legacy: CompanionData | undefined): GameSaves => {
+    const lo = local[game];
+    const srv = saves?.[game];
+    const list = parseSaveList(srv?.list);
+    if (list.length) {
+      const data: Record<string, CompanionData> = {};
+      for (const s of list)
+        data[s.id] = norm({ ...(lo.data[s.id] || EMPTY_DATA), ...(srv?.data?.[s.id] || {}) });
+      const cur = srv && list.some((s) => s.id === srv.cur) ? srv.cur : list[0].id;
+      return { list, cur, data };
+    }
+    // A blob written before saves existed knows only the default one. Merge it
+    // into "" and keep any saves this browser has, rather than dropping them.
+    if (!legacy) return lo;
+    return {
+      list: lo.list.some((s) => s.id === "")
+        ? lo.list
+        : [{ id: "", name: DEFAULT_SAVE_NAME }, ...lo.list],
+      cur: lo.cur,
+      data: { ...lo.data, "": norm({ ...(lo.data[""] || EMPTY_DATA), ...legacy }) },
+    };
+  };
   return {
-    anno1800: norm({ ...local.anno1800, ...(rest as CompanionData) }),
-    anno117: g117 ? norm({ ...local.anno117, ...g117 }) : local.anno117,
+    anno1800: forGame("anno1800", rest as CompanionData),
+    anno117: forGame("anno117", g117),
   };
 }
 
@@ -394,6 +502,18 @@ interface CompanionCtx {
   /** Which game the Tracker is showing. Everything in `data` belongs to it. */
   game: Game;
   setGame: (g: Game) => void;
+  /** The current game's saves — one per Anno save game, in menu order. */
+  saves: SaveMeta[];
+  /** Which one the Tracker is showing; "" is the original save. */
+  saveId: string;
+  setSave: (id: string) => void;
+  /** Start an empty save and switch to it. */
+  addSave: (name: string) => void;
+  /** Copy the current save under a new name and switch to it. */
+  duplicateSave: (name: string) => void;
+  renameSave: (id: string, name: string) => void;
+  /** Delete a save and its contents; refuses to remove the last one. */
+  deleteSave: (id: string) => void;
   sync: "local" | "syncing" | "synced" | "error";
   setOpenq: (k: string, v: string) => void;
   setFocus: (k: string, v: string) => void;
@@ -443,21 +563,23 @@ export function useCompanion(): CompanionCtx {
 export function AppProviders({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [db, setDb] = useState(false);
-  // Both games are held at once: the Tracker shows one, but a sync push has to
-  // carry both or switching games would clobber the other's server copy.
-  const [all, setAll] = useState<Record<Game, CompanionData>>({
-    anno1800: EMPTY_DATA,
-    anno117: EMPTY_DATA,
+  // Both games are held at once, with all their saves: the Tracker shows one,
+  // but a sync push has to carry everything or switching games (or saves) would
+  // clobber the other's server copy.
+  const [all, setAll] = useState<Record<Game, GameSaves>>({
+    anno1800: EMPTY_GAME,
+    anno117: EMPTY_GAME,
   });
   const [game, setGameState] = useState<Game>("anno1800");
-  const data = all[game];
+  const gs = all[game];
+  const data = gs.data[gs.cur] ?? EMPTY_DATA;
   const [sync, setSync] = useState<CompanionCtx["sync"]>("local");
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const canSync = useRef(false);
 
   // Initial local load + auth probe.
   useEffect(() => {
-    setAll({ anno1800: loadLocal("anno1800"), anno117: loadLocal("anno117") });
+    setAll({ anno1800: loadGame("anno1800"), anno117: loadGame("anno117") });
     const g = ls.get(GAME_KEY);
     if (isGame(g)) setGameState(g);
     (async () => {
@@ -473,7 +595,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
-  const push = useCallback((next: Record<Game, CompanionData>) => {
+  const push = useCallback((next: Record<Game, GameSaves>) => {
     if (!canSync.current) return;
     if (pushTimer.current) clearTimeout(pushTimer.current);
     pushTimer.current = setTimeout(async () => {
@@ -512,14 +634,14 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         const dirty = ls.get("anno_dirty") === "1";
         canSync.current = true;
         const local = {
-          anno1800: loadLocal("anno1800"),
-          anno117: loadLocal("anno117"),
+          anno1800: loadGame("anno1800"),
+          anno117: loadGame("anno117"),
         };
         if (j.data && !dirty && j.updatedAt > localTs) {
           const merged = fromBlob(j.data as SyncBlob, local);
           setAll(merged);
-          saveLocal(merged.anno1800, "anno1800");
-          saveLocal(merged.anno117, "anno117");
+          saveGame("anno1800", merged.anno1800);
+          saveGame("anno117", merged.anno117);
           ls.set("anno_sync_ts", String(j.updatedAt));
           setSync("synced");
         } else {
@@ -535,8 +657,30 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   const update = useCallback(
     (fn: (d: CompanionData) => CompanionData) => {
       setAll((prev) => {
-        const next = { ...prev, [game]: fn(prev[game]) } as Record<Game, CompanionData>;
-        saveLocal(next[game], game);
+        const g = prev[game];
+        const cur = g.cur;
+        const one = fn(g.data[cur] ?? EMPTY_DATA);
+        const next = {
+          ...prev,
+          [game]: { ...g, data: { ...g.data, [cur]: one } },
+        } as Record<Game, GameSaves>;
+        saveLocal(one, game, cur);
+        if (canSync.current) push(next);
+        else ls.set("anno_dirty", "1");
+        return next;
+      });
+    },
+    [push, game]
+  );
+
+  // Save-list edits (add / rename / delete / switch). Same persistence path as
+  // `update`, but they rewrite the list rather than one save's contents.
+  const updateSaves = useCallback(
+    (fn: (g: GameSaves) => GameSaves) => {
+      setAll((prev) => {
+        const g = fn(prev[game]);
+        const next = { ...prev, [game]: g } as Record<Game, GameSaves>;
+        saveGame(game, g);
         if (canSync.current) push(next);
         else ls.set("anno_dirty", "1");
         return next;
@@ -555,6 +699,46 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
       data,
       game,
       setGame,
+      saves: gs.list,
+      saveId: gs.cur,
+      setSave: (id) =>
+        updateSaves((g) => (g.list.some((s) => s.id === id) ? { ...g, cur: id } : g)),
+      addSave: (name) =>
+        updateSaves((g) => {
+          const id = newSaveId();
+          return {
+            list: [...g.list, { id, name: name.trim() || `Save ${g.list.length + 1}` }],
+            cur: id,
+            data: { ...g.data, [id]: EMPTY_DATA },
+          };
+        }),
+      duplicateSave: (name) =>
+        updateSaves((g) => {
+          const id = newSaveId();
+          const from = g.list.find((s) => s.id === g.cur)?.name ?? DEFAULT_SAVE_NAME;
+          return {
+            list: [...g.list, { id, name: name.trim() || `${from} copy` }],
+            cur: id,
+            data: { ...g.data, [id]: g.data[g.cur] ?? EMPTY_DATA },
+          };
+        }),
+      renameSave: (id, name) =>
+        updateSaves((g) => ({
+          ...g,
+          list: g.list.map((s) => (s.id === id ? { ...s, name: name.trim() || s.name } : s)),
+        })),
+      deleteSave: (id) =>
+        updateSaves((g) => {
+          // The last save can't go — there'd be nothing to show.
+          if (g.list.length < 2 || !g.list.some((s) => s.id === id)) return g;
+          const list = g.list.filter((s) => s.id !== id);
+          const data = { ...g.data };
+          delete data[id];
+          // saveGame only writes the surviving saves, so blank this one's keys
+          // by hand. For "" that also empties what /legacy.html reads.
+          saveLocal(EMPTY_DATA, game, id);
+          return { list, cur: g.cur === id ? list[0].id : g.cur, data };
+        }),
       sync,
       setOpenq: (k, v) => update((d) => ({ ...d, openq: { ...d.openq, [k]: v } })),
       setFocus: (k, v) => update((d) => ({ ...d, focus: { ...d.focus, [k]: v } })),
@@ -880,7 +1064,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           return { ...d, islandCulture: all };
         }),
     }),
-    [data, game, setGame, sync, update]
+    [data, game, gs, setGame, sync, update, updateSaves]
   );
 
   const auth = useMemo<AuthCtx>(

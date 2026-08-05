@@ -245,6 +245,23 @@ is in CLAUDE.md.
   rules, and the new `npm run test:quests` drives the real tracker in jsdom —
   tap ⏳, name a blocker, tick it off, watch the row come back.
 
+- **Saves — one per playthrough** (build 67): "we should be able to have more
+  than one save". The Tracker held exactly one world per game; now each game
+  keeps a **list** of saves (quests, islands, inventory, plan links, culture),
+  switched from a 📖 menu that only appears on the Tracker tab — the calculator
+  stays shared, since plans are blueprints you reuse across playthroughs.
+  Storage mirrors the game switcher one level down: the FIRST save has the id
+  `""` and stays on the **bare legacy keys**, so an existing playthrough simply
+  becomes "Main" with nothing moved and /legacy.html still reads it; extra saves
+  hang off `…__<id>` keys, with the list in `anno_saves` and the current one in
+  `anno_save` (`anno117_` prefixed for Rome). The list key is authoritative once
+  written, so a deleted "" save stays deleted. The synced blob gains `saves`
+  while its top level stays a mirror of the first save, so a client that
+  predates this still finds the main playthrough; a pre-saves blob coming back
+  from the server merges into "" instead of dropping the browser's other saves.
+  `npm run test:saves` drives the real provider in jsdom — new/switch/rename/
+  duplicate/delete, saves per game, and the untouched-bytes invariant.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)
@@ -273,7 +290,8 @@ is in CLAUDE.md.
   demand honest. Start read-only (suggested flows from the ledgers); manual
   route records only if the suggestions aren't enough.
 - **M6** — backup & restore: one-button JSON export/import of all companion
-  state; phone polish (touch targets, PWA install).
+  state; phone polish (touch targets, PWA install). Now that saves exist, the
+  export should be per save (and an import should land as a new one).
 - **M10 — Anno 117 support** (noodled Aug 2026; timing DECIDED — after M7,
   before M8/M9, so residents/trade-routes are built per-game once instead of
   being generalised later). One app, game switcher at the top, per-game

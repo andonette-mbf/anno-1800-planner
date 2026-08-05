@@ -125,6 +125,9 @@ a.plx:hover{color:var(--accent)}
 .ddopt .optlbl span{white-space:normal;line-height:1.35;margin-top:1px}
 .ddgrp{padding:7px 12px 4px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--gold);background:#efe5cc;font-weight:700;position:sticky;top:0}
 .ddopt{gap:8px;align-items:flex-start}
+/* Save picker in the tab row: sized to sit beside the .chip tabs, pushed to
+   the far end so it reads as "which save", not a third tab. */
+.savemenu{width:auto;flex:0 0 auto;margin-left:auto;font-size:13px;padding:7px 12px;max-width:min(46vw,240px)}
 .ddopt:last-child{border-bottom:0}
 .ddopt .optlbl{min-width:0}
 .ddopt .optlbl b{font-weight:500}

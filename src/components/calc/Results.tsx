@@ -127,7 +127,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 66 · tasks that free each other</span>
+      <span style={{ opacity: 0.55 }}>build 67 · one save per playthrough</span>
     </div>
   );
 }
