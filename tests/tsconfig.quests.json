@@ -1,0 +1,25 @@
+{
+  "// why": [
+    "Same reason as tsconfig.culture.json: TrackerView imports through the @/*",
+    "alias, which the single-file tsc invocations cannot resolve. This compiles",
+    "the whole tracker to CommonJS under tests/build so the jsdom test can",
+    "require it and click it."
+  ],
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": false,
+    "outDir": "./build",
+    "rootDir": "../src",
+    "baseUrl": "..",
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "files": ["../src/components/TrackerView.tsx"]
+}

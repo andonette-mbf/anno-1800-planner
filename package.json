@@ -13,6 +13,7 @@
     "test:culture": "node tests/culture.test.cjs",
     "test:culture-ui": "node tests/culture-ui.test.mjs",
     "test:dropdown": "node tests/dropdown-ui.test.mjs",
+    "test:quests": "node tests/quest-ui.test.mjs",
     "extract:117": "node scripts/extract-117.mjs",
     "extract:culture": "node scripts/extract-culture.mjs",
     "test:games": "node tests/store-games.test.mjs"

@@ -480,6 +480,34 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
   const visOpen = onIsland(openQuests);
   const visWait = onIsland(waitQuests);
   const visDone = onIsland(doneQuests);
+  // How many parked tasks are queued behind each task (build 66), keyed by its
+  // text — the same handle the store links on. Shown on the blocker's row, so
+  // "tick this and two things come back" is visible before you tick it. The
+  // count ignores the island filter: a task on one island can block another's.
+  const behind = new Map<string, number>();
+  for (const { q } of indexed)
+    if (!q.done && q.w && q.wq) {
+      const k = q.wq.trim().toLowerCase();
+      behind.set(k, (behind.get(k) || 0) + 1);
+    }
+  // The label half of a quest row, shared by the open and waiting lists.
+  const questBody = (q: QuestItem) => {
+    const n = behind.get(q.t.trim().toLowerCase()) || 0;
+    return (
+      <span style={{ flex: 1 }}>
+        {linkify(q.t)}
+        {q.note && <small className="qnote">{q.note}</small>}
+        {n > 0 && (
+          <small
+            className="qnote qdep"
+            title="Tick this off and they free themselves, straight to the top of the list"
+          >
+            ⛓ {n} task{n > 1 ? "s" : ""} queued behind this
+          </small>
+        )}
+      </span>
+    );
+  };
   // 📈 goals pertain to the regions you actually play: the filtered island's
   // region when one is set, else the union of your islands' 🌍 tags. No tags
   // anywhere → the full list.
@@ -543,24 +571,22 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
     setRouteWhat(""); // keep from/to: often several goods ride the same route
   };
   // Check-in tasks (build 62) — "I'm leaving this island, remind me to come
-  // back". One tap from the island's own block (👁 on its header), or from the
-  // row here with a detail ("check back in on the beer"). It lands at the
-  // bottom of the open list, because a check-in is by definition for later.
+  // back". One tap from the island's own block (👁 on its header) or from the
+  // row here. It lands at the bottom of the open list, because a check-in is by
+  // definition for later. Deliberately just the island: a typed detail only
+  // ended up restating a task already on the list (build 66).
   const CHECK_IN = "check back in";
-  const checkInText = (isle: string, what?: string) =>
-    `${isle ? `${isle}: ` : ""}${CHECK_IN}${what?.trim() ? ` on ${what.trim()}` : ""}`;
+  const checkInText = (isle: string) => `${isle}: ${CHECK_IN}`;
   // Is this island already queued for a look? Keeps double-taps from stacking
   // duplicates, and lets the 👁 show it's already done.
   const checkInQueued = (isle: string) =>
     quests.some((q) => !q.done && q.t.startsWith(`${isle}: ${CHECK_IN}`));
-  const addCheckIn = (isle: string, what?: string) => {
-    const t = checkInText(isle, what);
-    if (!t.trim() || quests.some((q) => !q.done && q.t === t)) return;
-    addQuest(t);
+  const addCheckIn = (isle: string) => {
+    if (!isle || checkInQueued(isle)) return;
+    addQuest(checkInText(isle));
   };
   const [ciOpen, setCiOpen] = useState(false);
   const [ciIsle, setCiIsle] = useState("");
-  const [ciWhat, setCiWhat] = useState("");
   // Landmark quick-add chips, collapsed per island until asked for.
   const [chipsOpen, setChipsOpen] = useState<Record<string, boolean>>({});
   const savedLabel =
@@ -581,8 +607,9 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
               : "real unlock thresholds, with the residence count"}
             ), a route task (🚢 from → to → what), a check-in (👁 come back to an island later)
             or type your own — top of the list = do next.
-            ⤓ sends one to the bottom, ⏳ parks one you can&apos;t do yet (say what you&apos;re
-            waiting on; ⤒ brings it back to the top); ticked quests tuck away below.
+            ⤓ sends one to the bottom, ⏳ parks one you can&apos;t do yet — say what you&apos;re
+            waiting on, or name another task and it frees itself when you tick that one off (⤒
+            brings one back by hand); ticked quests tuck away below.
           </p>
           <div className="plrow">
             <Dropdown
@@ -896,28 +923,19 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                     ariaLabel="Which island to check back in on"
                     value={ciIsle}
                     onChange={setCiIsle}
-                    options={[
-                      { value: "", label: "(no island)" },
-                      ...islands.map((n) => ({ value: n, label: n })),
-                    ]}
-                  />
-                  <input
-                    placeholder="What to look at… optional (Enter to add)"
-                    value={ciWhat}
-                    onChange={(e) => setCiWhat(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key !== "Enter") return;
-                      addCheckIn(ciIsle, ciWhat);
-                      setCiWhat("");
-                    }}
+                    options={islands.map((n) => ({ value: n, label: n }))}
                   />
                   <button
                     className="linkbtn"
-                    disabled={!ciIsle && !ciWhat.trim()}
-                    title={`Adds “${checkInText(ciIsle, ciWhat)}” to the bottom of the list`}
+                    disabled={!ciIsle || checkInQueued(ciIsle)}
+                    title={
+                      ciIsle && checkInQueued(ciIsle)
+                        ? `${ciIsle} is already on the list to check back in`
+                        : `Adds “${checkInText(ciIsle)}” to the bottom of the list`
+                    }
                     onClick={() => {
-                      addCheckIn(ciIsle, ciWhat);
-                      setCiWhat("");
+                      addCheckIn(ciIsle);
+                      setCiOpen(false);
                     }}
                   >
                     ＋ Add
@@ -962,10 +980,7 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                       checked={q.done}
                       onChange={(e) => toggleQuest(i, e.target.checked)}
                     />
-                    <span style={{ flex: 1 }}>
-                      {linkify(q.t)}
-                      {q.note && <small className="qnote">{q.note}</small>}
-                    </span>
+                    {questBody(q)}
                   </label>
                   <button
                     className="plx qmove"
@@ -1037,21 +1052,42 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                           checked={q.done}
                           onChange={(e) => toggleQuest(i, e.target.checked)}
                         />
-                        <span style={{ flex: 1 }}>
-                          {linkify(q.t)}
-                          {q.note && <small className="qnote">{q.note}</small>}
-                        </span>
+                        {questBody(q)}
                       </label>
-                      <input
-                        className="wnote"
-                        placeholder="waiting on…"
-                        title="What has to happen first — bricks, a ship, an unlock"
-                        defaultValue={q.wn || ""}
-                        onBlur={(e) => setQuestWaitNote(i, e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") e.currentTarget.blur();
-                        }}
-                      />
+                      {q.wq ? (
+                        // Waiting on another task: no box to type in, because
+                        // the link is the answer. Tap to break it.
+                        <button
+                          className="chip schip wqchip"
+                          title={`Frees itself the moment “${q.wq}” is ticked off — tap to unlink`}
+                          onClick={() => setQuestWaitNote(i, "")}
+                        >
+                          ⛓ after {q.wq}
+                        </button>
+                      ) : (
+                        <>
+                          <input
+                            className="wnote"
+                            placeholder="waiting on… or a task"
+                            title="What has to happen first — bricks, a ship, an unlock. Name another task in the list and this one frees itself when you tick that one off."
+                            list={`blockers${i}`}
+                            defaultValue={q.wn || ""}
+                            onBlur={(e) => setQuestWaitNote(i, e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") e.currentTarget.blur();
+                            }}
+                          />
+                          {/* Every other unfinished task, so a blocker can be
+                              picked rather than typed out exactly. */}
+                          <datalist id={`blockers${i}`}>
+                            {indexed
+                              .filter((x) => !x.q.done && x.i !== i)
+                              .map((x) => (
+                                <option key={x.i} value={x.q.t} />
+                              ))}
+                          </datalist>
+                        </>
+                      )}
                       <button
                         className="plx qmove qwait"
                         title="Unblocked — back to the top of the list"

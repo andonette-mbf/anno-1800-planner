@@ -229,6 +229,22 @@ is in CLAUDE.md.
   Deferred: item pictures (the pack records each piece's wiki icon file name
   so a later pass can fetch them the way build 57 did for goods).
 
+- **Tasks that free each other** (build 66): "can we also wait on another task,
+  so it auto frees?" The parked row's "waiting on…" box now doubles as a link:
+  type (or pick, from a datalist of every other unfinished task) the name of a
+  task and ticking that one off frees this one automatically, straight to the
+  top; deleting the blocker frees it too, rather than stranding it. Anything
+  that matches no task stays a plain note, so the box keeps its first job.
+  Quests have no ids — position is their only handle and every reorder changes
+  it — so the link is the blocker's **text** (`QuestItem.wq`, matched case- and
+  space-insensitively, canonicalised on write); `healBlockers` releases anything
+  left waiting on a task that is no longer open, which covers a sync race and
+  /legacy.html rewriting the list without these fields. Both ends show it: ⛓
+  chip on the parked row, "⛓ 2 tasks queued behind this" on the blocker's.
+  Chains work (A waits on B waits on C). `npm run test:games` covers the store
+  rules, and the new `npm run test:quests` drives the real tracker in jsdom —
+  tap ⏳, name a blocker, tick it off, watch the row come back.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)

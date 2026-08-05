@@ -60,6 +60,10 @@ a.plx:hover{color:var(--accent)}
 /* An island already queued for a check-in (build 62): the button is spent,
    but "already on the list" has to read as done, not as unavailable. */
 .qeye.on:disabled{opacity:.9;color:var(--gold);cursor:default}
+/* Waiting on another task (build 66): the link chip on the parked row, and
+   the count of what frees up on the blocker's row. */
+.wqchip{max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.qdep{color:var(--gold)}
 .wnote{width:auto;flex:0 0 auto;max-width:34%;font-size:11.5px;padding:4px 8px;color:var(--muted)}
 @media(max-width:560px){.wnote{max-width:28%}}
 /* Culture collections (build 64): zoo/museum/garden set tracking under an

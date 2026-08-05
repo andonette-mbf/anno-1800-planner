@@ -127,7 +127,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 65 · tidier menus</span>
+      <span style={{ opacity: 0.55 }}>build 66 · tasks that free each other</span>
     </div>
   );
 }
