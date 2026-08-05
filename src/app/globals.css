@@ -56,6 +56,9 @@ a.plx:hover{color:var(--accent)}
 .waitblk{margin-top:10px;padding-top:6px;border-top:1px dashed var(--line)}
 .questrow.waiting{border-style:dashed;background:var(--panel2)}
 .questrow.waiting .qmain>span{color:var(--muted)}
-.qwait{font-size:12px}
+.qwait,.qeye{font-size:12px}
+/* An island already queued for a check-in (build 62): the button is spent,
+   but "already on the list" has to read as done, not as unavailable. */
+.qeye.on:disabled{opacity:.9;color:var(--gold);cursor:default}
 .wnote{width:auto;flex:0 0 auto;max-width:34%;font-size:11.5px;padding:4px 8px;color:var(--muted)}
 @media(max-width:560px){.wnote{max-width:28%}}

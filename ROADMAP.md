@@ -198,6 +198,16 @@ is in CLAUDE.md.
   ever see actionable rows. Island filter chips count them apart ("🏝 Ditchwater
   · 3 ⏳2"). Ordering pinned in `npm run test:games`.
 
+- **Check-in tasks** (build 62): "when I leave an island I need a task to come
+  back to it later." 👁 on an island block's header adds "Crown Falls: check
+  back in" in one tap — island-prefixed, so the filter chips catch it, and at
+  the bottom of the open list, because a check-in is for later by definition.
+  The header 👁 goes gold and inert while one is queued (`checkInQueued`), so
+  a second tap can't stack duplicates. The quest card's "👁 Check back in on…"
+  row does the same with a detail ("…on the beer supply") and an island
+  select including "(no island)" for a general one. Pure UI over `addQuest` —
+  no new state, nothing to sync.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)

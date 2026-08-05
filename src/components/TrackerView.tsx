@@ -530,6 +530,25 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
     );
     setRouteWhat(""); // keep from/to: often several goods ride the same route
   };
+  // Check-in tasks (build 62) — "I'm leaving this island, remind me to come
+  // back". One tap from the island's own block (👁 on its header), or from the
+  // row here with a detail ("check back in on the beer"). It lands at the
+  // bottom of the open list, because a check-in is by definition for later.
+  const CHECK_IN = "check back in";
+  const checkInText = (isle: string, what?: string) =>
+    `${isle ? `${isle}: ` : ""}${CHECK_IN}${what?.trim() ? ` on ${what.trim()}` : ""}`;
+  // Is this island already queued for a look? Keeps double-taps from stacking
+  // duplicates, and lets the 👁 show it's already done.
+  const checkInQueued = (isle: string) =>
+    quests.some((q) => !q.done && q.t.startsWith(`${isle}: ${CHECK_IN}`));
+  const addCheckIn = (isle: string, what?: string) => {
+    const t = checkInText(isle, what);
+    if (!t.trim() || quests.some((q) => !q.done && q.t === t)) return;
+    addQuest(t);
+  };
+  const [ciOpen, setCiOpen] = useState(false);
+  const [ciIsle, setCiIsle] = useState("");
+  const [ciWhat, setCiWhat] = useState("");
   // Landmark quick-add chips, collapsed per island until asked for.
   const [chipsOpen, setChipsOpen] = useState<Record<string, boolean>>({});
   const savedLabel =
@@ -548,7 +567,8 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
             {game === "anno117"
               ? "what each need is worth in residents per house"
               : "real unlock thresholds, with the residence count"}
-            ), a route task (🚢 from → to → what) or type your own — top of the list = do next.
+            ), a route task (🚢 from → to → what), a check-in (👁 come back to an island later)
+            or type your own — top of the list = do next.
             ⤓ sends one to the bottom, ⏳ parks one you can&apos;t do yet (say what you&apos;re
             waiting on; ⤒ brings it back to the top); ticked quests tuck away below.
           </p>
@@ -861,6 +881,62 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
               )}
             </div>
           )}
+          {islands.length > 0 && (
+            <div className="plrow">
+              {!ciOpen ? (
+                <button
+                  className="linkbtn"
+                  title="Task to come back to an island later — the 👁 on an island block does the same in one tap"
+                  onClick={() => {
+                    setCiIsle(effFilter || islands[0] || "");
+                    setCiOpen(true);
+                  }}
+                >
+                  👁 Check back in on…
+                </button>
+              ) : (
+                <>
+                  <select
+                    className="qisle"
+                    aria-label="Which island to check back in on"
+                    value={ciIsle}
+                    onChange={(e) => setCiIsle(e.target.value)}
+                  >
+                    <option value="">(no island)</option>
+                    {islands.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    placeholder="What to look at… optional (Enter to add)"
+                    value={ciWhat}
+                    onChange={(e) => setCiWhat(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter") return;
+                      addCheckIn(ciIsle, ciWhat);
+                      setCiWhat("");
+                    }}
+                  />
+                  <button
+                    className="linkbtn"
+                    disabled={!ciIsle && !ciWhat.trim()}
+                    title={`Adds “${checkInText(ciIsle, ciWhat)}” to the bottom of the list`}
+                    onClick={() => {
+                      addCheckIn(ciIsle, ciWhat);
+                      setCiWhat("");
+                    }}
+                  >
+                    ＋ Add
+                  </button>
+                  <button className="plx" title="Close" onClick={() => setCiOpen(false)}>
+                    ✕
+                  </button>
+                </>
+              )}
+            </div>
+          )}
           {filterIslands.length > 0 && (
             <div className="chips qfilter">
               <button
@@ -1154,6 +1230,18 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                         ))}
                       </select>
                     )}
+                    <button
+                      className={"plx qmove qeye" + (checkInQueued(name) ? " on" : "")}
+                      title={
+                        checkInQueued(name)
+                          ? `${name} is already on the quest list to check back in`
+                          : `Leaving ${name}? Add a task to come back and look it over`
+                      }
+                      disabled={checkInQueued(name)}
+                      onClick={() => addCheckIn(name)}
+                    >
+                      👁
+                    </button>
                     <button
                       className="plx"
                       title="Remove island and its checklist"
