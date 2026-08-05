@@ -89,6 +89,11 @@ export interface QuestItem {
   // list and out of the way, keeping the order you built. Absent = actionable.
   w?: boolean;
   wn?: string; // what it's waiting on, free text ("bricks")
+  // …or another task in the list, by its text (build 66). Quests have no ids —
+  // they're identified by position, which every reorder changes — so the
+  // blocker's own text is the only stable handle. Ticking or deleting that
+  // task frees this one automatically. Mutually exclusive with `wn`.
+  wq?: string;
 }
 
 export interface CompanionData {
@@ -120,6 +125,42 @@ export interface CompanionData {
 function firstIndexOf(quests: QuestItem[], pred: (q: QuestItem) => boolean): number {
   const f = quests.findIndex(pred);
   return f < 0 ? quests.length : f;
+}
+
+const qkey = (t: string) => t.trim().toLowerCase();
+
+// Release every quest waiting on `blocker` (build 66) — called when that task
+// is ticked off or deleted. Freed quests go to the top of the open list, same
+// as unblocking one by hand: what just came free is what to go and do.
+function freeBlockedBy(quests: QuestItem[], blocker: string): QuestItem[] {
+  const key = qkey(blocker);
+  if (!key) return quests;
+  const freed: QuestItem[] = [];
+  const rest: QuestItem[] = [];
+  for (const q of quests) {
+    if (!q.done && q.w && qkey(q.wq || "") === key) {
+      const n = { ...q };
+      delete n.w;
+      delete n.wq;
+      delete n.wn;
+      freed.push(n);
+    } else rest.push(q);
+  }
+  return freed.length ? [...freed, ...rest] : quests;
+}
+
+// A task waiting on one that is no longer open — ticked or deleted on another
+// device, or dropped by /legacy.html, which doesn't know these fields — has
+// nothing left to wait for, so free it on the way in rather than stranding it.
+function healBlockers(quests: QuestItem[]): QuestItem[] {
+  const open = new Set(quests.filter((q) => !q.done).map((q) => qkey(q.t)));
+  return quests.map((q) => {
+    if (!q.w || !q.wq || open.has(qkey(q.wq))) return q;
+    const n = { ...q };
+    delete n.w;
+    delete n.wq;
+    return n;
+  });
 }
 
 function parseChecks(raw: unknown): CheckItem[] {
@@ -249,8 +290,10 @@ function loadLocal(game: Game = "anno1800"): CompanionData {
           ...(x?.note ? { note: String(x.note) } : {}),
           ...(x?.w && !x?.done ? { w: true } : {}),
           ...(x?.wn ? { wn: String(x.wn) } : {}),
+          ...(x?.wq ? { wq: String(x.wq) } : {}),
         }))
         .filter((x) => x.t);
+    quests = healBlockers(quests);
   } catch {}
   return {
     openq,
@@ -314,6 +357,7 @@ function fromBlob(blob: SyncBlob, local: Record<Game, CompanionData>): Record<Ga
       Object.entries(d.islandChecks || {}).map(([k, v]) => [k, parseChecks(v)])
     ),
     islandCulture: parseCulture(d.islandCulture),
+    quests: healBlockers(d.quests || []),
   });
   return {
     anno1800: norm({ ...local.anno1800, ...(rest as CompanionData) }),
@@ -556,15 +600,18 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           // unticking re-surfaces it at the end of the open list, above the
           // waiting block. Ticking also clears the block — it can't still be
           // waiting on bricks once it's built.
-          const quests = d.quests.slice();
+          let quests = d.quests.slice();
           const [q] = quests.splice(i, 1);
           const at = done ? quests.length : firstIndexOf(quests, (x) => !!x.w || x.done);
           const next = { ...q, done };
           if (done) {
             delete next.w;
             delete next.wn;
+            delete next.wq;
           }
           quests.splice(at, 0, next);
+          // Anything queued behind this task frees itself the moment it's done.
+          if (done) quests = freeBlockedBy(quests, q.t);
           return { ...d, quests };
         }),
       // Park a quest you can't do yet (build 60). Waiting sinks it to the
@@ -581,22 +628,45 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           else {
             delete next.w;
             delete next.wn;
+            delete next.wq;
           }
           quests.splice(w ? firstIndexOf(quests, (x) => x.done) : 0, 0, next);
           return { ...d, quests };
         }),
+      // One box, two meanings: name another task in the list and this one waits
+      // on it (and frees itself when that one is ticked); anything else is just
+      // a note about what you're short of. Matching on text is what makes the
+      // link survive every reorder — see QuestItem.wq.
       setQuestWaitNote: (i, wn) =>
         update((d) => {
           if (i < 0 || i >= d.quests.length) return d;
           const quests = d.quests.slice();
           const next = { ...quests[i] };
-          if (wn.trim()) next.wn = wn.trim();
-          else delete next.wn;
+          const s = wn.trim();
+          const blocker = s
+            ? quests.find((x, j) => j !== i && !x.done && qkey(x.t) === qkey(s))
+            : undefined;
+          delete next.wn;
+          delete next.wq;
+          if (blocker) next.wq = blocker.t;
+          else if (s) next.wn = s;
           quests[i] = next;
           return { ...d, quests };
         }),
+      // Deleting a task frees whatever was queued behind it — better than
+      // leaving those waiting on something that is no longer in the list.
       removeQuest: (i) =>
-        update((d) => ({ ...d, quests: d.quests.filter((_, j) => j !== i) })),
+        update((d) => {
+          if (i < 0 || i >= d.quests.length) return d;
+          const gone = d.quests[i];
+          return {
+            ...d,
+            quests: freeBlockedBy(
+              d.quests.filter((_, j) => j !== i),
+              gone.t
+            ),
+          };
+        }),
       swapQuests: (i, j) =>
         update((d) => {
           if (i < 0 || j < 0 || i >= d.quests.length || j >= d.quests.length || i === j)
