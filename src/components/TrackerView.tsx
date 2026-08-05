@@ -1256,12 +1256,12 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                   (!s.regions || !region || s.regions.includes(region)) &&
                   !items.some((c) => c.t.toLowerCase() === s.t.toLowerCase())
               ).map((s) => s.t);
-              const ledger = islandLedger(items, game);
+              const ledger = islandLedger(items, game, REGION_NUM[region] || 0);
               const plan = (data.islandPlans || {})[name];
               return (
                 <div className="isleblk" key={name}>
                   <datalist id={`bldgSuggest${idx}`}>
-                    {buildingOptionsFor(REGION_NUM[region], game).map((b) => (
+                    {itemSuggestions(region).map((b) => (
                       <option key={b} value={b} />
                     ))}
                   </datalist>

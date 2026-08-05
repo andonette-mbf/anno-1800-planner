@@ -22,6 +22,9 @@ export interface GameContent {
   regionNum: Record<string, number>;
   /** One-tap chips for the island inventory. `regions` omitted = everywhere. */
   suggestions: { t: string; regions?: string[] }[];
+  /** Buildings that make nothing, so the ledger doesn't know them and they
+   *  can't be chips without swamping the row — offered as you type instead. */
+  services: { t: string; regions?: string[] }[];
   /** Seeded UNTICKED on island add — red "still to do" gaps. */
   starters: { key: string; label: string; items: string[] }[];
   /** Fandom wiki search base for the 🔗 lookup on an item. */
@@ -52,6 +55,28 @@ const ANNO1800: GameContent = {
     { t: "Airship platform" },
     { t: "Research Institute", regions: ["en"] },
     { t: "Hacienda", regions: ["nw"] },
+    { t: "Town Hall", regions: ["ow", "nw", "en"] },
+    { t: "Trade Union", regions: ["ow", "nw", "en"] },
+    { t: "Post Office", regions: ["ow", "nw", "ar"] },
+  ],
+  services: [
+    { t: "Marketplace", regions: ["ow", "nw", "en"] },
+    { t: "Depot" },
+    { t: "Harbourmaster's Office", regions: ["ow", "nw", "en"] },
+    { t: "Pub", regions: ["ow"] },
+    { t: "Church", regions: ["ow"] },
+    { t: "School", regions: ["ow"] },
+    { t: "Bank", regions: ["ow"] },
+    { t: "University", regions: ["ow"] },
+    { t: "Variety Theatre", regions: ["ow"] },
+    { t: "Bus Stop", regions: ["ow"] },
+    { t: "Chapel", regions: ["nw"] },
+    { t: "Cinema", regions: ["nw"] },
+    { t: "Heater", regions: ["ar"] },
+    // Hacienda modules that make nothing the calculator tracks — the fertiliser
+    // works turns Dung into Fertiliser, neither of which is a tradeable good.
+    { t: "Hacienda Storeroom", regions: ["nw"] },
+    { t: "Hacienda Fertiliser Works", regions: ["nw"] },
   ],
   starters: [
     {
@@ -148,6 +173,8 @@ const ANNO117: GameContent = {
     { t: "Baths" },
     { t: "Aqueduct Cistern" },
   ],
+  // 117's public buildings are few enough to all be chips.
+  services: [],
   // The first resident tier's full need chains plus the construction-material
   // basics — building names come straight from data-117.json, so a ticked
   // starter feeds the ledger.

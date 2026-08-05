@@ -50,6 +50,11 @@ interface Index {
   // good display name -> the building that makes it (first = Old World
   // preferred), so a deficit can be phrased as "build N× Grain Farm".
   producer: Record<string, { building: string; rate: number }>;
+  // The same, per region: `${good display name}|${region}`. The New World's
+  // Cattle Farm makes twice what the Old World's does, so the same Beef gap
+  // needs half as many farms there — and the region-suffixed name. Islands
+  // with no 🌍 tag fall back to `producer`.
+  producerAt: Map<string, { building: string; rate: number }>;
   // Entry name -> every region that building exists in. Merged names collect
   // all their regions (Lumberjack's Hut = OW+NW+Arctic), so a region-filtered
   // datalist still offers them everywhere they're real.
@@ -79,6 +84,7 @@ function emptyIndex(): IndexCore {
     primaryName: {},
     regionName: new Map(),
     producer: {},
+    producerAt: new Map(),
     nameRegions: new Map(),
   };
 }
@@ -90,6 +96,10 @@ function build1800(): Index {
     let s = ix.nameRegions.get(k);
     if (!s) ix.nameRegions.set(k, (s = new Set()));
     s.add(region);
+  };
+  const notePro = (good: string, region: number, building: string, rate: number) => {
+    const k = `${good}|${region}`;
+    if (!ix.producerAt.has(k)) ix.producerAt.set(k, { building, rate });
   };
   const register = (name: string, v: Variant, hidden = false): boolean => {
     const k = name.toLowerCase();
@@ -112,6 +122,7 @@ function build1800(): Index {
       ix.primaryName[g.id] = name;
     noteRegion(name, g.region);
     if (!ix.producer[g.name]) ix.producer[g.name] = { building: name, rate: g.rate };
+    notePro(g.name, g.region, name, g.rate);
     for (const a of g.alts) {
       register(a.building, { good: g.id, rate: a.rate, inputs: g.inputs, siloFeed });
       noteRegion(a.building, g.region);
@@ -130,6 +141,58 @@ function build1800(): Index {
       { good: gid, rate: bv.rate, inputs: bv.inputs, silo: true, siloFeed: SILO[gid] },
       true
     );
+  }
+
+  // Hacienda modules (Seeds of Change). A hacienda grows and brews things a New
+  // World island otherwise can't — Old World crops included — and each recipe
+  // is its own building in the build menu, so they are their own entries rather
+  // than the plain farms with the New World added: the hacienda version is the
+  // only one you can put up over there. Rates are the wiki's production cycles.
+  // Every farm matches its non-hacienda twin; two of the breweries do NOT —
+  // hacienda schnapps runs at half the Old World distillery's speed, and
+  // hacienda beer is brewed from Grain and Corn rather than Hops and Malt.
+  // Hot Sauce and Atole exist only as hacienda recipes and are already in
+  // data.json under their hacienda names.
+  const HACIENDA: { name: string; good: string; rate: number; inputs: string[] }[] = [
+    { name: "Hacienda Sugar Cane Farm", good: "sugar_cane", rate: 2, inputs: [] },
+    { name: "Hacienda Corn Farm", good: "corn", rate: 1, inputs: [] },
+    { name: "Hacienda Coffee Farm", good: "coffee_beans", rate: 1, inputs: [] },
+    { name: "Hacienda Caoutchouc Plantation", good: "caoutchouc", rate: 1, inputs: [] },
+    { name: "Hacienda Cocoa Farm", good: "cocoa", rate: 1, inputs: [] },
+    { name: "Hacienda Potato Farm", good: "potatoes", rate: 2, inputs: [] },
+    { name: "Hacienda Spice Farm", good: "spices", rate: 1, inputs: [] },
+    { name: "Hacienda Grain Farm", good: "grain", rate: 1, inputs: [] },
+    { name: "Hacienda Rum Distillery", good: "rum", rate: 2, inputs: ["wood_nw", "sugar_cane"] },
+    { name: "Hacienda Beer Brewery", good: "beer", rate: 1, inputs: ["grain", "corn"] },
+    { name: "Hacienda Schnapps Distillery", good: "schnapps", rate: 1, inputs: ["potatoes"] },
+  ];
+  for (const h of HACIENDA) {
+    register(h.name, {
+      good: h.good,
+      rate: h.rate,
+      inputs: h.inputs.map((good) => ({ good, qty: 1 })),
+    });
+    noteRegion(h.name, 2);
+    // Only where the New World has no other source: Corn already has its own
+    // farm there, but Potatoes, Grain and Spices arrive by hacienda alone, so a
+    // gap on a New World island should name the hacienda module.
+    const g = GOODS[h.good];
+    if (g) notePro(g.name, 2, h.name, h.rate);
+  }
+
+  // Buildings you can also put up outside their good's home region — the index
+  // works the region out from the good (Coal is Old World, so the kiln was too)
+  // and that hides real options. The kiln is buildable in the New World with
+  // Empire of the Skies or New World Rising, and in the Arctic (The Passage)
+  // where it is what feeds the heaters.
+  const ALSO_IN: Record<string, number[]> = { "Charcoal Kiln": [2, 4] };
+  for (const [name, regions] of Object.entries(ALSO_IN)) {
+    const v = ix.variants.get(name.toLowerCase());
+    for (const r of regions) {
+      noteRegion(name, r);
+      const g = v && GOODS[v.good];
+      if (v && g) notePro(g.name, r, name, v.rate);
+    }
   }
 
   return {
@@ -188,6 +251,10 @@ function build117(): Index {
       for (const r of [1, 2]) if (p.region & r) ix.regionName.set(`${g.id}|${r}`, name);
       noteRegion(name, p.region);
       if (!ix.producer[g.name]) ix.producer[g.name] = { building: name, rate };
+      for (const r of [1, 2]) {
+        const k = `${g.name}|${r}`;
+        if (p.region & r && !ix.producerAt.has(k)) ix.producerAt.set(k, { building: name, rate });
+      }
     }
   }
 
@@ -281,8 +348,14 @@ export interface LedgerRow {
 }
 
 /** Sum one island's checklist into per-good makes/uses/net rows.
- *  Unticked (broken) buildings and non-building items are skipped. */
-export function islandLedger(items: CheckItem[], game: Game = "anno1800"): LedgerRow[] {
+ *  Unticked (broken) buildings and non-building items are skipped.
+ *  `region` is the island's 🌍 tag as a region number (0 = untagged); it only
+ *  affects which building a shortfall suggests. */
+export function islandLedger(
+  items: CheckItem[],
+  game: Game = "anno1800",
+  region = 0
+): LedgerRow[] {
   const I = ix(game);
   const produced: Record<string, number> = {};
   const used: Record<string, number> = {};
@@ -325,7 +398,7 @@ export function islandLedger(items: CheckItem[], game: Game = "anno1800"): Ledge
       const p = produced[name] || 0;
       const u = used[name] || 0;
       const row: LedgerRow = { name, produced: p, used: u, net: p - u };
-      const pr = I.producer[name];
+      const pr = (region ? I.producerAt.get(`${name}|${region}`) : null) ?? I.producer[name];
       if (row.net < -1e-9 && pr)
         row.fix = { building: pr.building, count: Math.ceil((u - p) / pr.rate - 1e-9) };
       return row;
