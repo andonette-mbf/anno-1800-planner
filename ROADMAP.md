@@ -288,6 +288,20 @@ is in CLAUDE.md.
   "the next region" are as valid as ever, and a material stays a NOTE rather
   than becoming a blocker — only tasks can free a task.
 
+- **Fold an island away** (build 72): "make island inventory collapsible". A
+  settled island's block is a screenful — inventory, ledger, plan check,
+  collections — and with several islands you scroll past all of them to reach
+  the one you want. The island name is now the fold control (▾/▸); folding
+  removes the body from the DOM rather than hiding it, and takes the 🌍 and 🎯
+  pickers with it, leaving a one-line header. What stays is what you'd fold up
+  to glance at: the built count, and **⚠ N short** if its ledger is missing
+  something (goods, not buildings) — plus 👁 and ✕, which you want without
+  opening it. Default is open, so nothing hides itself; the folds you make are
+  remembered per game in `anno_isle_shut`, presentation-only and never synced.
+  `npm run test:islands` folds one of two islands and checks the body really
+  goes, the header keeps count and shortfall, the other island is untouched,
+  and the state survives a remount.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)

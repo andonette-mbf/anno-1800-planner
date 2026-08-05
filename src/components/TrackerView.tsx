@@ -286,6 +286,10 @@ const GROWTH_TIERS_BY_GAME: Record<Game, GrowthTier[]> = {
 
 // Every good display name, for the route-task datalist — shipping moves
 // goods, not buildings. Regions merged: Rum is Rum.
+// Which island blocks are folded up, per game. Presentation only — never
+// synced, and an absent key means every island is open, as it always was.
+const ISLE_SHUT_KEY = (g: Game) => (g === "anno117" ? "anno117_isle_shut" : "anno_isle_shut");
+
 const GOOD_NAMES_BY_GAME: Record<Game, string[]> = {
   anno1800: [...new Set(Object.values(GOODS).map((g) => g.name))].sort(),
   anno117: [...new Set(Object.values(GOODS_117).map((g) => g.name))].sort(),
@@ -634,6 +638,30 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
   const [ciIsle, setCiIsle] = useState("");
   // Landmark quick-add chips, collapsed per island until asked for.
   const [chipsOpen, setChipsOpen] = useState<Record<string, boolean>>({});
+  // Folded-up islands (build 72). A settled island's block runs to a screenful
+  // once it has an inventory, a ledger and a plan check, and you are usually
+  // only looking at one of them. Which are folded is remembered per game, and
+  // read after mount rather than during render — localStorage isn't there when
+  // this component is prerendered on the server.
+  const [isleShut, setIsleShut] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    let shut: Record<string, boolean> = {};
+    try {
+      const raw = JSON.parse(localStorage.getItem(ISLE_SHUT_KEY(game)) || "[]");
+      if (Array.isArray(raw)) shut = Object.fromEntries(raw.map((n) => [String(n), true]));
+    } catch {}
+    setIsleShut(shut);
+  }, [game]);
+  const toggleIsle = (name: string) =>
+    setIsleShut((cur) => {
+      const next = { ...cur };
+      if (next[name]) delete next[name];
+      else next[name] = true;
+      try {
+        localStorage.setItem(ISLE_SHUT_KEY(game), JSON.stringify(Object.keys(next)));
+      } catch {}
+      return next;
+    });
   const savedLabel =
     sync === "synced" ? "synced" : sync === "syncing" ? "syncing…" : "saves automatically";
 
@@ -1306,18 +1334,43 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
               ).map((s) => s.t);
               const ledger = islandLedger(items, game, REGION_NUM[region] || 0);
               const plan = (data.islandPlans || {})[name];
+              const shut = !!isleShut[name];
+              const short = ledger.filter((r) => r.fix).length;
               return (
-                <div className="isleblk" key={name}>
-                  <datalist id={`bldgSuggest${idx}`}>
-                    {itemSuggestions(region).map((b) => (
-                      <option key={b} value={b} />
-                    ))}
-                  </datalist>
+                <div className={"isleblk" + (shut ? " shut" : "")} key={name}>
+                  {!shut && (
+                    <datalist id={`bldgSuggest${idx}`}>
+                      {itemSuggestions(region).map((b) => (
+                        <option key={b} value={b} />
+                      ))}
+                    </datalist>
+                  )}
                   <div className="islehd">
-                    <h4>🏝 {name}</h4>
+                    <h4>
+                      <button
+                        className="isletog"
+                        aria-expanded={!shut}
+                        title={shut ? `Open ${name}` : `Fold ${name} away`}
+                        onClick={() => toggleIsle(name)}
+                      >
+                        {shut ? "▸" : "▾"} 🏝 {name}
+                      </button>
+                    </h4>
                     <span className="muted">
                       {have}/{items.length}
                     </span>
+                    {/* Folded up, the one thing worth saying is whether it's
+                        short of something — that's what you'd open it to find. */}
+                    {shut && short > 0 && (
+                      <span
+                        className="isleshort"
+                        title="Open it for what to build — the ledger says which goods run short"
+                      >
+                        ⚠ {short} short
+                      </span>
+                    )}
+                    {!shut && (
+                      <>
                     <Dropdown
                       className="planlink"
                       ariaLabel={`Region of ${name}`}
@@ -1376,6 +1429,8 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                         ]}
                       />
                     )}
+                      </>
+                    )}
                     <button
                       className={"plx qmove qeye" + (checkInQueued(name) ? " on" : "")}
                       title={
@@ -1399,6 +1454,8 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                       ✕
                     </button>
                   </div>
+                  {!shut && (
+                    <>
                   {items.map((c, i) => (
                     <div className={"plitem questrow" + (c.done ? "" : " gap")} key={`${i}:${c.t}`}>
                       <label className="qmain" title="Tap to toggle">
@@ -1636,6 +1693,8 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                         </button>
                       )}
                     </div>
+                  )}
+                    </>
                   )}
                 </div>
               );

@@ -18,6 +18,7 @@
     "extract:culture": "node scripts/extract-culture.mjs",
     "test:games": "node tests/store-games.test.mjs",
     "test:saves": "node tests/store-saves.test.mjs",
+    "test:islands": "node tests/island-ui.test.mjs",
     "test:ledger": "node tests/ledger.test.cjs"
   },
   "dependencies": {

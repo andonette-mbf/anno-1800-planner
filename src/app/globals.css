@@ -25,6 +25,12 @@ a.plx:hover{color:var(--accent)}
 .isleblk{border:1px solid var(--line);border-radius:0;padding:10px 12px;margin:10px 0;background:#fffdf6}
 .islehd{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .islehd h4{margin:0;flex:1}
+/* The island name IS the fold control — a bare button so it keeps the h4's
+   type, with room either side for a thumb. */
+.isletog{background:0 0;border:0;padding:2px 0;margin:0;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.isletog:hover{color:var(--gold)}
+.isleblk.shut{padding-bottom:6px}
+.isleshort{font-size:11px;color:var(--red);font-weight:700;white-space:nowrap}
 .ichips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .questrow.gap{border-color:#cfa08e}
 /* Red only on the item's own label — a bare `span` selector also caught the
