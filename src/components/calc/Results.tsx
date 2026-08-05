@@ -127,7 +127,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 67 · one save per playthrough</span>
+      <span style={{ opacity: 0.55 }}>build 68 · a timer on waiting</span>
     </div>
   );
 }

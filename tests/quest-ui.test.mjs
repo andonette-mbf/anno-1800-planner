@@ -166,12 +166,125 @@ check(
   $(".qdep").map((el) => el.textContent).join(" | ")
 );
 
+// --- a timer is the third kind of wait (build 68) -------------------------
+// The orchard is still parked with its "marble" note; put it on the clock too.
+const pick = waitRows()[0].querySelector(".tpick");
+check("a parked row offers a timer", !!pick);
+await fire(pick, "click");
+const tenMin = [...document.querySelectorAll(".ddpop .ddopt")].find(
+  (o) => o.textContent.trim() === "10 min"
+);
+await fire(tenMin, "click");
+check(
+  "picking a length starts a countdown on the row",
+  /^⏱ (9|10):\d\d$/.test(waitRows()[0].querySelector(".qtimer")?.textContent.trim() || ""),
+  waitRows()[0].querySelector(".qtimer")?.textContent
+);
+check(
+  "the note it was already waiting on is untouched",
+  waitRows()[0].querySelector(".wnote")?.value === "marble",
+  waitRows()[0].querySelector(".wnote")?.value
+);
+const saved = JSON.parse(localStorage.getItem("anno_quests") || "[]");
+const orchard = saved.find((q) => q.t === "Plant an orchard");
+check(
+  "the deadline is saved, ~10 minutes out",
+  Math.abs(orchard?.wt - (Date.now() + 600000)) < 5000,
+  String(orchard?.wt && orchard.wt - Date.now())
+);
+
 // --- ⤒ still works by hand -----------------------------------------------
 await fire(btn(waitRows()[0], "⤒"), "click");
 check(
   "⤒ brings it back to the top",
   $(".waitblk").length === 0 && rowText(openRows()[0]).startsWith("Plant an orchard"),
   openRows().map((el) => rowText(el).split("\n")[0]).join(" | ")
+);
+check(
+  "…and calls the timer off with it",
+  !JSON.parse(localStorage.getItem("anno_quests") || "[]").some((q) => q.wt),
+  localStorage.getItem("anno_quests")
+);
+
+// --- a timer that ran out while the app was shut --------------------------
+// Rather than wait ten minutes, seed a deadline in the past and mount the app
+// again: the task should be open, at the top, wearing the ⏰ mark.
+localStorage.setItem(
+  "anno_quests",
+  JSON.stringify([
+    { t: "Build a brickworks", done: false, added: 1, sess: 0 },
+    { t: "Ship guns to Manola", done: false, added: 1, sess: 0, w: true, wt: Date.now() - 1000 },
+  ])
+);
+await act(async () => r.unmount());
+document.getElementById("root").innerHTML = "";
+const r2 = createRoot(document.getElementById("root"));
+await act(async () => {
+  r2.render(
+    React.createElement(
+      S.AppProviders,
+      null,
+      React.createElement(TrackerView, { calcState: E.DEFAULT_STATE })
+    )
+  );
+});
+check(
+  "a timer that rang while you were away frees its task, at the top",
+  $(".waitblk").length === 0 && rowText(openRows()[0]).startsWith("Ship guns to Manola"),
+  openRows().map((el) => rowText(el).split("\n")[0]).join(" | ")
+);
+check(
+  "…and says so, so you know why it moved",
+  openRows()[0].querySelector(".qrang")?.textContent.includes("time"),
+  openRows()[0].querySelector(".qrang")?.textContent
+);
+await fire(openRows()[0].querySelector(".qrang"), "click");
+check(
+  "tapping the mark clears it",
+  !$(".qrang").length && rowText(openRows()[0]).startsWith("Ship guns to Manola"),
+  openRows().map((el) => rowText(el).split("\n")[0]).join(" | ")
+);
+
+// --- and one that runs out while you're looking at it ---------------------
+// The real promise of the feature: nobody has to come back and unpark it. Two
+// seconds of real clock, seeded through storage because the menu's shortest
+// offer is a minute.
+localStorage.setItem(
+  "anno_quests",
+  JSON.stringify([
+    { t: "Build a brickworks", done: false, added: 1, sess: 0 },
+    { t: "Sail to La Isla", done: false, added: 1, sess: 0, w: true, wt: Date.now() + 1500 },
+  ])
+);
+await act(async () => r2.unmount());
+document.getElementById("root").innerHTML = "";
+const r3 = createRoot(document.getElementById("root"));
+await act(async () => {
+  r3.render(
+    React.createElement(
+      S.AppProviders,
+      null,
+      React.createElement(TrackerView, { calcState: E.DEFAULT_STATE })
+    )
+  );
+});
+check(
+  "it starts out parked, counting down",
+  waitRows().length === 1 && !!waitRows()[0].querySelector(".qtimer"),
+  waitRows()[0]?.querySelector(".qtimer")?.textContent
+);
+await act(async () => {
+  await new Promise((res) => setTimeout(res, 2200));
+});
+check(
+  "when the clock runs out it frees itself, no tap needed",
+  $(".waitblk").length === 0 && rowText(openRows()[0]).startsWith("Sail to La Isla"),
+  openRows().map((el) => rowText(el).split("\n")[0]).join(" | ")
+);
+check(
+  "…and it's saved that way",
+  !!localStorage.getItem("anno_quests")?.includes('"wr":true'),
+  String(localStorage.getItem("anno_quests"))
 );
 
 let bad = 0;

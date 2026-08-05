@@ -323,6 +323,21 @@ function linkify(t: string) {
   );
 }
 
+// Timer lengths for a parked task (build 68). A short hop between Old World
+// islands is a minute or two, a New World crossing runs to ten and up, and the
+// long end covers a build or an expedition you're waiting out. Whole minutes
+// only: this is "roughly when to look again", not a stopwatch.
+const TIMER_MINS = [1, 2, 3, 5, 10, 15, 20, 30, 45, 60];
+
+// m:ss, or h:mm:ss once there's an hour on it.
+function countdown(ms: number) {
+  const s = Math.max(0, Math.ceil(ms / 1000));
+  const two = (n: number) => String(n).padStart(2, "0");
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return h ? `${h}:${two(m)}:${two(s % 60)}` : `${m}:${two(s % 60)}`;
+}
+
 // A per-line bolt-on counter (silo module, electricity): how many of the
 // line's n buildings have it. One building = a tap toggle, several = −/＋ over
 // the count, because a line is often part-fitted (3 of 5 farms silo'd).
@@ -382,6 +397,8 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
     toggleQuest,
     setQuestWaiting,
     setQuestWaitNote,
+    setQuestTimer,
+    clearQuestRang,
     removeQuest,
     swapQuests,
     moveQuestAfter,
@@ -403,9 +420,23 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
   const {
     starters: ISLAND_STARTERS,
     suggestions: ISLAND_SUGGESTIONS,
+    services: ISLAND_SERVICES,
     regionNum: REGION_NUM,
     regionLabels: REGION_LABELS,
   } = GAME_CONTENT[game];
+  // What the item box offers as you type: every production building of that
+  // region (the ledger's own names, so a pick counts in the ledger) plus the
+  // public buildings, which make nothing and so aren't in the ledger at all.
+  const itemSuggestions = (region: string) => {
+    const inRegion = (s: { regions?: string[] }) =>
+      !s.regions || !region || s.regions.includes(region);
+    return [
+      ...new Set([
+        ...buildingOptionsFor(REGION_NUM[region], game),
+        ...[...ISLAND_SUGGESTIONS, ...ISLAND_SERVICES].filter(inRegion).map((s) => s.t),
+      ]),
+    ].sort();
+  };
   const GROWTH_TIERS = GROWTH_TIERS_BY_GAME[game];
   const GOOD_NAMES = GOOD_NAMES_BY_GAME[game];
   const islands = data.islands || [];
@@ -457,6 +488,17 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
   const doneQuests = indexed.filter((x) => x.q.done);
   const [showDone, setShowDone] = useState(false);
   const [showWait, setShowWait] = useState(true);
+  // Redraw once a second while any countdown is on screen — nothing else in
+  // the Tracker changes on its own, so the interval only exists when a task is
+  // actually on the clock. (The freeing itself is the store's job.)
+  const anyTimer = quests.some((q) => !q.done && q.w && q.wt);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!anyTimer) return;
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [anyTimer]);
   // M5 — filter the quest list by island tag. Chips appear for islands with
   // at least one tagged quest; the count on a chip is its actionable quests,
   // with waiting ones counted separately — the point of the number is "how
@@ -608,8 +650,9 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
             ), a route task (🚢 from → to → what), a check-in (👁 come back to an island later)
             or type your own — top of the list = do next.
             ⤓ sends one to the bottom, ⏳ parks one you can&apos;t do yet — say what you&apos;re
-            waiting on, or name another task and it frees itself when you tick that one off (⤒
-            brings one back by hand); ticked quests tuck away below.
+            waiting on, name another task and it frees itself when you tick that one off, or set
+            a ⏱ timer for a wait that&apos;s only time passing, like a ship crossing (⤒ brings one
+            back by hand); ticked quests tuck away below.
           </p>
           <div className="plrow">
             <Dropdown
@@ -982,6 +1025,15 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                     />
                     {questBody(q)}
                   </label>
+                  {q.wr && (
+                    <button
+                      className="chip schip qrang"
+                      title="Its timer ran out while you were playing, so it came back up here — tap to clear the mark"
+                      onClick={() => clearQuestRang(i)}
+                    >
+                      ⏰ time&apos;s up
+                    </button>
+                  )}
                   <button
                     className="plx qmove"
                     title="Move up — do sooner"
@@ -1087,6 +1139,33 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                               ))}
                           </datalist>
                         </>
+                      )}
+                      {q.wt ? (
+                        // On the clock: the countdown replaces the picker, and
+                        // tapping it calls the wait off early.
+                        <button
+                          className="chip schip qtimer"
+                          title={`Frees itself at ${new Date(q.wt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })} — tap to cancel the timer`}
+                          onClick={() => setQuestTimer(i, null)}
+                        >
+                          ⏱ {countdown(q.wt - now)}
+                        </button>
+                      ) : (
+                        <Dropdown
+                          className="tpick"
+                          ariaLabel={`Set a timer on ${q.t}`}
+                          title="Waiting on nothing but time — a ship crossing, a build finishing? Give it a rough length and the task frees itself when the clock runs out."
+                          placeholder="⏱"
+                          value=""
+                          onChange={(v) => setQuestTimer(i, Number(v))}
+                          options={TIMER_MINS.map((m) => ({
+                            value: String(m),
+                            label: m === 60 ? "1 hour" : `${m} min`,
+                          }))}
+                        />
                       )}
                       <button
                         className="plx qmove qwait"

@@ -66,6 +66,12 @@ a.plx:hover{color:var(--accent)}
 .qdep{color:var(--gold)}
 .wnote{width:auto;flex:0 0 auto;max-width:34%;font-size:11.5px;padding:4px 8px;color:var(--muted)}
 @media(max-width:560px){.wnote{max-width:28%}}
+/* Waiting on the clock (build 68): the ⏱ picker on a parked row, the running
+   countdown that replaces it, and the ⏰ mark a rung timer leaves on the task
+   it freed. Brass for all three — it's the app's "this is live" colour. */
+.tpick{width:auto;flex:0 0 auto;font-size:11px;padding:4px 8px;gap:5px;color:var(--muted)}
+.qtimer{cursor:pointer;color:var(--gold);border-color:var(--gold2);font-variant-numeric:tabular-nums}
+.qrang{cursor:pointer;color:var(--gold);border-color:var(--gold2);font-weight:700}
 /* Culture collections (build 64): zoo/museum/garden set tracking under an
    island. Everything starts collapsed — three buildings' worth of sets is a
    lot of rows, and the tracker's rule since build 43 is that a card earns its

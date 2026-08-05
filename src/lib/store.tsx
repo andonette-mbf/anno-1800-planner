@@ -114,6 +114,16 @@ export interface QuestItem {
   // blocker's own text is the only stable handle. Ticking or deleting that
   // task frees this one automatically. Mutually exclusive with `wn`.
   wq?: string;
+  // …or on the clock (build 68): epoch ms at which the wait is up. Some waits
+  // are only time passing — a clipper crossing to the New World, a build
+  // finishing — so park the task with a timer and it frees itself. Independent
+  // of `wn`/`wq`: whichever comes first frees the task.
+  wt?: number;
+  // A timer rang and freed this task. Kept until you clear it (or tick the task
+  // off), because the ring almost always lands while you're in the game rather
+  // than looking at this list — without the mark the task would just be quietly
+  // sitting at the top next time you glanced over.
+  wr?: boolean;
 }
 
 export interface CompanionData {
@@ -167,6 +177,32 @@ function freeBlockedBy(quests: QuestItem[], blocker: string): QuestItem[] {
     } else rest.push(q);
   }
   return freed.length ? [...freed, ...rest] : quests;
+}
+
+// Free every waiting task whose timer has run out (build 68). Same landing spot
+// as a blocker being ticked — the top of the open list — plus the ⏰ mark, since
+// nobody is watching the page when it happens. Returns the array unchanged when
+// nothing is due, so the tick can call it every second without dirtying state.
+function ringTimers(quests: QuestItem[], now: number = Date.now()): QuestItem[] {
+  const due = (q: QuestItem) => !q.done && !!q.w && !!q.wt && q.wt <= now;
+  if (!quests.some(due)) return quests;
+  const rung: QuestItem[] = [];
+  const rest: QuestItem[] = [];
+  for (const q of quests) {
+    if (!due(q)) {
+      rest.push(q);
+      continue;
+    }
+    // Whatever else it was waiting on goes with the timer: the task is out of
+    // the waiting block now, and those fields only mean anything in there.
+    const n = { ...q, wr: true };
+    delete n.w;
+    delete n.wt;
+    delete n.wq;
+    delete n.wn;
+    rung.push(n);
+  }
+  return [...rung, ...rest];
 }
 
 // A task waiting on one that is no longer open — ticked or deleted on another
@@ -311,9 +347,13 @@ function loadLocal(game: Game = "anno1800", id = ""): CompanionData {
           ...(x?.w && !x?.done ? { w: true } : {}),
           ...(x?.wn ? { wn: String(x.wn) } : {}),
           ...(x?.wq ? { wq: String(x.wq) } : {}),
+          ...(Number(x?.wt) > 0 && !x?.done ? { wt: Number(x.wt) } : {}),
+          ...(x?.wr && !x?.done ? { wr: true } : {}),
         }))
         .filter((x) => x.t);
-    quests = healBlockers(quests);
+    // Timers that ran out while the app was shut ring on the way in — the point
+    // of a timer is that the task comes back on its own.
+    quests = ringTimers(healBlockers(quests));
   } catch {}
   return {
     openq,
@@ -443,7 +483,7 @@ function fromBlob(blob: SyncBlob, local: Record<Game, GameSaves>): Record<Game, 
       Object.entries(d.islandChecks || {}).map(([k, v]) => [k, parseChecks(v)])
     ),
     islandCulture: parseCulture(d.islandCulture),
-    quests: healBlockers(d.quests || []),
+    quests: ringTimers(healBlockers(d.quests || [])),
   });
   const forGame = (game: Game, legacy: CompanionData | undefined): GameSaves => {
     const lo = local[game];
@@ -525,6 +565,10 @@ interface CompanionCtx {
   toggleQuest: (i: number, done: boolean) => void;
   setQuestWaiting: (i: number, w: boolean) => void;
   setQuestWaitNote: (i: number, wn: string) => void;
+  /** Park a task on the clock: `minutes` from now, or null to cancel. */
+  setQuestTimer: (i: number, minutes: number | null) => void;
+  /** Drop the ⏰ mark left by a timer that rang. */
+  clearQuestRang: (i: number) => void;
   removeQuest: (i: number) => void;
   swapQuests: (i: number, j: number) => void;
   moveQuestAfter: (from: number, to: number) => void;
@@ -689,6 +733,20 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     [push, game]
   );
 
+  // Waiting timers run here rather than in the Tracker, so the clock keeps
+  // going while you're on the calculator tab — and the second one is up, its
+  // task belongs back in the open list whether or not anyone is looking. Only
+  // the showing save ticks live; timers in the others ring when you open them.
+  useEffect(() => {
+    if (!data.quests.some((q) => !q.done && q.w && q.wt)) return;
+    const id = setInterval(() => {
+      const now = Date.now();
+      if (data.quests.some((q) => !q.done && q.w && q.wt && q.wt <= now))
+        update((d) => ({ ...d, quests: ringTimers(d.quests, now) }));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [data.quests, update]);
+
   const setGame = useCallback((g: Game) => {
     setGameState(g);
     ls.set(GAME_KEY, g);
@@ -792,6 +850,8 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             delete next.w;
             delete next.wn;
             delete next.wq;
+            delete next.wt;
+            delete next.wr;
           }
           quests.splice(at, 0, next);
           // Anything queued behind this task frees itself the moment it's done.
@@ -808,11 +868,14 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           const quests = d.quests.slice();
           const [q] = quests.splice(i, 1);
           const next = { ...q };
+          delete next.wr;
           if (w) next.w = true;
           else {
+            // Unblocking by hand answers the timer too — you're doing it now.
             delete next.w;
             delete next.wn;
             delete next.wq;
+            delete next.wt;
           }
           quests.splice(w ? firstIndexOf(quests, (x) => x.done) : 0, 0, next);
           return { ...d, quests };
@@ -834,6 +897,38 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           delete next.wq;
           if (blocker) next.wq = blocker.t;
           else if (s) next.wn = s;
+          quests[i] = next;
+          return { ...d, quests };
+        }),
+      // Waiting on time itself (build 68) — a ship crossing, a build finishing.
+      // Setting a timer on a task still in the open list parks it, since a timer
+      // IS a wait; one already parked keeps its place, so the row doesn't jump
+      // out from under the tap. Cancelling leaves it parked: there may well be a
+      // note or a blocker on it too.
+      setQuestTimer: (i, minutes) =>
+        update((d) => {
+          if (i < 0 || i >= d.quests.length || d.quests[i].done) return d;
+          const quests = d.quests.slice();
+          const cur = quests[i];
+          const next = { ...cur };
+          delete next.wr;
+          if (minutes && minutes > 0) next.wt = Date.now() + Math.round(minutes * 60000);
+          else delete next.wt;
+          if (!next.wt || cur.w) {
+            quests[i] = next;
+            return { ...d, quests };
+          }
+          next.w = true;
+          quests.splice(i, 1);
+          quests.splice(firstIndexOf(quests, (x) => x.done), 0, next);
+          return { ...d, quests };
+        }),
+      clearQuestRang: (i) =>
+        update((d) => {
+          if (i < 0 || i >= d.quests.length || !d.quests[i].wr) return d;
+          const quests = d.quests.slice();
+          const next = { ...quests[i] };
+          delete next.wr;
           quests[i] = next;
           return { ...d, quests };
         }),
