@@ -15,6 +15,7 @@ import { buildingOptionsFor, elecCapable, islandLedger, itemGood, siloCapable } 
 import { planCheck, planSeed } from "@/lib/plancheck";
 import CultureBlock from "./CultureBlock";
 import { GoodIcon } from "./GoodIcon";
+import { Dropdown } from "./ui/Dropdown";
 import { useAuth, useCompanion, type QuestItem } from "@/lib/store";
 
 // Anno 1800 quests are mostly procedurally generated, so a complete built-in
@@ -584,39 +585,35 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
             waiting on; ⤒ brings it back to the top); ticked quests tuck away below.
           </p>
           <div className="plrow">
-            <select
-              aria-label="Add a story questline or add-on goal"
+            <Dropdown
+              ariaLabel="Add a story questline or add-on goal"
+              placeholder="＋ Add a story questline / add-on goal…"
               value=""
-              onChange={(e) => {
-                const entry = STORYLINES.flatMap(([, items]) => items).find(
-                  (s) => s.t === e.target.value
-                );
+              // The note used to be a tooltip you had to hover for. Our own
+              // list can just show it under the name.
+              hints
+              onChange={(v) => {
+                const entry = STORYLINES.flatMap(([, items]) => items).find((s) => s.t === v);
                 if (entry) addQuest(entry.t, entry.note);
               }}
-            >
-              <option value="">＋ Add a story questline / add-on goal…</option>
-              {STORYLINES.map(([group, items]) => (
-                <optgroup key={group} label={group}>
-                  {items.map((s) => (
-                    <option key={s.t} value={s.t} title={s.note}>
-                      {s.t}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+              options={STORYLINES.map(([group, items]) => ({
+                group,
+                options: items.map((s) => ({ value: s.t, label: s.t, title: s.note })),
+              }))}
+            />
           </div>
           <div className="plrow">
-            <select
-              aria-label="Add a population growth goal"
+            <Dropdown
+              ariaLabel="Add a population growth goal"
+              placeholder="📈 Add a population growth goal…"
               title={
                 game === "anno117"
                   ? "A 117 residence has no fixed size — it holds the sum of what its supplied needs are worth, so each goal is a need and the residents it adds to every house of that tier. Needs worth nothing are named, not offered. 'Custom…' asks for any number. Scoped to your islands' 🌍 regions (or the filtered island's)."
                   : "Growth milestones from the game's own need tables — each is the point a new need unlocks. 'Custom…' asks for any number. Scoped to your islands' 🌍 regions (or the filtered island's)."
               }
               value=""
-              onChange={(e) => {
-                const [tid, mark, srcId] = e.target.value.split(":");
+              onChange={(v) => {
+                const [tid, mark, srcId] = v.split(":");
                 const t = GROWTH_TIERS.find((x) => x.tid === tid);
                 if (!t) return;
                 // The island that grows: the filtered one, else an island in
@@ -667,43 +664,41 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                   }: ${goods.join(", ")} — size the farms in the calculator's population mode.`
                 );
               }}
-            >
-              <option value="">📈 Add a population growth goal…</option>
-              {growthTiers.map((t) => (
-                <optgroup
-                  key={t.tid}
-                  label={
-                    (growthRegions.size > 1 ? `${t.lbl} · ${REGION_LABEL(t.region)}` : t.lbl) +
-                    // 117 houses have no fixed size, so say what this tier's
-                    // holds when fed — it is the number the goals build toward.
-                    (t.gains ? ` · up to ${t.fh} per house` : "")
-                  }
-                >
-                  {t.marks.map(([target, goods]) => (
-                    <option key={target} value={`${t.tid}:${target}`}>
-                      Grow to {target} {t.lbl} → {goods.join(" + ")}
-                    </option>
-                  ))}
-                  {(t.gains || []).map((s) => (
-                    <option key={s.id} value={`${t.tid}:g:${s.id}`}>
-                      {`${growthVerb(s)} ${s.lbl} → +${s.pop} per house${
-                        s.kind === "wonder" ? " (Wonder)" : ""
-                      }`}
-                    </option>
-                  ))}
-                  {/* Named, not offered: supplying these grows nothing, which
-                      is the trap worth flagging where the choice is made. */}
-                  {!!t.noGain?.length && (
-                    <option disabled value="">
-                      {"— no residents: " +
-                        t.noGain.slice(0, 4).join(", ") +
-                        (t.noGain.length > 4 ? ` +${t.noGain.length - 4} more` : "")}
-                    </option>
-                  )}
-                  <option value={`${t.tid}:custom`}>Add a custom number of {t.lbl}…</option>
-                </optgroup>
-              ))}
-            </select>
+              options={growthTiers.map((t) => ({
+                group:
+                  (growthRegions.size > 1 ? `${t.lbl} · ${REGION_LABEL(t.region)}` : t.lbl) +
+                  // 117 houses have no fixed size, so say what this tier's
+                  // holds when fed — it is the number the goals build toward.
+                  (t.gains ? ` · up to ${t.fh} per house` : ""),
+                options: [
+                  ...t.marks.map(([target, goods]) => ({
+                    value: `${t.tid}:${target}`,
+                    label: `Grow to ${target} ${t.lbl} → ${goods.join(" + ")}`,
+                  })),
+                  ...(t.gains || []).map((s) => ({
+                    value: `${t.tid}:g:${s.id}`,
+                    label: `${growthVerb(s)} ${s.lbl} → +${s.pop} per house${
+                      s.kind === "wonder" ? " (Wonder)" : ""
+                    }`,
+                  })),
+                  // Named, not offered: supplying these grows nothing, which
+                  // is the trap worth flagging where the choice is made.
+                  ...(t.noGain?.length
+                    ? [
+                        {
+                          value: "",
+                          disabled: true,
+                          label:
+                            "— no residents: " +
+                            t.noGain.slice(0, 4).join(", ") +
+                            (t.noGain.length > 4 ? ` +${t.noGain.length - 4} more` : ""),
+                        },
+                      ]
+                    : []),
+                  { value: `${t.tid}:custom`, label: `Add a custom number of ${t.lbl}…` },
+                ],
+              }))}
+            />
           </div>
           {growthTid &&
             (() => {
@@ -727,19 +722,16 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                   <span className="muted" style={{ alignSelf: "center", flex: "0 0 auto" }}>
                     {t.lbl} on
                   </span>
-                  <select
+                  <Dropdown
                     className="qisle"
-                    aria-label="Which island grows"
+                    ariaLabel="Which island grows"
                     value={growthIsle}
-                    onChange={(e) => setGrowthIsle(e.target.value)}
-                  >
-                    <option value="">(no island)</option>
-                    {islands.map((n) => (
-                      <option key={n} value={n}>
-                        {n}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setGrowthIsle}
+                    options={[
+                      { value: "", label: "(no island)" },
+                      ...islands.map((n) => ({ value: n, label: n })),
+                    ]}
+                  />
                   <button className="linkbtn" disabled={!(Math.floor(Number(growthN)) > 0)} onClick={addGrowth}>
                     ＋ Add
                   </button>
@@ -750,12 +742,12 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
               );
             })()}
           <div className="plrow">
-            <select
+            <Dropdown
               className="qisle"
-              aria-label="Tag with one of your islands"
+              ariaLabel="Tag with one of your islands"
+              placeholder="🏝 Island…"
               value=""
-              onChange={(e) => {
-                const v = e.target.value;
+              onChange={(v) => {
                 if (v === "__add") {
                   const name = window.prompt("Island name to add:");
                   if (name?.trim()) {
@@ -784,16 +776,14 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                   setQuestDraft((d) => `${v}: ${d}`);
                 }
               }}
-            >
-              <option value="">🏝 Island…</option>
-              {islands.map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-              <option value="__add">＋ Add island…</option>
-              {islands.length > 0 && <option value="__del">− Remove island…</option>}
-            </select>
+              options={[
+                ...islands.map((n) => ({ value: n, label: n })),
+                { value: "__add", label: "＋ Add island…" },
+                ...(islands.length > 0
+                  ? [{ value: "__del", label: "− Remove island…" }]
+                  : []),
+              ]}
+            />
             <input
               placeholder="Quest or goal… (type for suggestions, Enter to add)"
               list="questSuggest"
@@ -833,32 +823,26 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                 </button>
               ) : (
                 <>
-                  <select
+                  <Dropdown
                     className="qisle"
-                    aria-label="From island"
+                    ariaLabel="From island"
                     value={routeFrom}
-                    onChange={(e) => setRouteFrom(e.target.value)}
-                  >
-                    <option value="">From…</option>
-                    {islands.map((n) => (
-                      <option key={n} value={n}>
-                        {n}
-                      </option>
-                    ))}
-                  </select>
-                  <select
+                    onChange={setRouteFrom}
+                    options={[
+                      { value: "", label: "From…" },
+                      ...islands.map((n) => ({ value: n, label: n })),
+                    ]}
+                  />
+                  <Dropdown
                     className="qisle"
-                    aria-label="To island"
+                    ariaLabel="To island"
                     value={routeTo}
-                    onChange={(e) => setRouteTo(e.target.value)}
-                  >
-                    <option value="">→ To…</option>
-                    {islands.map((n) => (
-                      <option key={n} value={n}>
-                        {n}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setRouteTo}
+                    options={[
+                      { value: "", label: "→ To…" },
+                      ...islands.map((n) => ({ value: n, label: n })),
+                    ]}
+                  />
                   <input
                     placeholder="What… e.g. Rum (Enter to add)"
                     list="goodSuggest"
@@ -907,19 +891,16 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                 </button>
               ) : (
                 <>
-                  <select
+                  <Dropdown
                     className="qisle"
-                    aria-label="Which island to check back in on"
+                    ariaLabel="Which island to check back in on"
                     value={ciIsle}
-                    onChange={(e) => setCiIsle(e.target.value)}
-                  >
-                    <option value="">(no island)</option>
-                    {islands.map((n) => (
-                      <option key={n} value={n}>
-                        {n}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setCiIsle}
+                    options={[
+                      { value: "", label: "(no island)" },
+                      ...islands.map((n) => ({ value: n, label: n })),
+                    ]}
+                  />
                   <input
                     placeholder="What to look at… optional (Enter to add)"
                     value={ciWhat}
@@ -1128,19 +1109,14 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
             broken. Hover anything for the details.
           </p>
           <div className="plrow">
-            <select
+            <Dropdown
               className="qisle"
-              aria-label="Region of the new island"
+              ariaLabel="Region of the new island"
               title="Where the new island is — it starts with that region's usual settle-up tasks, unticked"
               value={isleRegion}
-              onChange={(e) => setIsleRegion(e.target.value)}
-            >
-              {ISLAND_STARTERS.map((r) => (
-                <option key={r.key} value={r.key}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
+              onChange={setIsleRegion}
+              options={ISLAND_STARTERS.map((r) => ({ value: r.key, label: r.label }))}
+            />
             <input
               placeholder="Add island… (Enter to add)"
               value={isleDraft}
@@ -1179,20 +1155,20 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                     <span className="muted">
                       {have}/{items.length}
                     </span>
-                    <select
+                    <Dropdown
                       className="planlink"
-                      aria-label={`Region of ${name}`}
+                      ariaLabel={`Region of ${name}`}
                       title="Which world this island is in — building suggestions only offer that world's buildings. Amend any time; you can still type any name."
                       value={region}
-                      onChange={(e) => setIslandRegion(name, e.target.value || null)}
-                    >
-                      <option value="">🌍 region…</option>
-                      {Object.entries(REGION_LABELS).map(([k, l]) => (
-                        <option key={k} value={k}>
-                          {l}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(v) => setIslandRegion(name, v || null)}
+                      options={[
+                        { value: "", label: "🌍 region…" },
+                        ...Object.entries(REGION_LABELS).map(([k, l]) => ({
+                          value: k,
+                          label: l as string,
+                        })),
+                      ]}
+                    />
                     {plan ? (
                       <button
                         className="chip schip on"
@@ -1205,13 +1181,13 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                         🎯 {plan.name}
                       </button>
                     ) : (
-                      <select
+                      <Dropdown
                         className="planlink"
-                        aria-label={`Link a calculator plan to ${name}`}
+                        ariaLabel={`Link a calculator plan to ${name}`}
+                        placeholder="🎯 Link plan…"
                         title="Link a calculator plan — the island block then shows built vs planned"
                         value=""
-                        onChange={(e) => {
-                          const v = e.target.value;
+                        onChange={(v) => {
                           if (v === "__cur") {
                             const nm = window.prompt(
                               "Name this snapshot of the calculator:",
@@ -1231,15 +1207,11 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                               });
                           }
                         }}
-                      >
-                        <option value="">🎯 Link plan…</option>
-                        <option value="__cur">Current calculator setup</option>
-                        {savedPlans.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            💾 {p.name}
-                          </option>
-                        ))}
-                      </select>
+                        options={[
+                          { value: "__cur", label: "Current calculator setup" },
+                          ...savedPlans.map((p) => ({ value: p.id, label: `💾 ${p.name}` })),
+                        ]}
+                      />
                     )}
                     <button
                       className={"plx qmove qeye" + (checkInQueued(name) ? " on" : "")}

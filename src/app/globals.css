@@ -97,3 +97,39 @@ a.plx:hover{color:var(--accent)}
 .cuitem.rarQuest{border-left-color:var(--teal)}
 .cuitem.on{border-left-color:var(--gold2)}
 .cunone{margin:4px 0}
+/* Dropdown (build 65): replaces every native <select>, so the open list is
+   ours — parchment, sepia ink, square — instead of the OS popup. The base is
+   :where() so it carries ZERO specificity: the size variants that used to sit
+   on a <select> (.qisle, .planlink, .unit) still win on padding/width/font
+   even though this block is appended after them. State rules are plain
+   classes, which is what lets .ddbtn:hover beat .planlink's muted colour. */
+:where(.ddbtn){display:flex;align-items:center;gap:8px;width:100%;font:inherit;text-align:left;color:var(--ink);background:#fffdf6;border:1px solid var(--line);border-radius:0;padding:9px 11px;outline:0;cursor:pointer}
+.ddval{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ddval.ph{color:var(--muted)}
+/* Solid triangle, not a chevron — every other corner in this app is square. */
+.ddcar{flex:0 0 auto;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--dim);transition:transform .12s}
+.ddbtn:hover{color:var(--ink);border-color:var(--dim)}
+.ddbtn:hover .ddcar{border-top-color:var(--gold)}
+.ddbtn.open{border-color:var(--accent)}
+.ddbtn.open .ddcar{transform:rotate(180deg);border-top-color:var(--accent)}
+.ddbtn:focus-visible{border-color:var(--accent);box-shadow:0 0 0 2px rgba(46,110,142,.25)}
+.ddbtn:disabled{opacity:.5;cursor:default}
+/* Portalled to <body>, so every offset .pop sets for an in-flow popup has to
+   be cleared — `top:calc(100% + 6px)` against the viewport puts a menu that
+   flips upward (bottom set, top unset) a screen-height below the fold. */
+.ddpop{position:fixed;top:auto;bottom:auto;left:auto;right:auto;z-index:200;overscroll-behavior:contain}
+.ddopt .optlbl span{white-space:normal;line-height:1.35;margin-top:1px}
+.ddgrp{padding:7px 12px 4px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--gold);background:#efe5cc;font-weight:700;position:sticky;top:0}
+.ddopt{gap:8px;align-items:flex-start}
+.ddopt:last-child{border-bottom:0}
+.ddopt .optlbl{min-width:0}
+.ddopt .optlbl b{font-weight:500}
+.ddopt.act{background:#f1e7d0}
+.ddopt.on .optlbl b{font-weight:700;color:var(--gold)}
+/* Selected gets a tick in the gutter rather than a colour alone. */
+.ddopt.on::after{content:"✓";color:var(--gold);font-weight:700;flex:0 0 auto}
+.ddopt.off{cursor:default;color:var(--muted);background:0 0}
+.ddopt.off .optlbl b{font-weight:400;font-size:11.5px;font-style:italic}
+/* The ＋Add menus sit on an empty value, so the closed button would render a
+   blank strip; their first option carries the label and this keeps it lit. */
+.ddbtn .ddval:empty::before{content:"…";color:var(--dim)}

@@ -1,0 +1,24 @@
+{
+  "// why": [
+    "Same reason as tsconfig.culture.json: compile the TSX component (and",
+    "anything it imports) to CommonJS under tests/build so the jsdom test can",
+    "require the real thing rather than a copy."
+  ],
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": false,
+    "outDir": "./build",
+    "rootDir": "../src",
+    "baseUrl": "..",
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "files": ["../src/components/ui/Dropdown.tsx"]
+}

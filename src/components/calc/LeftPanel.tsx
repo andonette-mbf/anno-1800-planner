@@ -4,6 +4,7 @@ import { fmt } from "@/lib/data";
 import { BAND_LABELS, datasetFor } from "@/lib/dataset";
 import { CalcState, Selection, baseRate, buildingName, needActive } from "@/lib/engine";
 import { GoodIcon } from "../GoodIcon";
+import { Dropdown } from "../ui/Dropdown";
 import { CatPill } from "./CatPill";
 import { SavedPlans } from "./SavedPlans";
 
@@ -260,16 +261,18 @@ function SelRow({
           patch({ sel: { ...st.sel, [id]: { ...s, val } } });
         }}
       />
-      <select
+      <Dropdown
         className="unit"
+        ariaLabel={`Unit for ${g.name}`}
         value={s.mode}
-        onChange={(e) =>
-          patch({ sel: { ...st.sel, [id]: { ...s, mode: e.target.value as Selection["mode"] } } })
+        onChange={(v) =>
+          patch({ sel: { ...st.sel, [id]: { ...s, mode: v as Selection["mode"] } } })
         }
-      >
-        <option value="fac">factories</option>
-        <option value="tpm">t/min</option>
-      </select>
+        options={[
+          { value: "fac", label: "factories" },
+          { value: "tpm", label: "t/min" },
+        ]}
+      />
       <button
         className="x"
         title="remove"

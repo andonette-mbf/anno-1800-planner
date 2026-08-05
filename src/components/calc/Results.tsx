@@ -127,7 +127,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 64 · zoo, museum &amp; garden sets</span>
+      <span style={{ opacity: 0.55 }}>build 65 · tidier menus</span>
     </div>
   );
 }
