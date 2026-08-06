@@ -427,9 +427,14 @@ const isle = rowFor("Sail to La Isla");
 await fire(isle.querySelector(".wpick"), "click");
 const offers = [...document.querySelectorAll(".ddpop .ddopt")].map((el) => el.textContent.trim());
 check(
-  "⏳ offers goods and lengths of time, not just 'park it'",
-  offers.includes(PARK) && offers.includes("Bricks") && offers.includes("10 min"),
+  "⏳ offers goods, not just 'park it'",
+  offers.includes(PARK) && offers.includes("Bricks"),
   `${offers.length} offered`
+);
+check(
+  "…and doesn't repeat the timer, which has its own ⏱ on the row",
+  !offers.includes("10 min") && !!isle.querySelector(".tpick"),
+  offers.filter((o) => o.endsWith("min")).join(" | ")
 );
 const bricks = [...document.querySelectorAll(".ddpop .ddopt")].find(
   (el) => el.textContent.trim() === "Bricks"
@@ -457,8 +462,9 @@ check(
   String(localStorage.getItem("anno_quests"))
 );
 
-// Same task back on the open list (⤒ clears the note with it), now put on the
-// clock from there instead.
+// --- ⏱ on an open row (build 77) ------------------------------------------
+// A crossing is usually noticed while the task is still in the open list, so
+// the timer lives on the row itself and parks the task on its own.
 await fire(
   btn(
     waitRows().find((el) => rowText(el).startsWith("Sail to La Isla")),
@@ -466,7 +472,13 @@ await fire(
   ),
   "click"
 );
-await wait(rowFor("Sail to La Isla"), "20 min");
+const openIsle = rowFor("Sail to La Isla");
+check("every open row carries the timer", !!openIsle.querySelector(".tpick"));
+await fire(openIsle.querySelector(".tpick"), "click");
+const twenty = [...document.querySelectorAll(".ddpop .ddopt")].find(
+  (el) => el.textContent.trim() === "20 min"
+);
+await fire(twenty, "click");
 check(
   "picking a length parks it and starts the countdown",
   waitRows().some(

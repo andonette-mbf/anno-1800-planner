@@ -682,12 +682,13 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
               : "real unlock thresholds, with the residence count"}
             ), a route task (🚢 from → to → what), a check-in (👁 come back to an island later)
             or type your own — top of the list = do next.
-            ⤓ sends one to the bottom. ⛓ makes a task wait for others — add as many as you like,
-            and it comes back to the top on its own once the last of them is ticked off. ⏳ parks
-            one you can&apos;t do yet, and asks straight away what for: a good you&apos;re short
-            of, or a stretch of time for a wait that&apos;s only time passing, like a ship
-            crossing. Parked rows take free text (⏱ and the note box are there too), and ⤒ brings
-            one back by hand; ticked quests tuck away below.
+            ⤓ sends one to the bottom. Three ways to say a task has to wait, all on the row
+            itself: ⛓ makes it wait for other tasks — add as many as you like, and it comes back
+            to the top on its own once the last of them is ticked off; ⏱ gives it a stretch of
+            time for a wait that&apos;s only time passing, like a ship crossing; ⏳ parks it for a
+            good you&apos;re short of, or for no stated reason. Any of them parks the task for
+            you. Parked rows also take free text, and ⤒ brings one back by hand; ticked quests
+            tuck away below.
           </p>
           <div className="plrow">
             <Dropdown
@@ -1119,21 +1120,38 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                       />
                     ) : null;
                   })()}
+                  {/* Timers belong on any task, not only parked ones (build
+                      77): you're usually still looking at "sail to Manola"
+                      in the open list when you realise the crossing is the
+                      wait. Setting one parks the task on its own, same as ⛓
+                      does — the ⏱ here and the one on a parked row are the
+                      same control. */}
+                  <Dropdown
+                    className="tpick"
+                    ariaLabel={`Set a timer on ${q.t}`}
+                    title="Waiting on nothing but time — a ship crossing, a build finishing? Give it a rough length: the task parks itself and comes back to the top when the clock runs out."
+                    placeholder="⏱"
+                    value=""
+                    onChange={(v) => setQuestTimer(i, Number(v))}
+                    options={TIMER_MINS.map((m) => ({
+                      value: String(m),
+                      label: m === 60 ? "1 hour" : `${m} min`,
+                    }))}
+                  />
                   {/* The rest of "waiting on…" reaches the open list too (build
-                      73): a good you're short of or a stretch of time, answered
-                      where the task already is. Before this you had to park the
-                      task first and then find its row in the fold, which is a
-                      lot of ceremony for "no bricks yet". Anything else it might
-                      be waiting on is still free text on the parked row. */}
+                      73): a good you're short of, answered where the task
+                      already is. Before this you had to park the task first and
+                      then find its row in the fold, which is a lot of ceremony
+                      for "no bricks yet". Anything else it might be waiting on
+                      is still free text on the parked row. */}
                   <Dropdown
                     className="wpick"
                     ariaLabel={`Park ${q.t}`}
-                    title="Can't do it yet? Park it — and say what you're short of, or how long it needs, without leaving the list."
+                    title="Can't do it yet? Park it — and say what you're short of, without leaving the list."
                     placeholder="⏳"
                     value=""
                     onChange={(v) => {
                       if (v === "park") setQuestWaiting(i, true);
-                      else if (v.startsWith("t:")) setQuestTimer(i, Number(v.slice(2)));
                       else if (v.startsWith("g:")) setQuestWaitNote(i, v.slice(2));
                     }}
                     options={[
@@ -1141,13 +1159,6 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                       {
                         group: "Waiting on a good",
                         options: GOOD_NAMES.map((g) => ({ value: `g:${g}`, label: g })),
-                      },
-                      {
-                        group: "Waiting on the clock",
-                        options: TIMER_MINS.map((m) => ({
-                          value: `t:${m}`,
-                          label: m === 60 ? "1 hour" : `${m} min`,
-                        })),
                       },
                     ]}
                   />
