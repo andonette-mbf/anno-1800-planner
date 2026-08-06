@@ -359,6 +359,57 @@ is in CLAUDE.md.
 - **M6** — backup & restore: one-button JSON export/import of all companion
   state; phone polish (touch targets, PWA install). Now that saves exist, the
   export should be per save (and an import should land as a new one).
+
+- **M12 — any Anno, not just two** (asked for Aug 2026: "plan to do this for
+  any and all annos"). M10 built the seam for a SECOND game; this is the work
+  to make an Nth one a **pack, not a code change**. Nothing here is speculative
+  architecture — it is the list of places that still say `anno117` out loud.
+
+  **Already generic, proven by 117 — don't redo it.** `Dataset` +
+  `DATASETS: Record<Game, Dataset>` (the engine reads no table directly, and
+  `datasetFor(st)` resolves from state); `GameContent` in `games.ts` (region
+  tags, starter kits, inventory chips, services, wiki base, ship types); the
+  `GAMES` list, which is what draws the switcher; the hash marker, already
+  written for *any* non-1800 game with 1800 as the absent default; per-game
+  storage and the synced blob; per-game calculator state in `AppShell`. A
+  capability a game simply lacks is already modelled — `cultureFor` returns
+  null outside 1800 and the panel renders nothing. Keep that pattern.
+
+  **What is hardcoded to exactly two** (31 `anno117` literals, all of them):
+  1. `store.gkey` knows one prefix (`anno_` → `anno117_`). Needs a per-game
+     prefix on `GAMES`; 1800's must stay the bare legacy keys forever.
+     `ISLE_SHUT_KEY` in `TrackerView` is the same shape, and the sync blob's
+     `g117` field needs a general per-game slot (keeping `g117` readable).
+  2. `GoodIcon` picks `icons117 : icons` — wants a per-game icon map, and each
+     game needs its own `fetch-good-icons` run (the two maps must stay apart:
+     24 goods share a name across 1800 and 117 with different art).
+  3. `ledger.ts` builds its index off `GOODS_117` imports and a two-key record.
+     It should build from the `Dataset` instead — the pack already carries
+     everything it reads.
+  4. `engine.defaultStateFor` special-cases 117's opening region. Belongs on
+     the Dataset as a default region.
+  5. Presentation copy: the footer's data credits, the header title/logo, and
+     LeftPanel's region wording all branch on 117. Per-game strings.
+
+  **Per-game checklist once that's done** — pack + extractor + `test:<game>`
+  (no golden reference exists outside 1800, so each pack gets a coherence
+  test), icon set, `GameContent`, storage prefix, credits.
+
+  **The real gate is data, not code.** 1800 came from the legacy `_C`; 117 from
+  anno-mods/anno-117-calculator. For 1404 / 2070 / 2205 / 1701 the equivalent
+  has NOT been checked — confirm a licence-clean, machine-readable source
+  before promising a title, exactly as M10 did. Two model shapes will need a
+  look when one lands: **region** (1800 = id, 117 = bitmask; 2070's factions
+  and 2205's sectors are a third shape — keep it opaque per game, never
+  arithmetic) and **needs** (`needActive` currently collapses 1800's unlock
+  thresholds + lifestyle and 117's supply bands; a third scheme means a third
+  branch there).
+
+  **Cheap first step, worth doing on its own:** a game with no pack can still
+  be **tracker-only** — quests, islands, free-text inventory, fleet — which is
+  exactly what 117 shipped as in M10 phase 1. So any Anno can join the switcher
+  the day someone wants it, with the calculator arriving later. Decide
+  in-session whether the switcher should hide games that have no pack yet.
 - **M10 — Anno 117 support** (noodled Aug 2026; timing DECIDED — after M7,
   before M8/M9, so residents/trade-routes are built per-game once instead of
   being generalised later). One app, game switcher at the top, per-game
