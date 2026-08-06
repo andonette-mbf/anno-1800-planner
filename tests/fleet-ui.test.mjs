@@ -36,8 +36,8 @@ Object.defineProperty(global, "navigator", {
 global.localStorage = dom.window.localStorage;
 dom.window.fetch = () => Promise.reject(new Error("no server"));
 global.fetch = dom.window.fetch;
-// One island, so the "where" menu has somewhere real to offer.
-localStorage.setItem("anno_islands", JSON.stringify(["Crown Falls"]));
+// Two islands, so a trade route has both ends to pick from.
+localStorage.setItem("anno_islands", JSON.stringify(["Crown Falls", "Ditchwater"]));
 // Removing a ship asks first.
 let confirmAnswer = true;
 dom.window.confirm = () => confirmAnswer;
@@ -143,22 +143,67 @@ check(
   jobs.join(" | ")
 );
 check("and no cargo to fill in", !rows()[0].querySelector("input.shipdoing"));
-await pickFrom(0, ".shipdoing", "Trade route");
-check("what it's on is saved", stored()[0]?.doing === "Trade route", JSON.stringify(stored()));
+await pickFrom(0, ".shipdoing", "Expedition");
+check("what it's on is saved", stored()[0]?.doing === "Expedition", JSON.stringify(stored()));
 
+// --- where = the region, not the quay (build 79) --------------------------
 await fire(rows()[0].querySelector(".shipat"));
 const places = $(".ddpop .ddopt").map((el) => el.textContent.trim());
 check(
-  "the where menu offers your islands and at sea",
-  places.includes("Crown Falls") && places.includes("At sea"),
+  "the where menu offers the game's regions and at sea",
+  places.includes("Old World") && places.includes("New World") && places.includes("At sea"),
   places.join(" | ")
 );
-await pickFrom(0, ".shipat", "Crown Falls");
-check("where it is is saved", stored()[0]?.at === "Crown Falls", JSON.stringify(stored()));
+check(
+  "…and not your islands — that isn't what you forget",
+  !places.includes("Crown Falls"),
+  places.join(" | ")
+);
+await pickFrom(0, ".shipat", "New World");
+check("where it is is saved", stored()[0]?.at === "New World", JSON.stringify(stored()));
 
 await pickFrom(0, ".shipdoing", "— not saying");
 check("a job can be taken back off", !stored()[0]?.doing, JSON.stringify(stored()));
+
+// --- a trade route is the exception: two islands and a manifest -----------
 await pickFrom(0, ".shipdoing", "Trade route");
+check(
+  "a trader asks for both ends and the hold, not a region",
+  !!rows()[0].querySelector(".shipfrom") &&
+    !!rows()[0].querySelector(".shipto") &&
+    !!rows()[0].querySelector("input.shipcargo") &&
+    !rows()[0].querySelector(".shipat"),
+  rows()[0].className
+);
+await fire(rows()[0].querySelector(".shipfrom"));
+const ends = $(".ddpop .ddopt").map((el) => el.textContent.trim());
+check(
+  "the route's ends are islands",
+  ends.includes("Crown Falls") && ends.includes("Ditchwater") && !ends.includes("Old World"),
+  ends.join(" | ")
+);
+await pickFrom(0, ".shipfrom", "Ditchwater");
+await pickFrom(0, ".shipto", "Crown Falls");
+const hold = rows()[0].querySelector("input.shipcargo");
+check(
+  "the hold suggests the game's goods",
+  [...document.querySelectorAll("#shipGoods option")].map((o) => o.value).includes("Rum"),
+  String(document.querySelectorAll("#shipGoods option").length)
+);
+hold.value = "Rum and cotton";
+await fire(hold, "focusout");
+check(
+  "the whole manifest is saved",
+  stored()[0]?.from === "Ditchwater" &&
+    stored()[0]?.to === "Crown Falls" &&
+    stored()[0]?.cargo === "Rum and cotton",
+  JSON.stringify(stored())
+);
+check(
+  "…and the region it was in is kept, not thrown away by the change of job",
+  stored()[0]?.at === "New World",
+  JSON.stringify(stored())
+);
 
 // --- a name you already own ----------------------------------------------
 await setValue(addRow().querySelectorAll("input")[1], "bessie");
@@ -189,10 +234,12 @@ await act(async () => app.unmount());
 document.getElementById("root").innerHTML = "";
 app = await mount();
 check(
-  "the fleet comes back",
+  "the fleet comes back, manifest and all",
   rows().length === 2 &&
     rows()[0].querySelector(".shipdoing")?.textContent.includes("Trade route") &&
-    rows()[0].querySelector(".shipat")?.textContent.includes("Crown Falls"),
+    rows()[0].querySelector(".shipfrom")?.textContent.includes("Ditchwater") &&
+    rows()[0].querySelector(".shipto")?.textContent.includes("Crown Falls") &&
+    rows()[0].querySelector("input.shipcargo")?.value === "Rum and cotton",
   rows().map((r) => r.querySelector(".shipname")?.value).join(" | ")
 );
 check(

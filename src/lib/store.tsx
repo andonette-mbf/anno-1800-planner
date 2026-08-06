@@ -132,29 +132,52 @@ export interface QuestItem {
 /** One ship in the fleet list. `name` is what you called it in game — the only
  *  handle you'd recognise. `doing` and `at` are both picked from menus (build
  *  76): what it's on, and where you left it. Stored as plain strings so an
- *  island rename or a new status doesn't need a migration; `at` holding an
- *  island that no longer exists just shows as it was. */
+ *  island rename or a new status doesn't need a migration; `at` holding a place
+ *  that no longer exists just shows as it was.
+ *
+ *  `at` is the REGION it's in (build 79) — which ocean a ship is on is what you
+ *  actually forget, and an exact island only matters where you can trade. Ships
+ *  from before that hold an island name, which the menu keeps offering rather
+ *  than dropping. A trade route is the exception, and gets its own three: the
+ *  two islands it runs between and what it carries. */
 export interface ShipItem {
   name: string;
   type?: string;
   doing?: string;
   at?: string;
+  from?: string;
+  to?: string;
+  cargo?: string;
 }
 
 function parseShips(raw: unknown): ShipItem[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .map((x) => {
-      const o = x as { name?: unknown; type?: unknown; doing?: unknown; at?: unknown };
+      const o = x as {
+        name?: unknown;
+        type?: unknown;
+        doing?: unknown;
+        at?: unknown;
+        from?: unknown;
+        to?: unknown;
+        cargo?: unknown;
+      };
       const name = String(o?.name ?? "").trim();
       const type = String(o?.type ?? "").trim();
       const doing = String(o?.doing ?? "").trim();
       const at = String(o?.at ?? "").trim();
+      const from = String(o?.from ?? "").trim();
+      const to = String(o?.to ?? "").trim();
+      const cargo = String(o?.cargo ?? "").trim();
       return {
         name,
         ...(type ? { type } : {}),
         ...(doing ? { doing } : {}),
         ...(at ? { at } : {}),
+        ...(from ? { from } : {}),
+        ...(to ? { to } : {}),
+        ...(cargo ? { cargo } : {}),
       };
     })
     .filter((s) => s.name);
@@ -1354,7 +1377,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           const ships = d.ships || [];
           if (i < 0 || i >= ships.length) return d;
           const next = { ...ships[i] };
-          for (const key of ["name", "type", "doing", "at"] as const) {
+          for (const key of ["name", "type", "doing", "at", "from", "to", "cargo"] as const) {
             if (!(key in patch)) continue;
             const v = String(patch[key] ?? "").trim();
             // A blanked name would leave an unidentifiable row, so it stands.

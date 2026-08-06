@@ -44,6 +44,12 @@ a.plx:hover{color:var(--accent)}
 .shiptype{flex:1 1 18%;min-width:96px;width:auto}
 /* Job and place are menus, not boxes — sized to match the inputs beside them. */
 .shipdoing,.shipat{flex:1 1 22%;min-width:120px;width:auto;font-size:12.5px;padding:6px 9px;color:var(--muted)}
+/* A trade route's manifest (build 79): the two islands, the arrow between them
+   and what's in the hold. Narrower than the single place menu they replace,
+   because three of them share the line. */
+.shipfrom,.shipto{flex:1 1 16%;min-width:104px;width:auto;font-size:12.5px;padding:6px 9px;color:var(--muted)}
+.shiparrow{flex:0 0 auto;color:var(--dim);font-size:12px}
+.shipcargo{flex:1 1 18%;min-width:104px;width:auto}
 .ichips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .questrow.gap{border-color:#cfa08e}
 /* Red only on the item's own label — a bare `span` selector also caught the

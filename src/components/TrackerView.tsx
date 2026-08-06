@@ -1791,7 +1791,8 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
 // What a ship is on (build 76). Deliberately short and tap-only — the fleet
 // list answers "where did I leave it and is it busy", not "what is in the hold".
 // Game-agnostic: a trade route is a trade route in Rome too.
-const SHIP_JOBS = ["Trade route", "Expedition", "Exploring", "Escort", "Idle", "In for repairs"];
+const TRADE_JOB = "Trade route";
+const SHIP_JOBS = [TRADE_JOB, "Expedition", "Exploring", "Escort", "Idle", "In for repairs"];
 const CLEAR = "__none";
 
 /** Job menu, keeping whatever is already stored even if it isn't one of ours —
@@ -1803,15 +1804,30 @@ function jobOptions(cur?: string): { value: string; label: string }[] {
   return out;
 }
 
-/** Where menu: your own islands, plus at sea for a ship between them. */
-function placeOptions(islands: string[], cur?: string): { value: string; label: string }[] {
+/** Where menu: the game's regions, plus at sea for one mid-crossing (build 79).
+ *  A region is the honest answer for most ships — you lose track of which ocean
+ *  the salvager is on, not which quay it's tied to — and an island is only
+ *  really a place a ship *is* when it's running a route between two of them.
+ *  Ships that recorded an island before this keep showing it. */
+function placeOptions(
+  regions: Record<string, string>,
+  cur?: string
+): { value: string; label: string }[] {
   const out = [
     { value: "At sea", label: "At sea" },
-    ...islands.map((n) => ({ value: n, label: n })),
+    ...Object.values(regions).map((n) => ({ value: n, label: n })),
   ];
-  // An island that has since been removed still shows, rather than the row
-  // silently forgetting where the ship was.
-  if (cur && cur !== "At sea" && !islands.includes(cur)) out.unshift({ value: cur, label: cur });
+  if (cur && !out.some((o) => o.value === cur)) out.unshift({ value: cur, label: cur });
+  if (cur) out.push({ value: CLEAR, label: "— not saying" });
+  return out;
+}
+
+/** One end of a trade route: your own islands, nothing else. */
+function islandOptions(islands: string[], cur?: string): { value: string; label: string }[] {
+  const out = islands.map((n) => ({ value: n, label: n }));
+  // An island since removed still shows, rather than the row silently
+  // forgetting where the route ran.
+  if (cur && !islands.includes(cur)) out.unshift({ value: cur, label: cur });
   if (cur) out.push({ value: CLEAR, label: "— not saying" });
   return out;
 }
@@ -1828,6 +1844,7 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
   const [draft, setDraft] = useState("");
   const [draftType, setDraftType] = useState("");
   const types = GAME_CONTENT[game].shipTypes;
+  const regions = GAME_CONTENT[game].regionLabels;
   const add = () => {
     if (!draft.trim()) return;
     addShip(draft, draftType);
@@ -1846,9 +1863,17 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
       </div>
       <div className="bd doc">
         <p className="lead">
-          What you own, what it&apos;s on and where you left it — the ships you forget between
-          sessions. Name it as the game does; the rest is two taps.
+          What you own, what it&apos;s on and which region you left it in — the ships you forget
+          between sessions. Name it as the game does; the rest is two taps. A trade route asks
+          instead for the two islands it runs between and what it&apos;s carrying.
         </p>
+        {/* Cargo is typed, not tapped: a hold is often "rum and cotton", which
+            no single-pick menu says. The goods only suggest. */}
+        <datalist id="shipGoods">
+          {GOOD_NAMES_BY_GAME[game].map((g) => (
+            <option key={g} value={g} />
+          ))}
+        </datalist>
         {ships.map((s, i) => (
           <div className="plitem shiprow" key={`${i}:${s.name}`}>
             <input
@@ -1885,15 +1910,58 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
               onChange={(v) => setShip(i, { doing: v === CLEAR ? "" : v })}
               options={jobOptions(s.doing)}
             />
-            <Dropdown
-              className="shipat"
-              ariaLabel={`Where ${s.name} is`}
-              title="Where you left it. Islands come from your own list."
-              placeholder="🏝 where…"
-              value={s.at || ""}
-              onChange={(v) => setShip(i, { at: v === CLEAR ? "" : v })}
-              options={placeOptions(islands, s.at)}
-            />
+            {/* A trade route is the one job with a real manifest: which two
+                islands it runs between and what it carries (build 79).
+                Everything else answers with a region, which is the thing you
+                actually lose track of. Switching back and forth keeps both —
+                nothing is thrown away when the job changes. */}
+            {(s.doing || "") === TRADE_JOB ? (
+              <>
+                <Dropdown
+                  className="shipfrom"
+                  ariaLabel={`Where ${s.name} loads`}
+                  title="The island it loads at."
+                  placeholder="🏝 from…"
+                  value={s.from || ""}
+                  onChange={(v) => setShip(i, { from: v === CLEAR ? "" : v })}
+                  options={islandOptions(islands, s.from)}
+                />
+                <span className="shiparrow" aria-hidden="true">
+                  →
+                </span>
+                <Dropdown
+                  className="shipto"
+                  ariaLabel={`Where ${s.name} delivers`}
+                  title="The island it delivers to."
+                  placeholder="🏝 to…"
+                  value={s.to || ""}
+                  onChange={(v) => setShip(i, { to: v === CLEAR ? "" : v })}
+                  options={islandOptions(islands, s.to)}
+                />
+                <input
+                  className="shipcargo"
+                  placeholder="📦 carrying…"
+                  list="shipGoods"
+                  defaultValue={s.cargo || ""}
+                  aria-label={`What ${s.name} is carrying`}
+                  title="What's in the hold. Type any good for the list to suggest it — or several, however you'd say it."
+                  onBlur={(e) => setShip(i, { cargo: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") e.currentTarget.blur();
+                  }}
+                />
+              </>
+            ) : (
+              <Dropdown
+                className="shipat"
+                ariaLabel={`Where ${s.name} is`}
+                title="Which region you left it in — the thing you forget. Put it on a trade route and it asks for the two islands instead."
+                placeholder="🌍 where…"
+                value={s.at || ""}
+                onChange={(v) => setShip(i, { at: v === CLEAR ? "" : v })}
+                options={placeOptions(regions, s.at)}
+              />
+            )}
             <button
               className="plx"
               title={`Remove ${s.name} from the fleet`}

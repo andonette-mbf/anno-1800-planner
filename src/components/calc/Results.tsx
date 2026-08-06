@@ -128,7 +128,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 78 · no accidental ticks, easy clearing</span>
+      <span style={{ opacity: 0.55 }}>build 79 · ships by region, routes by island</span>
     </div>
   );
 }
