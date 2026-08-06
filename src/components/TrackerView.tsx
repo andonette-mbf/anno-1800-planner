@@ -655,6 +655,16 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
   };
   const [ciOpen, setCiOpen] = useState(false);
   const [ciIsle, setCiIsle] = useState("");
+  // How many islands are missing something. The per-island block works this out
+  // again for its own header; doing it here too keeps the tally at the top of
+  // the card honest when every island is folded away.
+  const islesShort = islands.filter((n) =>
+    islandLedger(
+      (data.islandChecks || {})[n] || [],
+      game,
+      REGION_NUM[(data.islandRegions || {})[n] || ""] || 0
+    ).some((r) => r.fix)
+  ).length;
   // Landmark quick-add chips, collapsed per island until asked for.
   const [chipsOpen, setChipsOpen] = useState<Record<string, boolean>>({});
   // Folded-up islands (build 72). A settled island's block runs to a screenful
@@ -692,21 +702,15 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
           <span className="muted">{savedLabel}</span>
         </div>
         <div className="bd doc">
-          <p className="lead">
-            Pick a storyline, a growth goal (📈 —{" "}
-            {game === "anno117"
-              ? "what each need is worth in residents per house"
-              : "real unlock thresholds, with the residence count"}
-            ), a route task (🚢 from → to → what), a check-in (👁 come back to an island later)
-            or type your own — top of the list = do next.
-            ⤓ sends one to the bottom. Three ways to say a task has to wait, all on the row
-            itself: ⛓ makes it wait for other tasks — add as many as you like, and it comes back
-            to the top on its own once the last of them is ticked off; ⏱ gives it a stretch of
-            time for a wait that&apos;s only time passing, like a ship crossing; ⏳ parks it for a
-            good you&apos;re short of, or for no stated reason. Any of them parks the task for
-            you. Parked rows also take free text, and ⤒ brings one back by hand; ticked quests
-            tuck away below.
-          </p>
+          {/* A tally, not an essay (build 83). Every button says what it does
+              on hover; the paragraph that used to be here said it all again. */}
+          {quests.length > 0 && (
+            <p className="fleetsum">
+              <span>To do ×{openQuests.length}</span>
+              {waitQuests.length > 0 && <span>Waiting ×{waitQuests.length}</span>}
+              {doneQuests.length > 0 && <span>Done ×{doneQuests.length}</span>}
+            </p>
+          )}
           <div className="plrow">
             <Dropdown
               ariaLabel="Add a story questline or add-on goal"
@@ -1376,11 +1380,14 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
           <span className="muted">{savedLabel}</span>
         </div>
         <div className="bd doc">
-          <p className="lead">
-            What each island already runs — buildings feed the <b>ledger</b> (makes/uses, red =
-            short), 🎯 links a calculator plan for built&nbsp;vs&nbsp;planned. Untick anything
-            broken. Hover anything for the details.
-          </p>
+          {islands.length > 0 && (
+            <p className="fleetsum">
+              <span>
+                {islands.length} island{islands.length > 1 ? "s" : ""}
+              </span>
+              {islesShort > 0 && <span className="isleshort">⚠ {islesShort} short</span>}
+            </p>
+          )}
           <div className="plrow">
             <Dropdown
               className="qisle"
@@ -1907,20 +1914,38 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
   };
   const known = new Set(ships.map((s) => s.name.trim().toLowerCase()));
   const dupe = !!draft.trim() && known.has(draft.trim().toLowerCase());
+  // How many of each type, most first. Ships with no type counted together at
+  // the end, so the tally still adds up to the fleet.
+  const typeCounts = (() => {
+    const by = new Map<string, number>();
+    for (const s of ships) {
+      const t = (s.type || "").trim();
+      by.set(t, (by.get(t) || 0) + 1);
+    }
+    return [...by.entries()].sort(
+      (a, b) => (!a[0] ? 1 : 0) - (!b[0] ? 1 : 0) || b[1] - a[1] || a[0].localeCompare(b[0])
+    );
+  })();
   return (
     <div className="card">
       <div className="hd">
-        <h2>🚢 Fleet</h2>
+        <h2>🚢 Ship Manifest</h2>
         <span className="muted">
           {ships.length ? `${ships.length} ship${ships.length > 1 ? "s" : ""}` : savedLabel}
         </span>
       </div>
       <div className="bd doc">
-        <p className="lead">
-          What you own, what it&apos;s on and which region you left it in — the ships you forget
-          between sessions. Name it as the game does; the rest is two taps. A trade route asks
-          instead for the two islands it runs between and what it&apos;s carrying.
-        </p>
+        {/* What you have, counted by type — the answer to "how many clippers
+            have I got" without reading the list (build 83). */}
+        {typeCounts.length > 0 && (
+          <p className="fleetsum">
+            {typeCounts.map(([t, n]) => (
+              <span key={t || "?"}>
+                {t || "No type"} ×{n}
+              </span>
+            ))}
+          </p>
+        )}
         {ships.length > 1 && (
           <div className="chips qfilter">
             <span className="muted fleetsortlbl">Sort by</span>

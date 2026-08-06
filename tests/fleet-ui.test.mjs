@@ -318,6 +318,11 @@ check(
   String(localStorage.getItem("anno117_ships"))
 );
 
+// --- the tally at the top (build 83) --------------------------------------
+const tally = () => $(".card")[2].querySelector(".fleetsum")?.textContent || "";
+// Both were added as Clippers — the add row keeps the type between adds.
+check("it counts what you own by type", tally().includes("Clipper ×2"), tally());
+
 // --- sorting (build 82) ---------------------------------------------------
 // Bessie is a Clipper on a route out of Ditchwater; The Seagull has neither a
 // type nor a place. Sorting must reorder what you SEE without sending an edit
@@ -337,6 +342,11 @@ const sortChip = (label) =>
       )
     : null;
 check("a sort row appears once there are two ships", !!sortChip("Type"), "no Type chip");
+check(
+  "the tally follows a type being set",
+  tally().includes("Cargo Ship ×1") && tally().includes("Clipper ×1"),
+  tally()
+);
 await fire(sortChip("Name"));
 check("by name", names().join(" | ") === "Bessie | The Seagull", names().join(" | "));
 await fire(sortChip("Type"));

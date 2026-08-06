@@ -362,6 +362,18 @@ is in CLAUDE.md.
   appear once there are two ships. Tested including the case that would bite —
   editing the top row after a sort has flipped the order.
 
+- **Counts at the top, prose gone** (build 83): "absolute nonsense jargon…
+  don't need all that prattle. Summarise at top." All three Tracker cards had
+  an explaining paragraph at the top; the quest one had grown to eight lines
+  describing every button. All three are deleted. Each button already says what
+  it does when you hover it, so the paragraph said everything twice.
+  In their place, one line of counts: **Ship Manifest** (renamed from Fleet)
+  tallies by type — "Clipper ×2 · Schooner ×1", with untyped ships counted last
+  so the total still adds up; **Quest Tracker** shows To do / Waiting / Done;
+  **Island Inventory** shows how many islands and how many are short of
+  something, worked out for every island so the count is right even when they
+  are all folded away.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)
