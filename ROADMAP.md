@@ -302,6 +302,21 @@ is in CLAUDE.md.
   goes, the header keeps count and shortfall, the other island is untouched,
   and the state survives a remount.
 
+- **A fleet you can keep track of** (build 75): "can we have a ship inventory".
+  A 🚢 Fleet card under the islands — name, type, and free-text "doing" ("Rum:
+  Manola → Crown Falls", "idle at Ditchwater", "expedition"). Its own card
+  rather than island inventory **because ships move**: the one you're after is
+  the one you can't remember where you left. The name is the row's identity
+  (it's what the game shows you), so a duplicate name is refused rather than
+  quietly making a second row, and blanking a name is refused rather than
+  leaving an unidentifiable ship. `CompanionData.ships` → `anno_ships`, so it's
+  per save, per game and synced like the rest. Ship TYPES are the one soft spot:
+  `GameContent.shipTypes` is a convenience list of 1800's common hulls typed by
+  hand, NOT extracted like goods and buildings — the packs carry no ships — so
+  the field is always free text, and 117's list is deliberately empty until
+  someone fills it in from the game rather than from memory. Wiring for M11b's
+  ship items to hang off later. `npm run test:fleet` covers it.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)

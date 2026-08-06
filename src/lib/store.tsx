@@ -129,6 +129,28 @@ export interface QuestItem {
   wr?: "timer" | "deps";
 }
 
+/** One ship in the fleet list. `name` is what you called it in game — the only
+ *  handle you'd recognise; `type` and `doing` are free text (the type offers
+ *  the game's common ships as suggestions). */
+export interface ShipItem {
+  name: string;
+  type?: string;
+  doing?: string;
+}
+
+function parseShips(raw: unknown): ShipItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((x) => {
+      const o = x as { name?: unknown; type?: unknown; doing?: unknown };
+      const name = String(o?.name ?? "").trim();
+      const type = String(o?.type ?? "").trim();
+      const doing = String(o?.doing ?? "").trim();
+      return { name, ...(type ? { type } : {}), ...(doing ? { doing } : {}) };
+    })
+    .filter((s) => s.name);
+}
+
 export interface CompanionData {
   openq: Record<string, string>;
   focus: Record<string, string>;
@@ -151,6 +173,10 @@ export interface CompanionData {
   // building id ("zoo"|"museum"|"garden") → the item names placed there. Per
   // island because a set only pays out when it is complete in ONE building.
   islandCulture: Record<string, Record<string, string[]>>;
+  // The fleet (build 75). Ships move between islands, so they're a list of
+  // their own rather than island inventory: what it's called, what it is, and
+  // what it's doing right now.
+  ships: ShipItem[];
 }
 
 // findIndex, but "no match" means "the end" — the insertion point that keeps
@@ -384,6 +410,10 @@ function loadLocal(game: Game = "anno1800", id = ""): CompanionData {
   try {
     islandCulture = parseCulture(JSON.parse(ls.get(k("anno_island_culture")) || "{}"));
   } catch {}
+  let ships: ShipItem[] = [];
+  try {
+    ships = parseShips(JSON.parse(ls.get(k("anno_ships")) || "[]"));
+  } catch {}
   try {
     const q = JSON.parse(ls.get(k("anno_quests")) || "[]");
     if (Array.isArray(q))
@@ -424,6 +454,7 @@ function loadLocal(game: Game = "anno1800", id = ""): CompanionData {
     islandPlans,
     islandRegions,
     islandCulture,
+    ships,
   };
 }
 
@@ -440,6 +471,7 @@ function saveLocal(d: CompanionData, game: Game = "anno1800", id = "") {
   ls.set(k("anno_island_plans"), JSON.stringify(d.islandPlans || {}));
   ls.set(k("anno_island_regions"), JSON.stringify(d.islandRegions || {}));
   ls.set(k("anno_island_culture"), JSON.stringify(d.islandCulture || {}));
+  ls.set(k("anno_ships"), JSON.stringify(d.ships || []));
 }
 
 const EMPTY_DATA: CompanionData = {
@@ -454,6 +486,7 @@ const EMPTY_DATA: CompanionData = {
   islandPlans: {},
   islandRegions: {},
   islandCulture: {},
+  ships: [],
 };
 
 /** One game's saves: the list (never empty), which one is showing, and the
@@ -540,6 +573,7 @@ function fromBlob(blob: SyncBlob, local: Record<Game, GameSaves>): Record<Game, 
       Object.entries(d.islandChecks || {}).map(([k, v]) => [k, parseChecks(v)])
     ),
     islandCulture: parseCulture(d.islandCulture),
+    ships: parseShips(d.ships),
     quests: ringTimers(healBlockers(d.quests || [])),
   });
   const forGame = (game: Game, legacy: CompanionData | undefined): GameSaves => {
@@ -654,6 +688,12 @@ interface CompanionCtx {
   ) => void;
   /** Empty one culture building on one island. */
   clearIslandCulture: (island: string, building: string) => void;
+  /** Fleet list (build 75). Ships are named, so `name` is the row's identity;
+   *  re-adding a name you already have is refused rather than silently
+   *  duplicating it. */
+  addShip: (name: string, type?: string) => void;
+  setShip: (i: number, patch: Partial<ShipItem>) => void;
+  removeShip: (i: number) => void;
 }
 
 const CompanionContext = createContext<CompanionCtx | null>(null);
@@ -1273,6 +1313,36 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           else delete all[island];
           return { ...d, islandCulture: all };
         }),
+      addShip: (name, type) => {
+        const n = name.trim();
+        if (!n) return;
+        update((d) => {
+          const ships = d.ships || [];
+          // You'd never own two ships of the same name, and a duplicate row is
+          // worse than a refused tap — the fleet is read by name.
+          if (ships.some((s) => s.name.toLowerCase() === n.toLowerCase())) return d;
+          const t = (type || "").trim();
+          return { ...d, ships: [...ships, { name: n, ...(t ? { type: t } : {}) }] };
+        });
+      },
+      setShip: (i, patch) =>
+        update((d) => {
+          const ships = d.ships || [];
+          if (i < 0 || i >= ships.length) return d;
+          const next = { ...ships[i] };
+          for (const key of ["name", "type", "doing"] as const) {
+            if (!(key in patch)) continue;
+            const v = String(patch[key] ?? "").trim();
+            // A blanked name would leave an unidentifiable row, so it stands.
+            if (key === "name") {
+              if (v) next.name = v;
+            } else if (v) next[key] = v;
+            else delete next[key];
+          }
+          return { ...d, ships: ships.map((s, j) => (j === i ? next : s)) };
+        }),
+      removeShip: (i) =>
+        update((d) => ({ ...d, ships: (d.ships || []).filter((_, j) => j !== i) })),
     }),
     [data, game, gs, setGame, sync, update, updateSaves]
   );

@@ -31,6 +31,14 @@ a.plx:hover{color:var(--accent)}
 .isletog:hover{color:var(--gold)}
 .isleblk.shut{padding-bottom:6px}
 .isleshort{font-size:11px;color:var(--red);font-weight:700;white-space:nowrap}
+/* Fleet rows: name, type, what it's doing. The name earns the most width —
+   it's what you're scanning for — and the row wraps on a phone rather than
+   squeezing three boxes onto one line. */
+.shiprow{gap:8px;flex-wrap:wrap}
+.shiprow input{padding:6px 9px;font-size:13px}
+.shipname{flex:2 1 30%;min-width:120px;font-weight:600}
+.shiptype{flex:1 1 20%;min-width:96px;width:auto}
+.shipdoing{flex:3 1 40%;min-width:150px}
 .ichips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .questrow.gap{border-color:#cfa08e}
 /* Red only on the item's own label — a bare `span` selector also caught the

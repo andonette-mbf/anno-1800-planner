@@ -29,6 +29,12 @@ export interface GameContent {
   starters: { key: string; label: string; items: string[] }[];
   /** Fandom wiki search base for the 🔗 lookup on an item. */
   wikiSearch: string;
+  /** Suggestions for a ship's type in the fleet list. Unlike `starters` and
+   *  `suggestions` these are NOT extracted from a data pack — the packs carry
+   *  goods and buildings, not ships — so this is a convenience list of the
+   *  common ones, and the field is always free text. Empty is fine: 117's
+   *  ships aren't in any data we've extracted, so it types its own. */
+  shipTypes: string[];
 }
 
 const ANNO1800: GameContent = {
@@ -144,6 +150,22 @@ const ANNO1800: GameContent = {
     { key: "none", label: "Blank island", items: [] },
   ],
   wikiSearch: "https://anno1800.fandom.com/wiki/Special:Search?query=",
+  // The ones you actually name and keep. Deliberately not exhaustive — DLC
+  // adds more and the field takes any text.
+  shipTypes: [
+    "Schooner",
+    "Clipper",
+    "Cargo Ship",
+    "Great Eastern",
+    "Extravaganza Steamer",
+    "Salvager",
+    "Gunboat",
+    "Frigate",
+    "Ship-of-the-Line",
+    "Monitor",
+    "Battle Cruiser",
+    "Airship",
+  ],
 };
 
 // 117's regions are the two sessions, and the dataset stores them as a bitmask
@@ -213,6 +235,10 @@ const ANNO117: GameContent = {
     { key: "none", label: "Blank island", items: [] },
   ],
   wikiSearch: "https://anno117.fandom.com/wiki/Special:Search?query=",
+  // Rome's ships aren't in the pack and the wiki has no list worth extracting
+  // yet, so the type is free text here — same call as its specialists. Fill
+  // this in from what the game actually shows, not from memory.
+  shipTypes: [],
 };
 
 export const GAME_CONTENT: Record<Game, GameContent> = {

@@ -1735,6 +1735,128 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
           )}
         </div>
       </div>
+      <FleetCard game={game} savedLabel={savedLabel} />
+    </div>
+  );
+}
+
+// The fleet (build 75). A card of its own rather than island inventory: ships
+// move, and the one you're looking for is the one you can't remember where you
+// left. Name is the identity — it's what the game shows you — with the type
+// suggested from the game's common ships and a free-text "doing" for the rest
+// ("Rum: Manola → Crown Falls", "idle at Ditchwater", "expedition").
+function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
+  const { data, addShip, setShip, removeShip } = useCompanion();
+  const ships = data.ships || [];
+  const [draft, setDraft] = useState("");
+  const [draftType, setDraftType] = useState("");
+  const types = GAME_CONTENT[game].shipTypes;
+  const add = () => {
+    if (!draft.trim()) return;
+    addShip(draft, draftType);
+    setDraft("");
+    // The type stays: fleets come in batches of the same hull.
+  };
+  const known = new Set(ships.map((s) => s.name.trim().toLowerCase()));
+  const dupe = !!draft.trim() && known.has(draft.trim().toLowerCase());
+  return (
+    <div className="card">
+      <div className="hd">
+        <h2>🚢 Fleet</h2>
+        <span className="muted">
+          {ships.length ? `${ships.length} ship${ships.length > 1 ? "s" : ""}` : savedLabel}
+        </span>
+      </div>
+      <div className="bd doc">
+        <p className="lead">
+          What you own and what it&apos;s doing — the ships you forget between sessions. Name it as
+          the game does; everything else is free text.
+        </p>
+        {ships.map((s, i) => (
+          <div className="plitem shiprow" key={`${i}:${s.name}`}>
+            <input
+              className="shipname"
+              defaultValue={s.name}
+              aria-label={`Name of ship ${i + 1}`}
+              title="What you called it in game"
+              onBlur={(e) => setShip(i, { name: e.target.value })}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") e.currentTarget.blur();
+              }}
+            />
+            <input
+              className="shiptype"
+              placeholder={types.length ? "type…" : "type… e.g. trireme"}
+              list={types.length ? "shipTypes" : undefined}
+              defaultValue={s.type || ""}
+              aria-label={`Type of ${s.name}`}
+              title="Which ship it is. Free text — the list is only the common ones."
+              onBlur={(e) => setShip(i, { type: e.target.value })}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") e.currentTarget.blur();
+              }}
+            />
+            <input
+              className="shipdoing"
+              placeholder="doing… e.g. Rum: Manola → Crown Falls"
+              defaultValue={s.doing || ""}
+              aria-label={`What ${s.name} is doing`}
+              title="Where it is or what it's on — a route, an expedition, or nothing at all"
+              onBlur={(e) => setShip(i, { doing: e.target.value })}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") e.currentTarget.blur();
+              }}
+            />
+            <button
+              className="plx"
+              title={`Remove ${s.name} from the fleet`}
+              onClick={() => {
+                if (window.confirm(`Remove ${s.name} from the fleet?`)) removeShip(i);
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+        {types.length > 0 && (
+          <datalist id="shipTypes">
+            {types.map((t) => (
+              <option key={t} value={t} />
+            ))}
+          </datalist>
+        )}
+        <div className="plrow">
+          <input
+            className="shiptype"
+            placeholder="type…"
+            list={types.length ? "shipTypes" : undefined}
+            value={draftType}
+            onChange={(e) => setDraftType(e.target.value)}
+          />
+          <input
+            placeholder="Add ship… name it as the game does (Enter to add)"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") add();
+            }}
+          />
+          <button
+            className="linkbtn"
+            disabled={!draft.trim() || dupe}
+            title={dupe ? `You already have a ${draft.trim()}` : "Add it to the fleet"}
+            onClick={add}
+          >
+            ＋ Add
+          </button>
+        </div>
+        {!ships.length && (
+          <div className="empty">
+            No ships yet. Add the ones you keep losing track of — traders on routes, the salvager,
+            whatever is off on an expedition.
+          </div>
+        )}
+      </div>
     </div>
   );
 }

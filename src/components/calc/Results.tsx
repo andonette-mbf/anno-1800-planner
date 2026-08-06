@@ -128,7 +128,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 74 · Rome gets its pictures</span>
+      <span style={{ opacity: 0.55 }}>build 75 · a fleet you can keep track of</span>
     </div>
   );
 }
