@@ -147,7 +147,29 @@ export interface ShipItem {
   at?: string;
   from?: string;
   to?: string;
-  cargo?: string;
+  // What the route carries — a list, because one run usually hauls several
+  // goods (build 80). Free text typed before that is split on commas so a
+  // "Rum, Coffee" turns into two goods rather than one odd one.
+  cargo?: string[];
+}
+
+/** A route's goods. Takes the list it writes now, or the one free-text string
+ *  it wrote before — "Rum, Coffee & Sugar" becomes three goods. */
+function parseCargo(raw: unknown): string[] {
+  const list = Array.isArray(raw)
+    ? raw
+    : typeof raw === "string"
+      ? raw.split(/[,;+&]|\band\b/i)
+      : [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const x of list) {
+    const s = typeof x === "string" ? x.trim() : "";
+    if (!s || seen.has(s.toLowerCase())) continue;
+    seen.add(s.toLowerCase());
+    out.push(s);
+  }
+  return out;
 }
 
 function parseShips(raw: unknown): ShipItem[] {
@@ -169,7 +191,7 @@ function parseShips(raw: unknown): ShipItem[] {
       const at = String(o?.at ?? "").trim();
       const from = String(o?.from ?? "").trim();
       const to = String(o?.to ?? "").trim();
-      const cargo = String(o?.cargo ?? "").trim();
+      const cargo = parseCargo(o?.cargo);
       return {
         name,
         ...(type ? { type } : {}),
@@ -177,7 +199,7 @@ function parseShips(raw: unknown): ShipItem[] {
         ...(at ? { at } : {}),
         ...(from ? { from } : {}),
         ...(to ? { to } : {}),
-        ...(cargo ? { cargo } : {}),
+        ...(cargo.length ? { cargo } : {}),
       };
     })
     .filter((s) => s.name);
@@ -1377,7 +1399,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           const ships = d.ships || [];
           if (i < 0 || i >= ships.length) return d;
           const next = { ...ships[i] };
-          for (const key of ["name", "type", "doing", "at", "from", "to", "cargo"] as const) {
+          for (const key of ["name", "type", "doing", "at", "from", "to"] as const) {
             if (!(key in patch)) continue;
             const v = String(patch[key] ?? "").trim();
             // A blanked name would leave an unidentifiable row, so it stands.
@@ -1385,6 +1407,12 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
               if (v) next.name = v;
             } else if (v) next[key] = v;
             else delete next[key];
+          }
+          // Cargo is a list, so it takes the same trim-and-dedupe as loading.
+          if ("cargo" in patch) {
+            const c = parseCargo(patch.cargo);
+            if (c.length) next.cargo = c;
+            else delete next.cargo;
           }
           return { ...d, ships: ships.map((s, j) => (j === i ? next : s)) };
         }),

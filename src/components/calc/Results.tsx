@@ -128,7 +128,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 79 · ships by region, routes by island</span>
+      <span style={{ opacity: 0.55 }}>build 80 · a run can carry several goods</span>
     </div>
   );
 }

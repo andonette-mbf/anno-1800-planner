@@ -329,6 +329,15 @@ is in CLAUDE.md.
   option rather than being dropped, and an `at` naming an island you've since
   removed still shows.
 
+- **A run can carry several goods** (build 80): "the from and to in trade may
+  have more than one good. also icons could show." A trade route's cargo is now
+  a list, not one box of text. Each good is a chip with its picture on it; tap
+  a chip to take that good off, and pick from the goods menu to add another.
+  A good already aboard isn't offered again. `ShipItem.cargo` went from a
+  string to a list of strings; text written before this is split on commas,
+  semicolons, "+", "&" and "and", so "Rum and cotton" becomes two goods rather
+  than one strange one. The typed box and its suggestion list are gone.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)

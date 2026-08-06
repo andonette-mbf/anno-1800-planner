@@ -1867,13 +1867,6 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
           between sessions. Name it as the game does; the rest is two taps. A trade route asks
           instead for the two islands it runs between and what it&apos;s carrying.
         </p>
-        {/* Cargo is typed, not tapped: a hold is often "rum and cotton", which
-            no single-pick menu says. The goods only suggest. */}
-        <datalist id="shipGoods">
-          {GOOD_NAMES_BY_GAME[game].map((g) => (
-            <option key={g} value={g} />
-          ))}
-        </datalist>
         {ships.map((s, i) => (
           <div className="plitem shiprow" key={`${i}:${s.name}`}>
             <input
@@ -1938,18 +1931,39 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
                   onChange={(v) => setShip(i, { to: v === CLEAR ? "" : v })}
                   options={islandOptions(islands, s.to)}
                 />
-                <input
-                  className="shipcargo"
-                  placeholder="📦 carrying…"
-                  list="shipGoods"
-                  defaultValue={s.cargo || ""}
-                  aria-label={`What ${s.name} is carrying`}
-                  title="What's in the hold. Type any good for the list to suggest it — or several, however you'd say it."
-                  onBlur={(e) => setShip(i, { cargo: e.target.value })}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") e.currentTarget.blur();
-                  }}
-                />
+                {/* One run usually hauls several goods, so cargo is a list of
+                    chips with the good's picture on each — tap one to take it
+                    off (build 80). */}
+                {(s.cargo || []).map((c) => (
+                  <button
+                    key={c}
+                    className="chip schip cargochip"
+                    title={`${c} — tap to take it off the run`}
+                    onClick={() =>
+                      setShip(i, { cargo: (s.cargo || []).filter((x) => x !== c) })
+                    }
+                  >
+                    <GoodIcon name={c} game={game} />
+                    {c} ✕
+                  </button>
+                ))}
+                {(() => {
+                  const carried = new Set((s.cargo || []).map((c) => c.toLowerCase()));
+                  const opts = GOOD_NAMES_BY_GAME[game]
+                    .filter((g) => !carried.has(g.toLowerCase()))
+                    .map((g) => ({ value: g, label: g }));
+                  return opts.length ? (
+                    <Dropdown
+                      className="shipcargo"
+                      ariaLabel={`What ${s.name} is carrying`}
+                      title="What's in the hold. Add as many goods as the run carries."
+                      placeholder="📦 carrying…"
+                      value=""
+                      onChange={(v) => setShip(i, { cargo: [...(s.cargo || []), v] })}
+                      options={opts}
+                    />
+                  ) : null;
+                })()}
               </>
             ) : (
               <Dropdown

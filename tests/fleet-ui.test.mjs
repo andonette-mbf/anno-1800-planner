@@ -171,7 +171,7 @@ check(
   "a trader asks for both ends and the hold, not a region",
   !!rows()[0].querySelector(".shipfrom") &&
     !!rows()[0].querySelector(".shipto") &&
-    !!rows()[0].querySelector("input.shipcargo") &&
+    !!rows()[0].querySelector(".shipcargo") &&
     !rows()[0].querySelector(".shipat"),
   rows()[0].className
 );
@@ -184,19 +184,45 @@ check(
 );
 await pickFrom(0, ".shipfrom", "Ditchwater");
 await pickFrom(0, ".shipto", "Crown Falls");
-const hold = rows()[0].querySelector("input.shipcargo");
+// A run usually carries several goods, so the hold is a list of chips
+// (build 80), each with the good's picture on it.
+await fire(rows()[0].querySelector(".shipcargo"));
+const holdOpts = $(".ddpop .ddopt").map((el) => el.textContent.trim());
+check("the hold offers the game's goods", holdOpts.includes("Rum"), String(holdOpts.length));
+await pickFrom(0, ".shipcargo", "Rum");
+await pickFrom(0, ".shipcargo", "Cotton");
 check(
-  "the hold suggests the game's goods",
-  [...document.querySelectorAll("#shipGoods option")].map((o) => o.value).includes("Rum"),
-  String(document.querySelectorAll("#shipGoods option").length)
+  "more than one good can ride the run",
+  stored()[0]?.cargo?.join(" | ") === "Rum | Cotton",
+  JSON.stringify(stored())
 );
-hold.value = "Rum and cotton";
-await fire(hold, "focusout");
+check(
+  "each is a chip with the good's picture",
+  rows()[0].querySelectorAll(".cargochip").length === 2 &&
+    !!rows()[0].querySelector(".cargochip img.gicon"),
+  String(rows()[0].querySelectorAll(".cargochip").length)
+);
+check(
+  "and a good already aboard isn't offered twice",
+  !(await (async () => {
+    await fire(rows()[0].querySelector(".shipcargo"));
+    const o = $(".ddpop .ddopt").map((el) => el.textContent.trim());
+    await fire(document.querySelector(".shipcargo.open"));
+    return o;
+  })()).includes("Rum")
+);
+await fire(rows()[0].querySelectorAll(".cargochip")[1]);
+check(
+  "tapping a chip takes that good off",
+  stored()[0]?.cargo?.join(" | ") === "Rum",
+  JSON.stringify(stored())
+);
+await pickFrom(0, ".shipcargo", "Cotton");
 check(
   "the whole manifest is saved",
   stored()[0]?.from === "Ditchwater" &&
     stored()[0]?.to === "Crown Falls" &&
-    stored()[0]?.cargo === "Rum and cotton",
+    stored()[0]?.cargo?.join(" | ") === "Rum | Cotton",
   JSON.stringify(stored())
 );
 check(
@@ -239,7 +265,7 @@ check(
     rows()[0].querySelector(".shipdoing")?.textContent.includes("Trade route") &&
     rows()[0].querySelector(".shipfrom")?.textContent.includes("Ditchwater") &&
     rows()[0].querySelector(".shipto")?.textContent.includes("Crown Falls") &&
-    rows()[0].querySelector("input.shipcargo")?.value === "Rum and cotton",
+    rows()[0].querySelectorAll(".cargochip").length === 2,
   rows().map((r) => r.querySelector(".shipname")?.value).join(" | ")
 );
 check(
