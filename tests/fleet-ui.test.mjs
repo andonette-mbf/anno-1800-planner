@@ -57,7 +57,7 @@ const mount = async () => {
       React.createElement(
         S.AppProviders,
         null,
-        React.createElement(TrackerView, { calcState: E.DEFAULT_STATE })
+        React.createElement(TrackerView, { calcState: E.DEFAULT_STATE, section: "ships" })
       )
     );
   });
@@ -89,11 +89,12 @@ const setValue = async (el, v) => {
   });
 };
 const rows = () => $(".shiprow");
-const addRow = () => $(".card")[2].querySelector(".plrow");
+const addRow = () => $(".card")[0].querySelector(".plrow");
 const stored = () => JSON.parse(localStorage.getItem("anno_ships") || "[]");
 
 // --- an empty fleet -------------------------------------------------------
-check("the fleet card is there", $(".card").length === 3, String($(".card").length));
+// Ships are their own tab now (build 84), so this view is that card alone.
+check("the ship card is there", $(".card").length === 1, String($(".card").length));
 check("no ships yet", rows().length === 0);
 check(
   "the type box offers the game's ships",
@@ -319,7 +320,7 @@ check(
 );
 
 // --- the tally at the top (build 83) --------------------------------------
-const tally = () => $(".card")[2].querySelector(".fleetsum")?.textContent || "";
+const tally = () => $(".card")[0].querySelector(".fleetsum")?.textContent || "";
 // Both were added as Clippers — the add row keeps the type between adds.
 check("it counts what you own by type", tally().includes("Clipper ×2"), tally());
 
@@ -336,8 +337,8 @@ t2.value = "Cargo Ship";
 await fire(t2, "focusout");
 await done(1);
 const sortChip = (label) =>
-  $(".card")[2].querySelectorAll(".qfilter .chip")
-    ? [...$(".card")[2].querySelectorAll(".qfilter .chip")].find(
+  $(".card")[0].querySelectorAll(".qfilter .chip")
+    ? [...$(".card")[0].querySelectorAll(".qfilter .chip")].find(
         (b) => b.textContent.trim() === label
       )
     : null;

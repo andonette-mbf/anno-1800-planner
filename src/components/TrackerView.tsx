@@ -400,7 +400,15 @@ interface SavedPlanRow {
   data: CalcState;
 }
 
-export function TrackerView({ calcState }: { calcState: CalcState }) {
+export function TrackerView({
+  calcState,
+  section,
+}: {
+  calcState: CalcState;
+  /** Which of the three the tab row is showing (build 84). All three stay
+   *  mounted; only the one asked for is drawn. */
+  section: "tasks" | "islands" | "ships";
+}) {
   const {
     data,
     game,
@@ -438,12 +446,16 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
     regionNum: REGION_NUM,
     regionLabels: REGION_LABELS,
   } = GAME_CONTENT[game];
+  const REGION_ALIAS = GAME_CONTENT[game].regionAlias || {};
   // What the item box offers as you type: every production building of that
   // region (the ledger's own names, so a pick counts in the ledger) plus the
   // public buildings, which make nothing and so aren't in the ledger at all.
   const itemSuggestions = (region: string) => {
+    // Cape Trelawney borrows the Old World's chips: same region, same
+    // buildings, its own tag.
+    const r = REGION_ALIAS[region] || region;
     const inRegion = (s: { regions?: string[] }) =>
-      !s.regions || !region || s.regions.includes(region);
+      !s.regions || !r || s.regions.includes(r);
     return [
       ...new Set([
         ...buildingOptionsFor(REGION_NUM[region], game),
@@ -696,6 +708,7 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
 
   return (
     <div className="docwrap">
+      {section === "tasks" && (
       <div className="card">
         <div className="hd">
           <h2>📜 Quest Tracker</h2>
@@ -1374,6 +1387,8 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
           </div>
         </div>
       </div>
+      )}
+      {section === "islands" && (
       <div className="card">
         <div className="hd">
           <h2>🏝 Island Inventory</h2>
@@ -1416,9 +1431,10 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
               const items = (data.islandChecks || {})[name] || [];
               const have = items.filter((c) => c.done).length;
               const region = (data.islandRegions || {})[name] || "";
+              const chipRegion = REGION_ALIAS[region] || region;
               const chips = ISLAND_SUGGESTIONS.filter(
                 (s) =>
-                  (!s.regions || !region || s.regions.includes(region)) &&
+                  (!s.regions || !chipRegion || s.regions.includes(chipRegion)) &&
                   !items.some((c) => c.t.toLowerCase() === s.t.toLowerCase())
               ).map((s) => s.t);
               const ledger = islandLedger(items, game, REGION_NUM[region] || 0);
@@ -1796,7 +1812,8 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
           )}
         </div>
       </div>
-      <FleetCard game={game} savedLabel={savedLabel} />
+      )}
+      {section === "ships" && <FleetCard game={game} savedLabel={savedLabel} />}
     </div>
   );
 }
@@ -1824,15 +1841,13 @@ function jobOptions(cur?: string): { value: string; label: string }[] {
  *  Ships that recorded an island before this keep showing it. */
 function placeOptions(
   regions: Record<string, string>,
-  extra: string[],
   cur?: string
 ): { value: string; label: string }[] {
+  // Cape Trelawney is one of these now: it has its own island tag, so it is
+  // its own place to sail to as well.
   const out = [
     { value: "At sea", label: "At sea" },
     ...Object.values(regions).map((n) => ({ value: n, label: n })),
-    // Places the numbers don't name but you sail to anyway — Cape Trelawney is
-    // Old World in the data and its own destination in play.
-    ...extra.map((n) => ({ value: n, label: n })),
   ];
   if (cur && !out.some((o) => o.value === cur)) out.unshift({ value: cur, label: cur });
   if (cur) out.push({ value: CLEAR, label: "— not saying" });
@@ -2131,7 +2146,7 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
                 placeholder="🌍 where…"
                 value={s.at || ""}
                 onChange={(v) => setShip(i, { at: v === CLEAR ? "" : v })}
-                options={placeOptions(regions, GAME_CONTENT[game].places || [], s.at)}
+                options={placeOptions(regions, s.at)}
               />
             )}
             <button

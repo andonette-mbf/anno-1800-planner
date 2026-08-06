@@ -60,7 +60,7 @@ await act(async () => {
     React.createElement(
       S.AppProviders,
       null,
-      React.createElement(TrackerView, { calcState: E.DEFAULT_STATE })
+      React.createElement(TrackerView, { calcState: E.DEFAULT_STATE, section: "tasks" })
     )
   );
 });
@@ -337,7 +337,7 @@ await act(async () => {
     React.createElement(
       S.AppProviders,
       null,
-      React.createElement(TrackerView, { calcState: E.DEFAULT_STATE })
+      React.createElement(TrackerView, { calcState: E.DEFAULT_STATE, section: "tasks" })
     )
   );
 });
@@ -377,7 +377,7 @@ await act(async () => {
     React.createElement(
       S.AppProviders,
       null,
-      React.createElement(TrackerView, { calcState: E.DEFAULT_STATE })
+      React.createElement(TrackerView, { calcState: E.DEFAULT_STATE, section: "tasks" })
     )
   );
 });

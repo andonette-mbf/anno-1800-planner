@@ -67,7 +67,7 @@ const mount = async () => {
       React.createElement(
         S.AppProviders,
         null,
-        React.createElement(TrackerView, { calcState: E.DEFAULT_STATE })
+        React.createElement(TrackerView, { calcState: E.DEFAULT_STATE, section: "islands" })
       )
     );
   });
@@ -87,6 +87,17 @@ const fire = async (el) => {
 const blocks = () => $(".isleblk");
 const blockFor = (n) => blocks().find((el) => el.querySelector(".isletog")?.textContent.includes(n));
 const bodyOf = (n) => blockFor(n).querySelectorAll(".plitem").length;
+
+// --- Cape Trelawney settles as its own island (build 84) ------------------
+const addIsleRow = () => $(".card")[0].querySelector(".plrow");
+await fire(addIsleRow().querySelector(".ddbtn"));
+const kits = $(".ddpop .ddopt").map((el) => el.textContent.trim());
+check(
+  "the new-island menu offers Cape Trelawney on its own",
+  kits.includes("Cape Trelawney") && kits.includes("Old World"),
+  kits.join(" | ")
+);
+await fire(document.querySelector(".ddbtn.open"));
 
 // --- both start open, as they always were --------------------------------
 check("two island blocks", blocks().length === 2, String(blocks().length));

@@ -374,6 +374,20 @@ is in CLAUDE.md.
   something, worked out for every island so the count is right even when they
   are all folded away.
 
+- **Tabs, and Cape Trelawney settles** (build 84): "split them out into tabs,
+  islands, ships, tasks" and "ensure new island has cape t separately". The
+  Tracker's one long page is three tabs of its own in the top row —
+  **🧮 Calculator · 📜 Tasks · 🏝 Islands · 🚢 Ships**. Old stored tab ids
+  ("tracker", and "session" from the Playbook era) land on Tasks. All three
+  stay mounted and only the chosen one is drawn, so a half-typed box survives
+  a tab change. The save menu shows on all three, not just the old Tracker tab.
+  **Cape Trelawney is its own island tag** (`ct`), with its own starter kit
+  and its own entry in the new-island menu. It is still region 1 — the Old
+  World's buildings, exactly — so `GameContent.regionAlias` (`ct → ow`) says
+  which tag's chips and building list it borrows, rather than repeating "ow"
+  in 23 chip entries. That also makes it a place a ship can be, so the
+  separate `places` list added in build 81 is gone.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)

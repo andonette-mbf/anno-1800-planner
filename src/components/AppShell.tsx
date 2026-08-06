@@ -10,15 +10,25 @@ import { Results } from "./calc/Results";
 import { TrackerView } from "./TrackerView";
 import { Dropdown } from "./ui/Dropdown";
 
-type View = "calc" | "tracker";
+// The Tracker's three cards are three tabs of their own (build 84) — one page
+// of all three was a long scroll, and you are only ever in one of them.
+type View = "calc" | "tasks" | "islands" | "ships";
+export type TrackerSection = "tasks" | "islands" | "ships";
 
 const VIEW_KEY = "anno_view";
+const VIEWS: [View, string][] = [
+  ["calc", "🧮 Calculator"],
+  ["tasks", "📜 Tasks"],
+  ["islands", "🏝 Islands"],
+  ["ships", "🚢 Ships"],
+];
 
-// Stored ids from removed tabs fall through to the default view; the old
-// "session" id maps onto its successor.
+// Stored ids from tabs that no longer exist fall through to the default view.
+// "session" was the Playbook-era id and "tracker" the one-page Tracker; both
+// land on Tasks, which is the card that used to be at the top of it.
 function normalizeView(v: string | null): View | null {
-  if (v === "session") return "tracker";
-  return v === "calc" || v === "tracker" ? v : null;
+  if (v === "session" || v === "tracker") return "tasks";
+  return VIEWS.some(([id]) => id === v) ? (v as View) : null;
 }
 
 const LEGACY_DEFAULT: Partial<CalcState> = {
@@ -132,12 +142,7 @@ export function AppShell() {
         ))}
       </nav>
       <nav className="appnav" id="appnav">
-        {(
-          [
-            ["calc", "🧮 Calculator"],
-            ["tracker", "📜 Tracker"],
-          ] as [View, string][]
-        ).map(([v, label]) => (
+        {VIEWS.map(([v, label]) => (
           <button
             key={v}
             className={`chip ${view === v ? "on" : ""}`}
@@ -149,9 +154,9 @@ export function AppShell() {
             {label}
           </button>
         ))}
-        {/* Only on the Tracker: a save is a playthrough's quests and islands,
-            not a calculator setting. */}
-        {view === "tracker" && <SaveMenu />}
+        {/* Not on the calculator: a save is a playthrough's tasks, islands and
+            ships, not a calculator setting. */}
+        {view !== "calc" && <SaveMenu />}
       </nav>
       <div
         className="grid"
@@ -161,8 +166,10 @@ export function AppShell() {
         <LeftPanel st={st} patch={patch} gen={gen} bumpGen={bumpGen} loadState={loadState} />
         <Results st={st} patch={patch} />
       </div>
-      <div style={{ display: view === "tracker" ? "block" : "none" }}>
-        <TrackerView calcState={st} />
+      {/* Kept mounted rather than swapped, so the boxes you were half way
+          through typing in survive a tab change. */}
+      <div style={{ display: view === "calc" ? "none" : "block" }}>
+        <TrackerView calcState={st} section={view as TrackerSection} />
       </div>
     </div>
   );

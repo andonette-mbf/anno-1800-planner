@@ -29,11 +29,11 @@ export interface GameContent {
   starters: { key: string; label: string; items: string[] }[];
   /** Fandom wiki search base for the 🔗 lookup on an item. */
   wikiSearch: string;
-  /** Places to offer for "where a ship is", beyond the regions the data pack
-   *  names. Cape Trelawney is region 1 in the numbers — the game treats it as
-   *  Old World — but you sail to it as its own place, so the fleet says so.
-   *  Player-facing wording, deliberately not in the data pack. */
-  places?: string[];
+  /** A region tag that is really another one wearing a different name. Cape
+   *  Trelawney is Old World in the numbers and in every building list, but you
+   *  settle it and sail to it as its own place — so it gets its own tag, and
+   *  this says which tag's buildings and chips it borrows. */
+  regionAlias?: Record<string, string>;
   /** Suggestions for a ship's type in the fleet list. Unlike `starters` and
    *  `suggestions` these are NOT extracted from a data pack — the packs carry
    *  goods and buildings, not ships — so this is a convenience list of the
@@ -45,11 +45,15 @@ export interface GameContent {
 const ANNO1800: GameContent = {
   regionLabels: {
     ow: "Old World",
+    ct: "Cape Trelawney",
     nw: "New World",
     ar: "Arctic",
     en: "Enbesa",
   },
-  regionNum: { ow: 1, nw: 2, ar: 4, en: 5 },
+  // Cape Trelawney IS the Old World as far as the numbers go — same region 1,
+  // same buildings — so it borrows ow's chips through regionAlias.
+  regionNum: { ow: 1, ct: 1, nw: 2, ar: 4, en: 5 },
+  regionAlias: { ct: "ow" },
   suggestions: [
     { t: "Fire Station", regions: ["ow", "nw"] },
     { t: "Police Station", regions: ["ow", "nw"] },
@@ -92,7 +96,24 @@ const ANNO1800: GameContent = {
   starters: [
     {
       key: "ow",
-      label: "Old World / Cape Trelawney",
+      label: "Old World",
+      items: [
+        "Marketplace",
+        "Lumberjack's Hut",
+        "Sawmill",
+        "Fishery",
+        "Potato Farm",
+        "Schnapps Distillery",
+        "Sheep Farm",
+        "Framework Knitters",
+        "Fire Station",
+      ],
+    },
+    {
+      // Same buildings as the Old World — it IS the Old World region — but
+      // settled as its own island, so it gets its own starter kit.
+      key: "ct",
+      label: "Cape Trelawney",
       items: [
         "Marketplace",
         "Lumberjack's Hut",
@@ -155,7 +176,6 @@ const ANNO1800: GameContent = {
     { key: "none", label: "Blank island", items: [] },
   ],
   wikiSearch: "https://anno1800.fandom.com/wiki/Special:Search?query=",
-  places: ["Cape Trelawney"],
   // The ones you actually name and keep. Deliberately not exhaustive — DLC
   // adds more and the field takes any text.
   shipTypes: [

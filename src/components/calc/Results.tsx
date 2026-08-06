@@ -128,7 +128,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 83 · counts at the top, prose gone</span>
+      <span style={{ opacity: 0.55 }}>build 84 · tabs, and Cape Trelawney settles</span>
     </div>
   );
 }
