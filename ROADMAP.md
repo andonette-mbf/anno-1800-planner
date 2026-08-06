@@ -317,6 +317,18 @@ is in CLAUDE.md.
   someone fills it in from the game rather than from memory. Wiring for M11b's
   ship items to hang off later. `npm run test:fleet` covers it.
 
+- **Ships say what and where** (build 76): "shall we make a clickable thing eg
+  trade, or where it is" — and "I don't need to know what it's trading". The
+  free-text "doing" box is gone. In its place two menus: a short fixed list of
+  jobs (`SHIP_JOBS`: trade route, expedition, exploring, escort, idle, in for
+  repairs — game-agnostic, a trade route is a trade route in Rome too) and a
+  place, taken from **your own island list** plus "At sea". Both offer "— not
+  saying" to clear. Cargo is deliberately not tracked: the fleet list answers
+  "where did I leave it and is it busy", not "what's in the hold". Anything a
+  ship already carried from build 75's free-text box stays listed as its own
+  option rather than being dropped, and an `at` naming an island you've since
+  removed still shows.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)

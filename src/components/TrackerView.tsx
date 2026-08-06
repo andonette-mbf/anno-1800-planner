@@ -1740,6 +1740,34 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
   );
 }
 
+// What a ship is on (build 76). Deliberately short and tap-only — the fleet
+// list answers "where did I leave it and is it busy", not "what is in the hold".
+// Game-agnostic: a trade route is a trade route in Rome too.
+const SHIP_JOBS = ["Trade route", "Expedition", "Exploring", "Escort", "Idle", "In for repairs"];
+const CLEAR = "__none";
+
+/** Job menu, keeping whatever is already stored even if it isn't one of ours —
+ *  a ship that carried free text from build 75 shouldn't lose it silently. */
+function jobOptions(cur?: string): { value: string; label: string }[] {
+  const out = SHIP_JOBS.map((j) => ({ value: j, label: j }));
+  if (cur && !SHIP_JOBS.includes(cur)) out.unshift({ value: cur, label: cur });
+  if (cur) out.push({ value: CLEAR, label: "— not saying" });
+  return out;
+}
+
+/** Where menu: your own islands, plus at sea for a ship between them. */
+function placeOptions(islands: string[], cur?: string): { value: string; label: string }[] {
+  const out = [
+    { value: "At sea", label: "At sea" },
+    ...islands.map((n) => ({ value: n, label: n })),
+  ];
+  // An island that has since been removed still shows, rather than the row
+  // silently forgetting where the ship was.
+  if (cur && cur !== "At sea" && !islands.includes(cur)) out.unshift({ value: cur, label: cur });
+  if (cur) out.push({ value: CLEAR, label: "— not saying" });
+  return out;
+}
+
 // The fleet (build 75). A card of its own rather than island inventory: ships
 // move, and the one you're looking for is the one you can't remember where you
 // left. Name is the identity — it's what the game shows you — with the type
@@ -1748,6 +1776,7 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
 function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
   const { data, addShip, setShip, removeShip } = useCompanion();
   const ships = data.ships || [];
+  const islands = data.islands || [];
   const [draft, setDraft] = useState("");
   const [draftType, setDraftType] = useState("");
   const types = GAME_CONTENT[game].shipTypes;
@@ -1769,8 +1798,8 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
       </div>
       <div className="bd doc">
         <p className="lead">
-          What you own and what it&apos;s doing — the ships you forget between sessions. Name it as
-          the game does; everything else is free text.
+          What you own, what it&apos;s on and where you left it — the ships you forget between
+          sessions. Name it as the game does; the rest is two taps.
         </p>
         {ships.map((s, i) => (
           <div className="plitem shiprow" key={`${i}:${s.name}`}>
@@ -1796,16 +1825,26 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
                 if (e.key === "Enter") e.currentTarget.blur();
               }}
             />
-            <input
+            {/* Both taps, not typing: what it's on and where you left it. The
+                cargo isn't tracked on purpose — you don't need this list to
+                tell you what a trader is carrying. */}
+            <Dropdown
               className="shipdoing"
-              placeholder="doing… e.g. Rum: Manola → Crown Falls"
-              defaultValue={s.doing || ""}
-              aria-label={`What ${s.name} is doing`}
-              title="Where it is or what it's on — a route, an expedition, or nothing at all"
-              onBlur={(e) => setShip(i, { doing: e.target.value })}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") e.currentTarget.blur();
-              }}
+              ariaLabel={`What ${s.name} is doing`}
+              title="What it's on. Nothing here means you haven't said."
+              placeholder="⚓ doing…"
+              value={s.doing || ""}
+              onChange={(v) => setShip(i, { doing: v === CLEAR ? "" : v })}
+              options={jobOptions(s.doing)}
+            />
+            <Dropdown
+              className="shipat"
+              ariaLabel={`Where ${s.name} is`}
+              title="Where you left it. Islands come from your own list."
+              placeholder="🏝 where…"
+              value={s.at || ""}
+              onChange={(v) => setShip(i, { at: v === CLEAR ? "" : v })}
+              options={placeOptions(islands, s.at)}
             />
             <button
               className="plx"

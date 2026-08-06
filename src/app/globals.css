@@ -36,9 +36,10 @@ a.plx:hover{color:var(--accent)}
    squeezing three boxes onto one line. */
 .shiprow{gap:8px;flex-wrap:wrap}
 .shiprow input{padding:6px 9px;font-size:13px}
-.shipname{flex:2 1 30%;min-width:120px;font-weight:600}
-.shiptype{flex:1 1 20%;min-width:96px;width:auto}
-.shipdoing{flex:3 1 40%;min-width:150px}
+.shipname{flex:2 1 28%;min-width:120px;font-weight:600}
+.shiptype{flex:1 1 18%;min-width:96px;width:auto}
+/* Job and place are menus, not boxes — sized to match the inputs beside them. */
+.shipdoing,.shipat{flex:1 1 22%;min-width:120px;width:auto;font-size:12.5px;padding:6px 9px;color:var(--muted)}
 .ichips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .questrow.gap{border-color:#cfa08e}
 /* Red only on the item's own label — a bare `span` selector also caught the

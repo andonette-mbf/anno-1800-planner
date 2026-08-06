@@ -1,6 +1,6 @@
-// The fleet list (build 75): renders the real Tracker in jsdom and keeps a
-// fleet the way a player would — add a ship, say what it's on, rename it, lose
-// one.
+// The fleet list (builds 75/76): renders the real Tracker in jsdom and keeps a
+// fleet the way a player would — add a ship, say what it's on and where it is,
+// rename it, lose one.
 //
 // Ships are named, so the name is the row's identity: what this pins down is
 // that a duplicate name is refused rather than quietly making a second row, that
@@ -36,6 +36,8 @@ Object.defineProperty(global, "navigator", {
 global.localStorage = dom.window.localStorage;
 dom.window.fetch = () => Promise.reject(new Error("no server"));
 global.fetch = dom.window.fetch;
+// One island, so the "where" menu has somewhere real to offer.
+localStorage.setItem("anno_islands", JSON.stringify(["Crown Falls"]));
 // Removing a ship asks first.
 let confirmAnswer = true;
 dom.window.confirm = () => confirmAnswer;
@@ -122,15 +124,41 @@ check(
   JSON.stringify(stored())
 );
 
-// --- what it's doing ------------------------------------------------------
-const doing = rows()[0].querySelector(".shipdoing");
-doing.value = "Rum: Manola → Crown Falls";
-await fire(doing, "focusout");
+// --- what it's on, and where (build 76: taps, not typing) -----------------
+const menuOpen = () => $(".ddpop .ddopt").length > 0;
+const pickFrom = async (row, cls, label) => {
+  if (!menuOpen()) await fire(rows()[row].querySelector(cls));
+  const opt = $(".ddpop .ddopt").find((el) => el.textContent.trim() === label);
+  if (!opt)
+    throw new Error(
+      `no "${label}" in: ${$(".ddpop .ddopt").map((e) => e.textContent.trim()).join(" | ")}`
+    );
+  await fire(opt);
+};
+await fire(rows()[0].querySelector(".shipdoing"));
+const jobs = $(".ddpop .ddopt").map((el) => el.textContent.trim());
 check(
-  "what it's doing is saved",
-  stored()[0]?.doing === "Rum: Manola → Crown Falls",
-  JSON.stringify(stored())
+  "the job menu offers the usual ones",
+  jobs.includes("Trade route") && jobs.includes("Idle") && jobs.includes("Expedition"),
+  jobs.join(" | ")
 );
+check("and no cargo to fill in", !rows()[0].querySelector("input.shipdoing"));
+await pickFrom(0, ".shipdoing", "Trade route");
+check("what it's on is saved", stored()[0]?.doing === "Trade route", JSON.stringify(stored()));
+
+await fire(rows()[0].querySelector(".shipat"));
+const places = $(".ddpop .ddopt").map((el) => el.textContent.trim());
+check(
+  "the where menu offers your islands and at sea",
+  places.includes("Crown Falls") && places.includes("At sea"),
+  places.join(" | ")
+);
+await pickFrom(0, ".shipat", "Crown Falls");
+check("where it is is saved", stored()[0]?.at === "Crown Falls", JSON.stringify(stored()));
+
+await pickFrom(0, ".shipdoing", "— not saying");
+check("a job can be taken back off", !stored()[0]?.doing, JSON.stringify(stored()));
+await pickFrom(0, ".shipdoing", "Trade route");
 
 // --- a name you already own ----------------------------------------------
 await setValue(addRow().querySelectorAll("input")[1], "bessie");
@@ -162,7 +190,9 @@ document.getElementById("root").innerHTML = "";
 app = await mount();
 check(
   "the fleet comes back",
-  rows().length === 2 && rows()[0].querySelector(".shipdoing")?.value.startsWith("Rum:"),
+  rows().length === 2 &&
+    rows()[0].querySelector(".shipdoing")?.textContent.includes("Trade route") &&
+    rows()[0].querySelector(".shipat")?.textContent.includes("Crown Falls"),
   rows().map((r) => r.querySelector(".shipname")?.value).join(" | ")
 );
 check(
