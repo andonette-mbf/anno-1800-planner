@@ -318,6 +318,55 @@ check(
   String(localStorage.getItem("anno117_ships"))
 );
 
+// --- sorting (build 82) ---------------------------------------------------
+// Bessie is a Clipper on a route out of Ditchwater; The Seagull has neither a
+// type nor a place. Sorting must reorder what you SEE without sending an edit
+// to the wrong ship.
+const names = () => rows().map((r) => r.querySelector(".shipsum b")?.textContent);
+// Give the second ship a type that sorts BEFORE the first one's, so sorting by
+// type has to flip the order rather than leaving it as added.
+await edit(1);
+const t2 = rows()[1].querySelector(".shiptype");
+t2.value = "Cargo Ship";
+await fire(t2, "focusout");
+await done(1);
+const sortChip = (label) =>
+  $(".card")[2].querySelectorAll(".qfilter .chip")
+    ? [...$(".card")[2].querySelectorAll(".qfilter .chip")].find(
+        (b) => b.textContent.trim() === label
+      )
+    : null;
+check("a sort row appears once there are two ships", !!sortChip("Type"), "no Type chip");
+await fire(sortChip("Name"));
+check("by name", names().join(" | ") === "Bessie | The Seagull", names().join(" | "));
+await fire(sortChip("Type"));
+check(
+  "by type — Cargo Ship before Clipper, so the order flips",
+  names().join(" | ") === "The Seagull | Bessie",
+  names().join(" | ")
+);
+// Still sorted by type, so the TOP row is now the ship added second. Editing
+// it must reach that ship and not the one in stored position 0.
+await edit(0);
+check(
+  "the top row edits the ship it shows, not the one it used to be",
+  rows()[0].querySelector(".shipname")?.value === "The Seagull",
+  rows()[0].querySelector(".shipname")?.value
+);
+await done(0);
+await fire(sortChip("Where"));
+check(
+  "by where — Bessie loads at Ditchwater, the other has said nothing, so it's last",
+  names().join(" | ") === "Bessie | The Seagull",
+  names().join(" | ")
+);
+check(
+  "the choice is remembered",
+  localStorage.getItem("anno_fleet_sort") === "where",
+  String(localStorage.getItem("anno_fleet_sort"))
+);
+await fire(sortChip("Added"));
+
 // --- losing one -----------------------------------------------------------
 confirmAnswer = false;
 await fire([...rows()[0].querySelectorAll("button")].find((b) => b.textContent.trim() === "✕"));

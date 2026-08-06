@@ -16,7 +16,13 @@ import { planCheck, planSeed } from "@/lib/plancheck";
 import CultureBlock from "./CultureBlock";
 import { GoodIcon } from "./GoodIcon";
 import { Dropdown } from "./ui/Dropdown";
-import { blockersOf, useAuth, useCompanion, type QuestItem } from "@/lib/store";
+import {
+  blockersOf,
+  useAuth,
+  useCompanion,
+  type QuestItem,
+  type ShipItem,
+} from "@/lib/store";
 
 // Anno 1800 quests are mostly procedurally generated, so a complete built-in
 // quest list isn't feasible — these are just high-confidence quest givers and
@@ -1826,6 +1832,38 @@ function placeOptions(
   return out;
 }
 
+// Sorting the fleet (build 82) — a display order, never the stored one.
+const SHIP_SORTS = [
+  { key: "added", label: "Added" },
+  { key: "name", label: "Name" },
+  { key: "type", label: "Type" },
+  { key: "where", label: "Where" },
+] as const;
+type ShipSort = (typeof SHIP_SORTS)[number]["key"];
+const FLEET_SORT_KEY = "anno_fleet_sort";
+
+/** Where a ship counts as being, for sorting: the region you left it in, or
+ *  for a trader the island it loads at — a route has no single place. */
+function shipPlace(s: ShipItem): string {
+  return s.at || s.from || "";
+}
+
+function cmpShips(
+  sort: ShipSort,
+  a: { s: ShipItem; i: number },
+  b: { s: ShipItem; i: number }
+): number {
+  if (sort === "added") return a.i - b.i;
+  const key = (x: ShipItem) =>
+    sort === "name" ? x.name : sort === "type" ? x.type || "" : shipPlace(x);
+  const ka = key(a.s);
+  const kb = key(b.s);
+  // Ships you haven't said anything about go last, whichever way you sort —
+  // they're the ones with nothing to compare, not the first thing to read.
+  if (!ka !== !kb) return ka ? -1 : 1;
+  return ka.localeCompare(kb) || a.s.name.localeCompare(b.s.name) || a.i - b.i;
+}
+
 // The fleet (build 75). A card of its own rather than island inventory: ships
 // move, and the one you're looking for is the one you can't remember where you
 // left. Name is the identity — it's what the game shows you — with the type
@@ -1841,8 +1879,26 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
   // build 81 is that the list reads as a list. Adding a ship does NOT open it —
   // the add row already took the two things worth typing.
   const [editing, setEditing] = useState<number | null>(null);
+  // How the list is ordered on screen only (build 82). The stored order is
+  // never touched, so every row keeps its real position — which is what the
+  // edit and remove buttons work on. Remembered across visits, like the island
+  // folds, and read after mount because localStorage isn't there on the server.
+  const [sort, setSort] = useState<ShipSort>("added");
+  useEffect(() => {
+    const v = localStorage.getItem(FLEET_SORT_KEY);
+    if (v && SHIP_SORTS.some((s) => s.key === v)) setSort(v as ShipSort);
+  }, []);
+  const sortBy = (k: ShipSort) => {
+    setSort(k);
+    try {
+      localStorage.setItem(FLEET_SORT_KEY, k);
+    } catch {}
+  };
   const types = GAME_CONTENT[game].shipTypes;
   const regions = GAME_CONTENT[game].regionLabels;
+  // Rows carry their stored position, so sorting can't send an edit to the
+  // wrong ship.
+  const shown = ships.map((s, i) => ({ s, i })).sort((a, b) => cmpShips(sort, a, b));
   const add = () => {
     if (!draft.trim()) return;
     addShip(draft, draftType);
@@ -1865,7 +1921,28 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
           between sessions. Name it as the game does; the rest is two taps. A trade route asks
           instead for the two islands it runs between and what it&apos;s carrying.
         </p>
-        {ships.map((s, i) =>
+        {ships.length > 1 && (
+          <div className="chips qfilter">
+            <span className="muted fleetsortlbl">Sort by</span>
+            {SHIP_SORTS.map((o) => (
+              <button
+                key={o.key}
+                className={"chip" + (sort === o.key ? " on" : "")}
+                title={
+                  o.key === "added"
+                    ? "The order you added them"
+                    : o.key === "where"
+                      ? "Which region they're in — a trader sorts by where it loads"
+                      : `In order of ${o.label.toLowerCase()}`
+                }
+                onClick={() => sortBy(o.key)}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        )}
+        {shown.map(({ s, i }) =>
           editing !== i ? (
             // Read view (build 81): a fleet is for scanning, so a ship is one
             // line of plain words until you ask to change it. Empty fields say

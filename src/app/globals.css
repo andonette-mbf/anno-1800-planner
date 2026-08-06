@@ -58,6 +58,7 @@ a.plx:hover{color:var(--accent)}
 .shipsum .muted{font-size:12px}
 .shipjob,.shipwhere{font-size:12px;color:var(--muted);white-space:nowrap}
 .shipdone{white-space:nowrap}
+.fleetsortlbl{font-size:11px;align-self:center;margin-right:2px}
 /* One chip per good on the run, picture first. Tap takes it off again. */
 .cargochip{cursor:pointer;gap:5px;font-size:11px;padding:3px 8px}
 .shipread .cargochip{cursor:default}

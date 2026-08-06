@@ -351,6 +351,17 @@ is in CLAUDE.md.
   destination, so `GameContent.places` names extra places per game on top of
   the ones the data pack knows.
 
+- **Sort the fleet** (build 82): "fleet should be sortable by type or world".
+  Chips above the list: Added, Name, Type, Where. Added is the default and is
+  the order you put them in. Where uses the region a ship is in, or for a trader
+  the island it loads at, since a route has no one place. Ships you've said
+  nothing about go last whichever way you sort — they've nothing to compare.
+  The sort is on screen only: the stored order never changes, and each row
+  carries its real position, so a sorted list still edits and removes the ship
+  you're looking at. The choice is remembered across visits. The chips only
+  appear once there are two ships. Tested including the case that would bite —
+  editing the top row after a sort has flipped the order.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)
