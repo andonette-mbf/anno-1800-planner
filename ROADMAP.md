@@ -361,55 +361,65 @@ is in CLAUDE.md.
   export should be per save (and an import should land as a new one).
 
 - **M12 — any Anno, not just two** (asked for Aug 2026: "plan to do this for
-  any and all annos"). M10 built the seam for a SECOND game; this is the work
-  to make an Nth one a **pack, not a code change**. Nothing here is speculative
-  architecture — it is the list of places that still say `anno117` out loud.
+  any and all annos"). Adding Anno 117 made the app work for two games. This is
+  what it would take for a third, fourth or fifth to be **a data pack and some
+  settings, with no changes to the code that does the work**. This isn't a
+  redesign: it's a list of the places that still name Anno 117 directly.
 
-  **Already generic, proven by 117 — don't redo it.** `Dataset` +
-  `DATASETS: Record<Game, Dataset>` (the engine reads no table directly, and
-  `datasetFor(st)` resolves from state); `GameContent` in `games.ts` (region
-  tags, starter kits, inventory chips, services, wiki base, ship types); the
-  `GAMES` list, which is what draws the switcher; the hash marker, already
-  written for *any* non-1800 game with 1800 as the absent default; per-game
-  storage and the synced blob; per-game calculator state in `AppShell`. A
-  capability a game simply lacks is already modelled — `cultureFor` returns
-  null outside 1800 and the panel renders nothing. Keep that pattern.
+  **Already done, and proved by 117 — don't redo it.** The calculator reads no
+  game's tables directly; each game's numbers are one entry in `DATASETS`, and
+  `datasetFor(st)` picks the right one. Each game's own content — region names,
+  starter kits, inventory chips, services, wiki address, ship types — is one
+  entry in `games.ts`. The `GAMES` list is what draws the switcher, so a new
+  game appears there by being added to it. Share links already mark any game
+  that isn't 1800. Storage, saves and the calculator all keep each game apart.
+  And a game that simply doesn't have a feature is already handled: 1800's
+  collections panel returns nothing for 117 and draws nothing. Reuse that.
 
-  **What is hardcoded to exactly two** (31 `anno117` literals, all of them):
-  1. `store.gkey` knows one prefix (`anno_` → `anno117_`). Needs a per-game
-     prefix on `GAMES`; 1800's must stay the bare legacy keys forever.
-     `ISLE_SHUT_KEY` in `TrackerView` is the same shape, and the sync blob's
-     `g117` field needs a general per-game slot (keeping `g117` readable).
-  2. `GoodIcon` picks `icons117 : icons` — wants a per-game icon map, and each
-     game needs its own `fetch-good-icons` run (the two maps must stay apart:
-     24 goods share a name across 1800 and 117 with different art).
-  3. `ledger.ts` builds its index off `GOODS_117` imports and a two-key record.
-     It should build from the `Dataset` instead — the pack already carries
-     everything it reads.
-  4. `engine.defaultStateFor` special-cases 117's opening region. Belongs on
-     the Dataset as a default region.
-  5. Presentation copy: the footer's data credits, the header title/logo, and
-     LeftPanel's region wording all branch on 117. Per-game strings.
+  **What still assumes exactly two games** — all 31 mentions of `anno117`:
+  1. `store.gkey` knows one storage prefix (`anno_` → `anno117_`). Each game
+     needs its own, listed in `GAMES`; 1800 must keep the bare original names
+     for good, since /legacy.html still reads them. `ISLE_SHUT_KEY` in
+     `TrackerView` does the same thing, and the synced blob's `g117` field
+     needs to become one slot per game (still reading old `g117` blobs).
+  2. `GoodIcon` chooses between two icon files. It needs one per game, and each
+     game needs its own icon fetch. The files must stay separate: 24 goods have
+     the same name in 1800 and 117 but different pictures.
+  3. `ledger.ts` imports 117's goods directly and keys off two games. It should
+     read the dataset instead, which already holds everything it needs.
+  4. `engine.defaultStateFor` hardcodes which region 117 opens in. That belongs
+     in the dataset as "the region this game starts in".
+  5. Wording: the footer's data credits, the page title and logo, and the
+     region wording in the left panel all check for 117. Each game should
+     supply its own text.
 
-  **Per-game checklist once that's done** — pack + extractor + `test:<game>`
-  (no golden reference exists outside 1800, so each pack gets a coherence
-  test), icon set, `GameContent`, storage prefix, credits.
+  **Then, for each game added:** the data pack and the script that extracts it,
+  a test for that pack (only 1800 has the legacy app to check against, so every
+  other pack gets a test that checks it makes sense on its own), an icon set,
+  its entry in `games.ts`, its storage prefix, and its credits.
 
-  **The real gate is data, not code.** 1800 came from the legacy `_C`; 117 from
-  anno-mods/anno-117-calculator. For 1404 / 2070 / 2205 / 1701 the equivalent
-  has NOT been checked — confirm a licence-clean, machine-readable source
-  before promising a title, exactly as M10 did. Two model shapes will need a
-  look when one lands: **region** (1800 = id, 117 = bitmask; 2070's factions
-  and 2205's sectors are a third shape — keep it opaque per game, never
-  arithmetic) and **needs** (`needActive` currently collapses 1800's unlock
-  thresholds + lifestyle and 117's supply bands; a third scheme means a third
-  branch there).
+  **Which games.** The 3D ones only, 1701 onward: **1701, 1404, 2070, 2205**,
+  alongside the 1800 and 117 already here. Anno 1602 and 1503 are out — the
+  user doesn't play them, so don't spend a session on either.
 
-  **Cheap first step, worth doing on its own:** a game with no pack can still
-  be **tracker-only** — quests, islands, free-text inventory, fleet — which is
-  exactly what 117 shipped as in M10 phase 1. So any Anno can join the switcher
-  the day someone wants it, with the calculator arriving later. Decide
-  in-session whether the switcher should hide games that have no pack yet.
+  **What actually holds this up is the data, not the code.** 1800's numbers
+  came from the old single-file app; 117's from anno-mods/anno-117-calculator.
+  Nobody has checked whether anything similar exists for the other four — find
+  a source that is machine-readable and clearly licensed BEFORE promising a
+  game, which is the rule Anno 117 followed. Two things will need
+  thinking about when a third game arrives. **Regions:** 1800 numbers them,
+  117 uses a bitmask because a good can exist in both, and 2070's factions or
+  2205's sectors work differently again — so treat a region as each game's own
+  thing and never do sums with the numbers. **Needs:** the current code handles
+  1800 (needs unlock at population thresholds, plus the lifestyle switch) and
+  117 (four bands of how well-supplied you want people). A game that works a
+  third way needs another case there.
+
+  **The cheap first step, worth doing on its own:** a game with no data pack at
+  all can still have the Tracker — quests, islands, typed-in inventory, fleet.
+  That is exactly how 117 started. So any Anno can join the switcher whenever
+  you want it, and get a calculator later. Worth deciding at the time: should
+  the switcher hide games that have no numbers yet?
 - **M10 — Anno 117 support** (noodled Aug 2026; timing DECIDED — after M7,
   before M8/M9, so residents/trade-routes are built per-game once instead of
   being generalised later). One app, game switcher at the top, per-game
