@@ -1811,23 +1811,17 @@ function jobOptions(cur?: string): { value: string; label: string }[] {
  *  Ships that recorded an island before this keep showing it. */
 function placeOptions(
   regions: Record<string, string>,
+  extra: string[],
   cur?: string
 ): { value: string; label: string }[] {
   const out = [
     { value: "At sea", label: "At sea" },
     ...Object.values(regions).map((n) => ({ value: n, label: n })),
+    // Places the numbers don't name but you sail to anyway — Cape Trelawney is
+    // Old World in the data and its own destination in play.
+    ...extra.map((n) => ({ value: n, label: n })),
   ];
   if (cur && !out.some((o) => o.value === cur)) out.unshift({ value: cur, label: cur });
-  if (cur) out.push({ value: CLEAR, label: "— not saying" });
-  return out;
-}
-
-/** One end of a trade route: your own islands, nothing else. */
-function islandOptions(islands: string[], cur?: string): { value: string; label: string }[] {
-  const out = islands.map((n) => ({ value: n, label: n }));
-  // An island since removed still shows, rather than the row silently
-  // forgetting where the route ran.
-  if (cur && !islands.includes(cur)) out.unshift({ value: cur, label: cur });
   if (cur) out.push({ value: CLEAR, label: "— not saying" });
   return out;
 }
@@ -1843,6 +1837,10 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
   const islands = data.islands || [];
   const [draft, setDraft] = useState("");
   const [draftType, setDraftType] = useState("");
+  // Which row is open for editing, by position. One at a time: the point of
+  // build 81 is that the list reads as a list. Adding a ship does NOT open it —
+  // the add row already took the two things worth typing.
+  const [editing, setEditing] = useState<number | null>(null);
   const types = GAME_CONTENT[game].shipTypes;
   const regions = GAME_CONTENT[game].regionLabels;
   const add = () => {
@@ -1867,7 +1865,55 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
           between sessions. Name it as the game does; the rest is two taps. A trade route asks
           instead for the two islands it runs between and what it&apos;s carrying.
         </p>
-        {ships.map((s, i) => (
+        {ships.map((s, i) =>
+          editing !== i ? (
+            // Read view (build 81): a fleet is for scanning, so a ship is one
+            // line of plain words until you ask to change it. Empty fields say
+            // nothing rather than showing an empty box.
+            <div className="plitem shiprow shipread" key={`${i}:${s.name}`}>
+              <button
+                className="shipsum"
+                title={`Edit ${s.name}`}
+                onClick={() => setEditing(i)}
+              >
+                <b>{s.name}</b>
+                {s.type && <span className="muted">{s.type}</span>}
+                {s.doing && (
+                  <span className="shipjob">
+                    {s.doing === TRADE_JOB ? "🚢" : "⚓"} {s.doing}
+                  </span>
+                )}
+                {s.doing === TRADE_JOB
+                  ? (s.from || s.to) && (
+                      <span className="shipwhere">
+                        🏝 {s.from || "?"} → {s.to || "?"}
+                      </span>
+                    )
+                  : s.at && <span className="shipwhere">🌍 {s.at}</span>}
+                {(s.cargo || []).map((c) => (
+                  <span className="chip schip cargochip" key={c}>
+                    <GoodIcon name={c} game={game} />
+                    {c}
+                  </span>
+                ))}
+              </button>
+              <button className="plx" title={`Edit ${s.name}`} onClick={() => setEditing(i)}>
+                ✎
+              </button>
+              <button
+                className="plx"
+                title={`Remove ${s.name} from the fleet`}
+                onClick={() => {
+                  if (window.confirm(`Remove ${s.name} from the fleet?`)) {
+                    removeShip(i);
+                    setEditing(null);
+                  }
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
           <div className="plitem shiprow" key={`${i}:${s.name}`}>
             <input
               className="shipname"
@@ -1910,26 +1956,36 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
                 nothing is thrown away when the job changes. */}
             {(s.doing || "") === TRADE_JOB ? (
               <>
-                <Dropdown
+                {/* Typed, not picked (build 81): plenty of routes run to a
+                    neutral trader's harbour or another player, not to an
+                    island of yours. Your islands are suggested; anything else
+                    you can just write. */}
+                <input
                   className="shipfrom"
-                  ariaLabel={`Where ${s.name} loads`}
-                  title="The island it loads at."
                   placeholder="🏝 from…"
-                  value={s.from || ""}
-                  onChange={(v) => setShip(i, { from: v === CLEAR ? "" : v })}
-                  options={islandOptions(islands, s.from)}
+                  list="fleetPlaces"
+                  defaultValue={s.from || ""}
+                  aria-label={`Where ${s.name} loads`}
+                  title="Where it loads — one of your islands, a neutral trader, anyone."
+                  onBlur={(e) => setShip(i, { from: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") e.currentTarget.blur();
+                  }}
                 />
                 <span className="shiparrow" aria-hidden="true">
                   →
                 </span>
-                <Dropdown
+                <input
                   className="shipto"
-                  ariaLabel={`Where ${s.name} delivers`}
-                  title="The island it delivers to."
                   placeholder="🏝 to…"
-                  value={s.to || ""}
-                  onChange={(v) => setShip(i, { to: v === CLEAR ? "" : v })}
-                  options={islandOptions(islands, s.to)}
+                  list="fleetPlaces"
+                  defaultValue={s.to || ""}
+                  aria-label={`Where ${s.name} delivers`}
+                  title="Where it delivers — one of your islands, a neutral trader, anyone."
+                  onBlur={(e) => setShip(i, { to: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") e.currentTarget.blur();
+                  }}
                 />
                 {/* One run usually hauls several goods, so cargo is a list of
                     chips with the good's picture on each — tap one to take it
@@ -1973,20 +2029,40 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
                 placeholder="🌍 where…"
                 value={s.at || ""}
                 onChange={(v) => setShip(i, { at: v === CLEAR ? "" : v })}
-                options={placeOptions(regions, s.at)}
+                options={placeOptions(regions, GAME_CONTENT[game].places || [], s.at)}
               />
             )}
+            <button
+              className="linkbtn shipdone"
+              title="Done — back to the list"
+              onClick={() => setEditing(null)}
+            >
+              ✓ Done
+            </button>
             <button
               className="plx"
               title={`Remove ${s.name} from the fleet`}
               onClick={() => {
-                if (window.confirm(`Remove ${s.name} from the fleet?`)) removeShip(i);
+                if (window.confirm(`Remove ${s.name} from the fleet?`)) {
+                  removeShip(i);
+                  setEditing(null);
+                }
               }}
             >
               ✕
             </button>
           </div>
-        ))}
+          )
+        )}
+        {/* Route ends: your islands as suggestions only, since the other end
+            is as often a neutral trader or another player. */}
+        {islands.length > 0 && (
+          <datalist id="fleetPlaces">
+            {islands.map((n) => (
+              <option key={n} value={n} />
+            ))}
+          </datalist>
+        )}
         {types.length > 0 && (
           <datalist id="shipTypes">
             {types.map((t) => (

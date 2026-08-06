@@ -107,8 +107,32 @@ await setValue(typeBox, "Clipper");
 await setValue(nameBox, "Bessie");
 await fire(addRow().querySelector("button"));
 check("a ship is listed", rows().length === 1, String(rows().length));
+// A ship added is a ship you read, not a form (build 81).
 check(
-  "with the name and type given",
+  "it reads as one line, not a row of boxes",
+  rows()[0].classList.contains("shipread") && !rows()[0].querySelector("input"),
+  rows()[0].className
+);
+check(
+  "saying its name and type",
+  rows()[0].querySelector(".shipsum")?.textContent.includes("Bessie") &&
+    rows()[0].querySelector(".shipsum")?.textContent.includes("Clipper"),
+  rows()[0].querySelector(".shipsum")?.textContent
+);
+// ✎ opens the boxes; ✓ Done shuts them again.
+const edit = async (row = 0) => {
+  if (!rows()[row].querySelector("input"))
+    await fire([...rows()[row].querySelectorAll("button")].find((b) => b.textContent.trim() === "✎"));
+};
+const done = async (row = 0) => {
+  const b = [...rows()[row].querySelectorAll("button")].find((x) =>
+    x.textContent.trim().startsWith("✓")
+  );
+  if (b) await fire(b);
+};
+await edit();
+check(
+  "editing shows the boxes, filled in",
   rows()[0].querySelector(".shipname")?.value === "Bessie" &&
     rows()[0].querySelector(".shiptype")?.value === "Clipper",
   rows()[0].querySelector(".shipname")?.value
@@ -127,6 +151,7 @@ check(
 // --- what it's on, and where (build 76: taps, not typing) -----------------
 const menuOpen = () => $(".ddpop .ddopt").length > 0;
 const pickFrom = async (row, cls, label) => {
+  await edit(row);
   if (!menuOpen()) await fire(rows()[row].querySelector(cls));
   const opt = $(".ddpop .ddopt").find((el) => el.textContent.trim() === label);
   if (!opt)
@@ -135,6 +160,7 @@ const pickFrom = async (row, cls, label) => {
     );
   await fire(opt);
 };
+await edit();
 await fire(rows()[0].querySelector(".shipdoing"));
 const jobs = $(".ddpop .ddopt").map((el) => el.textContent.trim());
 check(
@@ -147,8 +173,14 @@ await pickFrom(0, ".shipdoing", "Expedition");
 check("what it's on is saved", stored()[0]?.doing === "Expedition", JSON.stringify(stored()));
 
 // --- where = the region, not the quay (build 79) --------------------------
+await edit();
 await fire(rows()[0].querySelector(".shipat"));
 const places = $(".ddpop .ddopt").map((el) => el.textContent.trim());
+check(
+  "Cape Trelawney is offered as its own place",
+  places.includes("Cape Trelawney"),
+  places.join(" | ")
+);
 check(
   "the where menu offers the game's regions and at sea",
   places.includes("Old World") && places.includes("New World") && places.includes("At sea"),
@@ -175,17 +207,26 @@ check(
     !rows()[0].querySelector(".shipat"),
   rows()[0].className
 );
-await fire(rows()[0].querySelector(".shipfrom"));
-const ends = $(".ddpop .ddopt").map((el) => el.textContent.trim());
+await edit();
+const ends = [...document.querySelectorAll("#fleetPlaces option")].map((o) => o.value);
 check(
-  "the route's ends are islands",
+  "your islands are suggested for the route's ends",
   ends.includes("Crown Falls") && ends.includes("Ditchwater") && !ends.includes("Old World"),
   ends.join(" | ")
 );
-await pickFrom(0, ".shipfrom", "Ditchwater");
-await pickFrom(0, ".shipto", "Crown Falls");
+// Both ends are typed now (build 81) — a route often runs to a neutral
+// trader, not to an island of yours.
+await edit();
+const typeInto = async (cls, v) => {
+  const box = rows()[0].querySelector(cls);
+  box.value = v;
+  await fire(box, "focusout");
+};
+await typeInto(".shipfrom", "Ditchwater");
+await typeInto(".shipto", "Sir Archibald Blake");
 // A run usually carries several goods, so the hold is a list of chips
 // (build 80), each with the good's picture on it.
+await edit();
 await fire(rows()[0].querySelector(".shipcargo"));
 const holdOpts = $(".ddpop .ddopt").map((el) => el.textContent.trim());
 check("the hold offers the game's goods", holdOpts.includes("Rum"), String(holdOpts.length));
@@ -221,7 +262,7 @@ await pickFrom(0, ".shipcargo", "Cotton");
 check(
   "the whole manifest is saved",
   stored()[0]?.from === "Ditchwater" &&
-    stored()[0]?.to === "Crown Falls" &&
+    stored()[0]?.to === "Sir Archibald Blake" &&
     stored()[0]?.cargo?.join(" | ") === "Rum | Cotton",
   JSON.stringify(stored())
 );
@@ -243,12 +284,13 @@ await fire(addRow().querySelector("button"));
 check("a new name adds", rows().length === 2, String(rows().length));
 
 // --- renaming, and refusing to un-name ------------------------------------
-const nameCell = rows()[1].querySelector(".shipname");
-nameCell.value = "  The Seagull ";
-await fire(nameCell, "focusout");
+await edit(1);
+const nameCell = () => rows()[1].querySelector(".shipname");
+nameCell().value = "  The Seagull ";
+await fire(nameCell(), "focusout");
 check("renaming works, trimmed", stored()[1]?.name === "The Seagull", JSON.stringify(stored()));
-nameCell.value = "   ";
-await fire(nameCell, "focusout");
+nameCell().value = "   ";
+await fire(nameCell(), "focusout");
 check(
   "a blanked name is refused — the row would be unidentifiable",
   stored()[1]?.name === "The Seagull",
@@ -261,12 +303,14 @@ document.getElementById("root").innerHTML = "";
 app = await mount();
 check(
   "the fleet comes back, manifest and all",
+  // Nothing is open for editing after a reload, so the read line is the proof.
   rows().length === 2 &&
-    rows()[0].querySelector(".shipdoing")?.textContent.includes("Trade route") &&
-    rows()[0].querySelector(".shipfrom")?.textContent.includes("Ditchwater") &&
-    rows()[0].querySelector(".shipto")?.textContent.includes("Crown Falls") &&
+    rows()[0].classList.contains("shipread") &&
+    ["Bessie", "Clipper", "Trade route", "Ditchwater", "Sir Archibald Blake"].every((t) =>
+      rows()[0].querySelector(".shipsum")?.textContent.includes(t)
+    ) &&
     rows()[0].querySelectorAll(".cargochip").length === 2,
-  rows().map((r) => r.querySelector(".shipname")?.value).join(" | ")
+  rows()[0].querySelector(".shipsum")?.textContent
 );
 check(
   "and it never touched the Rome side",

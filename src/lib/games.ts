@@ -29,6 +29,11 @@ export interface GameContent {
   starters: { key: string; label: string; items: string[] }[];
   /** Fandom wiki search base for the 🔗 lookup on an item. */
   wikiSearch: string;
+  /** Places to offer for "where a ship is", beyond the regions the data pack
+   *  names. Cape Trelawney is region 1 in the numbers — the game treats it as
+   *  Old World — but you sail to it as its own place, so the fleet says so.
+   *  Player-facing wording, deliberately not in the data pack. */
+  places?: string[];
   /** Suggestions for a ship's type in the fleet list. Unlike `starters` and
    *  `suggestions` these are NOT extracted from a data pack — the packs carry
    *  goods and buildings, not ships — so this is a convenience list of the
@@ -150,6 +155,7 @@ const ANNO1800: GameContent = {
     { key: "none", label: "Blank island", items: [] },
   ],
   wikiSearch: "https://anno1800.fandom.com/wiki/Special:Search?query=",
+  places: ["Cape Trelawney"],
   // The ones you actually name and keep. Deliberately not exhaustive — DLC
   // adds more and the field takes any text.
   shipTypes: [

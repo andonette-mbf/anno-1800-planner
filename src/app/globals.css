@@ -50,8 +50,17 @@ a.plx:hover{color:var(--accent)}
 .shipfrom,.shipto{flex:1 1 16%;min-width:104px;width:auto;font-size:12.5px;padding:6px 9px;color:var(--muted)}
 .shiparrow{flex:0 0 auto;color:var(--dim);font-size:12px}
 .shipcargo{flex:0 1 auto;min-width:104px;width:auto;font-size:12.5px;padding:6px 9px;color:var(--muted)}
+/* Read view: one line of words per ship, the whole line being the way in to
+   editing it. Only the edit form gets boxes. */
+.shipread{gap:6px}
+.shipsum{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px;background:0 0;border:0;padding:2px 0;font:inherit;font-size:13px;color:var(--ink);text-align:left;cursor:pointer}
+.shipsum:hover b{color:var(--gold)}
+.shipsum .muted{font-size:12px}
+.shipjob,.shipwhere{font-size:12px;color:var(--muted);white-space:nowrap}
+.shipdone{white-space:nowrap}
 /* One chip per good on the run, picture first. Tap takes it off again. */
 .cargochip{cursor:pointer;gap:5px;font-size:11px;padding:3px 8px}
+.shipread .cargochip{cursor:default}
 .cargochip .gicon{width:15px;height:15px}
 .ichips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .questrow.gap{border-color:#cfa08e}

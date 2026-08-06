@@ -338,6 +338,19 @@ is in CLAUDE.md.
   semicolons, "+", "&" and "and", so "Rum and cotton" becomes two goods rather
   than one strange one. The typed box and its suggestion list are gone.
 
+- **The fleet reads as a list** (build 81): "once you have added a ship the view
+  should compact instead of being form style, with a simple edit function" —
+  plus two smaller asks in the same breath. A ship is now one line of plain
+  words: name, type, what it's on, where, and its cargo as chips with pictures.
+  Empty fields say nothing rather than showing an empty box. Tap the line (or
+  ✎) to get the boxes back, ✓ Done to shut them. One row open at a time.
+  **Route ends are typed now**, not picked: plenty of runs go to a neutral
+  trader's harbour or another player, so both ends take any text with your own
+  islands offered as suggestions. **Cape Trelawney is its own place** in the
+  "where" menu — the numbers call it Old World, but you sail to it as its own
+  destination, so `GameContent.places` names extra places per game on top of
+  the ones the data pack knows.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)
