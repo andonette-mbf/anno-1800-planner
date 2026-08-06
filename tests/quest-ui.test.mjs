@@ -491,6 +491,55 @@ check(
     .join(" | ")
 );
 
+// --- the row is text, not a button (build 78) -----------------------------
+// It used to be a <label>: reading a task on a phone completed it.
+// Everything open is parked by now, so bring one back with ⤒ to poke at.
+await fire(
+  btn(
+    waitRows().find((el) => rowText(el).startsWith("Build a brickworks")),
+    "⤒"
+  ),
+  "click"
+);
+const readable = rowFor("Build a brickworks");
+const beforeText = rowText(readable);
+await fire(readable.querySelector(".qmain > span"), "click");
+check(
+  "touching the task text doesn't tick it off",
+  openRows().some((el) => rowText(el) === beforeText) &&
+    !readable.querySelector("input[type=checkbox]").checked,
+  openRows().map((el) => rowText(el).split("\n")[0]).join(" | ")
+);
+await fire(readable.querySelector("input[type=checkbox]"), "click");
+check(
+  "…but the box still does",
+  !openRows().some((el) => rowText(el) === beforeText),
+  openRows().map((el) => rowText(el).split("\n")[0]).join(" | ")
+);
+
+// --- clearing the completed fold (build 78) -------------------------------
+// The button lives on the header line now, so it can be found without opening
+// the fold — and it takes two taps, because the list doesn't come back.
+const doneBtns = () => [...document.querySelectorAll(".doneblk .linkbtn")];
+const clearBtn = () => doneBtns().find((el) => /clear/i.test(el.textContent || ""));
+const doneCount = () =>
+  JSON.parse(localStorage.getItem("anno_quests") || "[]").filter((q) => q.done).length;
+check("clear is on show without opening the fold", !!clearBtn(), doneBtns().map((el) => el.textContent).join(" | "));
+const hadDone = doneCount();
+check("there is something to clear", hadDone > 0, String(hadDone));
+await fire(clearBtn(), "click");
+check(
+  "one tap only arms it — nothing is lost yet",
+  doneCount() === hadDone && /Really clear/.test(clearBtn()?.textContent || ""),
+  `${doneCount()} done, button: ${clearBtn()?.textContent}`
+);
+await fire(clearBtn(), "click");
+check(
+  "the second tap clears them",
+  doneCount() === 0 && !document.querySelector(".doneblk"),
+  String(localStorage.getItem("anno_quests"))
+);
+
 // A running countdown means a live interval, which would keep node alive after
 // the last check — the run ends by tearing the tracker down.
 await act(async () => r3.unmount());

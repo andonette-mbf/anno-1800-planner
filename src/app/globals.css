@@ -18,7 +18,11 @@ a.plx:hover{color:var(--accent)}
 .qmove{font-size:10px;padding:2px 3px}
 .qmove:disabled{opacity:.25;cursor:default}
 .qmove:hover:not(:disabled){color:var(--gold)}
-.qmain{display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0;cursor:pointer}
+/* Only the checkbox ticks a task (build 78) — the row is text to read, and on
+   a phone it was too easy to complete something by touching it. */
+.qmain{display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0;cursor:default}
+/* An armed "clear completed", one tap from dropping the list. */
+.linkbtn.arm{color:var(--red);border-color:#cfa08e;font-weight:700}
 .questrow input[type=checkbox]{width:18px;height:18px}
 .qnote{display:block;color:var(--muted);font-size:11px;line-height:1.35;margin-top:2px}
 .qisle{width:auto;flex:0 0 auto;max-width:38%}

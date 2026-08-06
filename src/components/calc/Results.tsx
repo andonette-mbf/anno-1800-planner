@@ -128,7 +128,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 77 · a timer on any task</span>
+      <span style={{ opacity: 0.55 }}>build 78 · no accidental ticks, easy clearing</span>
     </div>
   );
 }

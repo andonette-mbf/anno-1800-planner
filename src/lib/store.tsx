@@ -675,7 +675,8 @@ interface CompanionCtx {
   removeQuest: (i: number) => void;
   swapQuests: (i: number, j: number) => void;
   moveQuestAfter: (from: number, to: number) => void;
-  clearDoneQuests: () => void;
+  /** Drop the completed tasks — all of them, or one island's. */
+  clearDoneQuests: (island?: string) => void;
   addIsland: (name: string, seed?: string[], region?: string) => void;
   setIslandRegion: (island: string, region: string | null) => void;
   removeIsland: (name: string) => void;
@@ -1130,8 +1131,22 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           quests.splice((to > from ? to - 1 : to) + 1, 0, q);
           return { ...d, quests };
         }),
-      clearDoneQuests: () =>
-        update((d) => ({ ...d, quests: d.quests.filter((q) => !q.done) })),
+      // Clearing the completed fold. With an island named, only that island's
+      // are dropped (build 78) — the button sits under a filtered list, and
+      // "clear" there has to mean what you can see. Island tags are an
+      // "Island: …" prefix on the text, the same handle questIsland reads.
+      clearDoneQuests: (island) =>
+        update((d) => {
+          const p = island?.trim().toLowerCase();
+          return {
+            ...d,
+            quests: d.quests.filter(
+              (q) =>
+                !q.done ||
+                (!!p && (/^([^:]+):/.exec(q.t)?.[1] ?? "").trim().toLowerCase() !== p)
+            ),
+          };
+        }),
       addIsland: (name, seed, region) => {
         const n = name.trim();
         if (!n) return;

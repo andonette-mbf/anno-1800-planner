@@ -496,6 +496,15 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
   const doneQuests = indexed.filter((x) => x.q.done);
   const [showDone, setShowDone] = useState(false);
   const [showWait, setShowWait] = useState(true);
+  // "Clear completed" arms on the first tap and fires on the second, going back
+  // to sleep if you walk away from it — the fold is the only record of what
+  // you've done, and the button now sits out in the open.
+  const [armClear, setArmClear] = useState(false);
+  useEffect(() => {
+    if (!armClear) return;
+    const id = setTimeout(() => setArmClear(false), 4000);
+    return () => clearTimeout(id);
+  }, [armClear]);
   // Redraw once a second while any countdown is on screen — nothing else in
   // the Tracker changes on its own, so the interval only exists when a task is
   // actually on the clock. (The freeing itself is the store's job.)
@@ -525,6 +534,8 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
   }
   const filterIslands = islands.filter((n) => anyTagged.has(n));
   const effFilter = isleFilter && anyTagged.has(isleFilter) ? isleFilter : null;
+  // Switching islands changes what "clear" would take with it, so it disarms.
+  useEffect(() => setArmClear(false), [effFilter]);
   const onIsland = <T extends { q: QuestItem }>(rows: T[]) =>
     effFilter ? rows.filter((x) => questIsland(x.q.t, islands) === effFilter) : rows;
   const visOpen = onIsland(openQuests);
@@ -1055,14 +1066,20 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
             {visOpen.length ? (
               visOpen.map(({ q, i }, k) => (
                 <div className="plitem questrow" key={`${i}:${q.t}`}>
-                  <label className="qmain" title="Tap to tick off">
+                  {/* The box ticks the task, and nothing else does (build 78).
+                      This used to be a <label>, so any tap on the row — reading
+                      it on a phone, following a link in the text — completed
+                      the thing you were only looking at. */}
+                  <div className="qmain">
                     <input
                       type="checkbox"
                       checked={q.done}
+                      title="Tick off"
+                      aria-label={`Tick off ${q.t}`}
                       onChange={(e) => toggleQuest(i, e.target.checked)}
                     />
                     {questBody(q)}
-                  </label>
+                  </div>
                   {q.wr && (
                     <button
                       className="chip schip qrang"
@@ -1195,14 +1212,16 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                 {showWait &&
                   visWait.map(({ q, i }) => (
                     <div className="plitem questrow waiting" key={`${i}:${q.t}`}>
-                      <label className="qmain" title="Tap to tick off">
+                      <div className="qmain">
                         <input
                           type="checkbox"
                           checked={q.done}
+                          title="Tick off"
+                          aria-label={`Tick off ${q.t}`}
                           onChange={(e) => toggleQuest(i, e.target.checked)}
                         />
                         {questBody(q)}
-                      </label>
+                      </div>
                       {/* One chip per task in the way — tap to unlink. The task
                           comes back on its own when the LAST of them is ticked
                           off, so several can be queued up (build 70). */}
@@ -1301,22 +1320,40 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                 <button className="linkbtn" onClick={() => setShowDone((v) => !v)}>
                   {showDone ? "▾" : "▸"} {visDone.length} completed
                 </button>
-                {showDone && !effFilter && (
-                  <button className="linkbtn" onClick={clearDoneQuests}>
-                    ✕ Clear all
-                  </button>
-                )}
+                {/* Clearing used to be inside the fold, so you had to open it
+                    to find it — and it was missing entirely under an island
+                    filter (build 78). It takes two taps: the list is history
+                    you can't get back, and it now sits in easy reach. */}
+                <button
+                  className={"linkbtn" + (armClear ? " arm" : "")}
+                  title={
+                    effFilter
+                      ? `Drop ${effFilter}'s completed tasks from the list`
+                      : "Drop every completed task from the list"
+                  }
+                  onClick={() => {
+                    if (!armClear) return setArmClear(true);
+                    setArmClear(false);
+                    clearDoneQuests(effFilter ?? undefined);
+                  }}
+                >
+                  {armClear
+                    ? `✕ Really clear ${visDone.length}?`
+                    : `✕ Clear ${visDone.length} completed${effFilter ? ` on ${effFilter}` : ""}`}
+                </button>
                 {showDone &&
                   visDone.map(({ q, i }) => (
                     <div className="plitem questrow done" key={`${i}:${q.t}`}>
-                      <label className="qmain" title="Untick to reopen">
+                      <div className="qmain">
                         <input
                           type="checkbox"
                           checked={q.done}
+                          title="Untick to reopen"
+                          aria-label={`Reopen ${q.t}`}
                           onChange={(e) => toggleQuest(i, e.target.checked)}
                         />
                         <span style={{ flex: 1 }}>{linkify(q.t)}</span>
-                      </label>
+                      </div>
                       <button className="plx" title="Remove quest" onClick={() => removeQuest(i)}>
                         ✕
                       </button>
