@@ -224,8 +224,10 @@ function houses(residents: number, fh: number) {
 }
 
 // Display name of the good an inventory item makes, for its picture.
-// Non-building items (landmarks, free text) have none; 117 goods have no
-// picture set yet, so GoodIcon just renders nothing for them.
+// Non-building items (landmarks, free text) have none, and a handful of goods
+// in each game have no picture on the wiki, so GoodIcon renders nothing for
+// them. The name alone isn't enough to pick the art — 24 goods are named the
+// same in both games — so every caller passes the game too.
 function iconGoodName(itemName: string, game: Game): string | null {
   const gid = itemGood(itemName, game);
   if (!gid) return null;
@@ -1230,7 +1232,7 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                           game's goods (build 71) — and shows the picture once
                           the note names one. Still free text: "a ship", "the
                           next region" and the like are just as valid. */}
-                      <GoodIcon name={q.wn} />
+                      <GoodIcon name={q.wn} game={game} />
                       <input
                         className="wnote"
                         placeholder="waiting on… e.g. Bricks"
@@ -1491,7 +1493,7 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                           onChange={(e) => toggleIslandCheck(name, i, e.target.checked)}
                         />
                         <span style={{ flex: 1 }}>
-                          <GoodIcon name={iconGoodName(c.t, game)} />
+                          <GoodIcon name={iconGoodName(c.t, game)} game={game} />
                           {c.t}
                           {(c.n || 1) > 1 && <b> ×{c.n}</b>}
                         </span>
@@ -1582,7 +1584,7 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                       {ledger.map((r) => (
                         <div className="iledgrow" key={r.name}>
                           <span>
-                            <GoodIcon name={r.name} />
+                            <GoodIcon name={r.name} game={game} />
                             {r.name}
                           </span>
                           <span className="num muted">
@@ -1629,7 +1631,7 @@ export function TrackerView({ calcState }: { calcState: CalcState }) {
                             return (
                               <div className="iledgrow" key={r.good}>
                                 <span>
-                                  <GoodIcon name={r.good} />
+                                  <GoodIcon name={r.good} game={game} />
                                   {r.building}
                                 </span>
                                 <span className="num muted">{r.built}</span>

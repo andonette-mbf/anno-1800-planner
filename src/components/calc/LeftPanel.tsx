@@ -178,7 +178,7 @@ function GoodsPanel({
               >
                 <div className="optlbl">
                   <b>
-                    <GoodIcon name={g.name} />
+                    <GoodIcon name={g.name} game={D.game} />
                     {g.name} <CatPill st={st} id={g.id} />
                   </b>
                   <span>
@@ -243,7 +243,7 @@ function SelRow({
       <span className="dot" style={{ background: D.regionColor(st, id) }} />
       <div className="nm">
         <b title={g.name}>
-          <GoodIcon name={g.name} />
+          <GoodIcon name={g.name} game={D.game} />
           {g.name}
         </b>
         <span>

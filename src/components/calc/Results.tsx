@@ -115,8 +115,9 @@ function Footer({ st }: { st: CalcState }) {
       {rome ? (
         <>
           Base data: Anno 117 production times &amp; chains extracted from the open-source
-          anno-mods/anno-117-calculator pack (MIT tooling; game values © Ubisoft). Rome is still
-          patching — every rate is editable in the model. Not affiliated with Ubisoft.
+          anno-mods/anno-117-calculator pack (MIT tooling; game values © Ubisoft). Goods pictures
+          from the Anno&nbsp;117 Wiki (game art © Ubisoft). Rome is still patching — every rate is
+          editable in the model. Not affiliated with Ubisoft.
         </>
       ) : (
         <>
@@ -127,7 +128,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 73 · say what you&apos;re waiting on, sooner</span>
+      <span style={{ opacity: 0.55 }}>build 74 · Rome gets its pictures</span>
     </div>
   );
 }
@@ -179,7 +180,7 @@ function Bld({ st, id, extra }: { st: CalcState; id: string; extra?: React.React
       <div>
         <b>{buildingName(st, id)}</b>{" "}
         <span className="muted">
-          → <GoodIcon name={g.name} />
+          → <GoodIcon name={g.name} game={D.game} />
           {g.name}
         </span>{" "}
         {extra}
@@ -326,7 +327,7 @@ function SharedPane({ st, R }: { st: CalcState; R: ReturnType<typeof buildingRow
                 className="dot"
                 style={{ background: D.regionColor(st, id), display: "inline-block" }}
               />{" "}
-              {buildingName(st, id)} → <GoodIcon name={g.name} />
+              {buildingName(st, id)} → <GoodIcon name={g.name} game={D.game} />
               {g.name} <span className="muted">· {fmt(o.er)}/min each</span>
             </h3>
             <div className="flow">
@@ -558,7 +559,7 @@ function TreeNode({ st, id, tpm }: { st: CalcState; id: string; tpm: number }) {
         <span className="cnt">{r.gathered ? "gather" : `${fmt(cnt, st.round ? 0 : 1)}×`}</span>{" "}
         <b>{buildingName(st, id)}</b>{" "}
         <span className="muted">
-          → <GoodIcon name={g.name} />
+          → <GoodIcon name={g.name} game={D.game} />
           {g.name} · {fmt(tpm)} t/min
         </span>
       </span>
