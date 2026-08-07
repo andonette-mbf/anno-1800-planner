@@ -7,6 +7,7 @@ import { decodeHash, encodeHash } from "@/lib/hash";
 import { DEFAULT_SAVE_NAME, useAuth, useCompanion } from "@/lib/store";
 import { LeftPanel } from "./calc/LeftPanel";
 import { Results } from "./calc/Results";
+import { QuickAdd } from "./QuickAdd";
 import { TrackerView } from "./TrackerView";
 import { Dropdown } from "./ui/Dropdown";
 
@@ -158,6 +159,13 @@ export function AppShell() {
             ships, not a calculator setting. */}
         {view !== "calc" && <SaveMenu />}
       </nav>
+      {/* Above the calculator, not inside its grid: you decide what to build
+          while looking at the numbers, and the tab that owns the list is two
+          clicks away (build 86). Hidden rather than unmounted, like the tracker
+          below, so a half-typed name survives a tab change. */}
+      <div style={{ display: view === "calc" ? undefined : "none" }}>
+        <QuickAdd go={go} />
+      </div>
       <div
         className="grid"
         id="view-calc"
