@@ -2047,6 +2047,31 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
               <button className="plx" title={`Edit ${s.name}`} onClick={() => setEditing(i)}>
                 ✎
               </button>
+              {/* One tap for the thing that happens in a hurry (build 87): a
+                  ship goes down mid-session and you want it off the count
+                  without opening the row and hunting the job menu. Tapping it
+                  again puts the ship back — on its route if it still has one,
+                  since that's the job whose details the row was hiding. */}
+              <button
+                className={"plx shipsink" + (isLost(s) ? " on" : "")}
+                title={
+                  isLost(s)
+                    ? `${s.name} is marked lost — put it back in the fleet`
+                    : `${s.name} was destroyed`
+                }
+                aria-pressed={isLost(s)}
+                onClick={() =>
+                  setShip(i, {
+                    doing: !isLost(s)
+                      ? DESTROYED
+                      : s.from || s.to || (s.cargo || []).length
+                        ? TRADE_JOB
+                        : "",
+                  })
+                }
+              >
+                ☠
+              </button>
               <button
                 className="plx"
                 title={`Remove ${s.name} from the fleet`}

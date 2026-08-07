@@ -128,7 +128,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 86 · quick add, from the numbers</span>
+      <span style={{ opacity: 0.55 }}>build 87 · one tap when a ship goes down</span>
     </div>
   );
 }

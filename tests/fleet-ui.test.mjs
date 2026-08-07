@@ -437,6 +437,35 @@ check(
 );
 check("and it's back on the tally", tally().includes("Clipper ×1"), tally());
 
+// --- the one-tap ☠ (build 87) ---------------------------------------------
+// Sinkings happen mid-session; opening the row and hunting the job menu is too
+// much ceremony for "it's gone".
+const skull = (name) =>
+  [...rows()[rowIdx(name)].querySelectorAll("button")].find((b) => b.textContent.trim() === "☠");
+check("every ship row has one", !!skull("Bessie") && !!skull("The Seagull"));
+await fire(skull("Bessie"));
+check(
+  "one tap marks it lost, no editing",
+  stored()[0]?.doing === "Destroyed" && !!rows()[rowIdx("Bessie")].classList.contains("shiplost"),
+  JSON.stringify(stored()[0])
+);
+check("the button reads as pressed", skull("Bessie").classList.contains("on"));
+await fire(skull("Bessie"));
+check(
+  "tapping again puts it back on its route, which is what the row was hiding",
+  stored()[0]?.doing === "Trade route" &&
+    rows()[rowIdx("Bessie")].querySelector(".shipwhere")?.textContent.includes("Ditchwater"),
+  JSON.stringify(stored()[0])
+);
+// A ship with no route to go back to just comes back jobless.
+await fire(skull("The Seagull"));
+await fire(skull("The Seagull"));
+check(
+  "one with nothing to restore comes back with no job at all",
+  !stored()[1]?.doing && !rows()[rowIdx("The Seagull")].classList.contains("shiplost"),
+  JSON.stringify(stored()[1])
+);
+
 // --- losing one -----------------------------------------------------------
 confirmAnswer = false;
 await fire([...rows()[0].querySelectorAll("button")].find((b) => b.textContent.trim() === "✕"));
