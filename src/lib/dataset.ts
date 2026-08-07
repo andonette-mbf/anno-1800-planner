@@ -354,7 +354,7 @@ const ANNO117: Dataset = {
     return ANNO117.regionTint(made);
   },
   // Terracotta for Latium, a Celtic green for Albion.
-  regionTint: (region) => (region === 2 ? "#4f8f5c" : "#c0724a"),
+  regionTint: (region) => (region === 2 ? "#6f6f6f" : "#111111"),
   itemRegion: planRegion117,
 };
 

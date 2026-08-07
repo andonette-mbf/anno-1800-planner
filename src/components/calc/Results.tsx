@@ -128,7 +128,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 88 · sold, not sunk</span>
+      <span style={{ opacity: 0.55 }}>build 89 · black and white</span>
     </div>
   );
 }

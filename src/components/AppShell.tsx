@@ -109,77 +109,85 @@ export function AppShell() {
 
   const rome = game === "anno117";
   return (
-    <div className="wrap">
-      <header className="top">
-        <div className="logo">{rome ? "🏛" : "A"}</div>
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <h1>{rome ? "Anno 117 Production Planner" : "Anno 1800 Production Planner"}</h1>
-          <div className="sub">
-            Set your target output — get exact building counts, shared-resource savings &
-            whole-building layouts.
-            {rome && " Pick the region you're building in: Rome's recipes differ by province."}
-          </div>
+    <>
+      {/* Build 89: one black bar across the top, and the game switch lives in
+          it. Which game you're in changes every number on the page, so it
+          belongs beside the title rather than in a row of chips below it. */}
+      <header className="topbar">
+        <div className="topbarin">
+          <div className="logo">{rome ? "🏛" : "A"}</div>
+          <h1>
+            {rome ? "Anno 117" : "Anno 1800"} <span>Production Planner</span>
+          </h1>
+          {/* Each game keeps its own quests, islands and inventory. */}
+          <nav className="gameswitch" id="gamenav" aria-label="Game">
+            {GAMES.map((g) => (
+              <button
+                key={g.id}
+                className={game === g.id ? "on" : ""}
+                aria-pressed={game === g.id}
+                title={`Switch to ${g.label} — separate quests, islands and inventory`}
+                onClick={() => {
+                  setGame(g.id);
+                  window.scrollTo(0, 0);
+                }}
+              >
+                {g.short}
+              </button>
+            ))}
+          </nav>
+          <span className="badge" id="verBadge">
+            {datasetFor(st).version}
+          </span>
+          <ShareButton />
+          <AuthChip />
         </div>
-        <span className="badge" id="verBadge">
-          {datasetFor(st).version}
-        </span>{" "}
-        <ShareButton />
-        <AuthChip />
       </header>
-      {/* Game switcher — each game keeps its own quests, islands and inventory. */}
-      <nav className="appnav" id="gamenav" style={{ marginBottom: 0 }}>
-        {GAMES.map((g) => (
-          <button
-            key={g.id}
-            className={`chip ${game === g.id ? "on" : ""}`}
-            title={`Switch to ${g.label} — separate quests, islands and inventory`}
-            onClick={() => {
-              setGame(g.id);
-              window.scrollTo(0, 0);
-            }}
-          >
-            {g.short}
-          </button>
-        ))}
-      </nav>
-      <nav className="appnav" id="appnav">
-        {VIEWS.map(([v, label]) => (
-          <button
-            key={v}
-            className={`chip ${view === v ? "on" : ""}`}
-            onClick={() => {
-              go(v);
-              window.scrollTo(0, 0);
-            }}
-          >
-            {label}
-          </button>
-        ))}
-        {/* Not on the calculator: a save is a playthrough's tasks, islands and
-            ships, not a calculator setting. */}
-        {view !== "calc" && <SaveMenu />}
-      </nav>
-      {/* Above the calculator, not inside its grid: you decide what to build
-          while looking at the numbers, and the tab that owns the list is two
-          clicks away (build 86). Hidden rather than unmounted, like the tracker
-          below, so a half-typed name survives a tab change. */}
-      <div style={{ display: view === "calc" ? undefined : "none" }}>
-        <QuickAdd go={go} />
+      <div className="wrap">
+        <div className="sub lead">
+          Set your target output — get exact building counts, shared-resource savings &
+          whole-building layouts.
+          {rome && " Pick the region you're building in: Rome's recipes differ by province."}
+        </div>
+        <nav className="appnav" id="appnav">
+          {VIEWS.map(([v, label]) => (
+            <button
+              key={v}
+              className={`chip ${view === v ? "on" : ""}`}
+              onClick={() => {
+                go(v);
+                window.scrollTo(0, 0);
+              }}
+            >
+              {label}
+            </button>
+          ))}
+          {/* Not on the calculator: a save is a playthrough's tasks, islands and
+              ships, not a calculator setting. */}
+          {view !== "calc" && <SaveMenu />}
+        </nav>
+        {/* Above the calculator, not inside its grid: you decide what to build
+            while looking at the numbers, and the tab that owns the list is two
+            clicks away (build 86). Hidden rather than unmounted, like the tracker
+            below, so a half-typed name survives a tab change. */}
+        <div style={{ display: view === "calc" ? undefined : "none" }}>
+          <QuickAdd go={go} />
+        </div>
+        <div
+          className="grid"
+          id="view-calc"
+          style={{ display: view === "calc" ? undefined : "none" }}
+        >
+          <LeftPanel st={st} patch={patch} gen={gen} bumpGen={bumpGen} loadState={loadState} />
+          <Results st={st} patch={patch} />
+        </div>
+        {/* Kept mounted rather than swapped, so the boxes you were half way
+            through typing in survive a tab change. */}
+        <div style={{ display: view === "calc" ? "none" : "block" }}>
+          <TrackerView calcState={st} section={view as TrackerSection} />
+        </div>
       </div>
-      <div
-        className="grid"
-        id="view-calc"
-        style={{ display: view === "calc" ? undefined : "none" }}
-      >
-        <LeftPanel st={st} patch={patch} gen={gen} bumpGen={bumpGen} loadState={loadState} />
-        <Results st={st} patch={patch} />
-      </div>
-      {/* Kept mounted rather than swapped, so the boxes you were half way
-          through typing in survive a tab change. */}
-      <div style={{ display: view === "calc" ? "none" : "block" }}>
-        <TrackerView calcState={st} section={view as TrackerSection} />
-      </div>
-    </div>
+    </>
   );
 }
 

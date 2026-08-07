@@ -98,10 +98,13 @@ export function tierName(t: string | null | undefined): string {
   return t ? TIER_LABELS[t] || t : "—";
 }
 
+/** Region tint (build 89: black and white). The four regions were four hues;
+ *  they are now four tones of one black, kept dark enough that the same value
+ *  works for a 6px dot AND for the small-caps tier heading it also colours. */
 export function regionColor(r: number): string {
   return (
-    ({ 1: "#e7b96b", 2: "#57c98a", 4: "#5fa8ff", 5: "#c98ad6" } as Record<number, string>)[r] ||
-    "#8fa9c4"
+    ({ 1: "#111111", 2: "#454545", 4: "#6f6f6f", 5: "#949494" } as Record<number, string>)[r] ||
+    "#b5b5b5"
   );
 }
 
