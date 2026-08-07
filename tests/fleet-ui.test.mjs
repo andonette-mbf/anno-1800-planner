@@ -378,6 +378,65 @@ check(
 );
 await fire(sortChip("Added"));
 
+// --- a ship you lost (build 85) -------------------------------------------
+// Sunk by pirates: it stays on the list as a record, but it isn't part of the
+// fleet any more — off the tally, at the bottom, and claiming nothing.
+const header = () => $(".card")[0].querySelector(".hd .muted")?.textContent || "";
+// Marking a ship lost moves its row to the bottom, so both the picking and the
+// closing have to follow the ship rather than a fixed position.
+const rowIdx = (name) =>
+  rows().findIndex(
+    (r) =>
+      (r.querySelector(".shipsum b")?.textContent ?? r.querySelector(".shipname")?.value) === name
+  );
+const closeEditor = async () => {
+  const open = rows().findIndex((r) => r.querySelector("input"));
+  if (open >= 0) await done(open);
+};
+await pickFrom(rowIdx("Bessie"), ".shipdoing", "Destroyed");
+await closeEditor();
+check("it's saved as destroyed", stored()[0]?.doing === "Destroyed", JSON.stringify(stored()));
+const lostRow = () => rows().find((r) => r.classList.contains("shiplost"));
+check(
+  "the row reads as lost",
+  !!lostRow() && lostRow().querySelector(".shipjob")?.textContent.includes("☠"),
+  rows().map((r) => r.className).join(" | ")
+);
+check(
+  "a sunk ship claims no place and no cargo",
+  !lostRow().querySelector(".shipwhere") && !lostRow().querySelector(".cargochip"),
+  lostRow().querySelector(".shipsum")?.textContent
+);
+check(
+  "…but its name and what it was are still there",
+  ["Bessie", "Clipper"].every((t) => lostRow().querySelector(".shipsum")?.textContent.includes(t)),
+  lostRow().querySelector(".shipsum")?.textContent
+);
+check(
+  "it sinks to the bottom, though it was added first",
+  names()[names().length - 1] === "Bessie",
+  names().join(" | ")
+);
+check("it's off the type tally", !tally().includes("Clipper"), tally());
+check(
+  "and the count says what's left, and what isn't",
+  /1 ship\b/.test(header()) && /1 lost/.test(header()),
+  header()
+);
+
+// Marking one lost by mistake is undone by giving it any other job — the route
+// and hold were kept, not thrown away.
+await pickFrom(rowIdx("Bessie"), ".shipdoing", "Trade route");
+await closeEditor();
+check(
+  "putting it back restores the route and the hold",
+  names()[0] === "Bessie" &&
+    rows()[0].querySelector(".shipwhere")?.textContent.includes("Ditchwater") &&
+    rows()[0].querySelectorAll(".cargochip").length === 2,
+  rows()[0].querySelector(".shipsum")?.textContent
+);
+check("and it's back on the tally", tally().includes("Clipper ×1"), tally());
+
 // --- losing one -----------------------------------------------------------
 confirmAnswer = false;
 await fire([...rows()[0].querySelectorAll("button")].find((b) => b.textContent.trim() === "✕"));

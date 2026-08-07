@@ -1822,7 +1822,20 @@ export function TrackerView({
 // list answers "where did I leave it and is it busy", not "what is in the hold".
 // Game-agnostic: a trade route is a trade route in Rome too.
 const TRADE_JOB = "Trade route";
-const SHIP_JOBS = [TRADE_JOB, "Expedition", "Exploring", "Escort", "Idle", "In for repairs"];
+// The one entry that isn't a job but an ending (build 85). A sunk ship stays on
+// the list rather than being removed: it's a record of what the pirates took,
+// and picking anything else brings it back if you were only marking it lost.
+const DESTROYED = "Destroyed";
+const SHIP_JOBS = [
+  TRADE_JOB,
+  "Expedition",
+  "Exploring",
+  "Escort",
+  "Idle",
+  "In for repairs",
+  DESTROYED,
+];
+const isLost = (s: ShipItem) => (s.doing || "") === DESTROYED;
 const CLEAR = "__none";
 
 /** Job menu, keeping whatever is already stored even if it isn't one of ours —
@@ -1875,6 +1888,9 @@ function cmpShips(
   a: { s: ShipItem; i: number },
   b: { s: ShipItem; i: number }
 ): number {
+  // Sunk ships sit at the bottom whichever way you sort — they're a record,
+  // not part of the fleet you're looking through.
+  if (isLost(a.s) !== isLost(b.s)) return isLost(a.s) ? 1 : -1;
   if (sort === "added") return a.i - b.i;
   const key = (x: ShipItem) =>
     sort === "name" ? x.name : sort === "type" ? x.type || "" : shipPlace(x);
@@ -1931,9 +1947,12 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
   const dupe = !!draft.trim() && known.has(draft.trim().toLowerCase());
   // How many of each type, most first. Ships with no type counted together at
   // the end, so the tally still adds up to the fleet.
+  const afloat = ships.filter((s) => !isLost(s));
+  const lost = ships.length - afloat.length;
   const typeCounts = (() => {
     const by = new Map<string, number>();
-    for (const s of ships) {
+    // Sunk ships are off the tally: "how many clippers have I got" means now.
+    for (const s of afloat) {
       const t = (s.type || "").trim();
       by.set(t, (by.get(t) || 0) + 1);
     }
@@ -1946,7 +1965,9 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
       <div className="hd">
         <h2>🚢 Ship Manifest</h2>
         <span className="muted">
-          {ships.length ? `${ships.length} ship${ships.length > 1 ? "s" : ""}` : savedLabel}
+          {ships.length
+            ? `${afloat.length} ship${afloat.length === 1 ? "" : "s"}${lost ? ` · ${lost} lost` : ""}`
+            : savedLabel}
         </span>
       </div>
       <div className="bd doc">
@@ -1987,32 +2008,41 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
             // Read view (build 81): a fleet is for scanning, so a ship is one
             // line of plain words until you ask to change it. Empty fields say
             // nothing rather than showing an empty box.
-            <div className="plitem shiprow shipread" key={`${i}:${s.name}`}>
+            <div
+              className={"plitem shiprow shipread" + (isLost(s) ? " shiplost" : "")}
+              key={`${i}:${s.name}`}
+            >
               <button
                 className="shipsum"
-                title={`Edit ${s.name}`}
+                title={isLost(s) ? `${s.name} was lost — tap to put it back` : `Edit ${s.name}`}
                 onClick={() => setEditing(i)}
               >
                 <b>{s.name}</b>
                 {s.type && <span className="muted">{s.type}</span>}
                 {s.doing && (
                   <span className="shipjob">
-                    {s.doing === TRADE_JOB ? "🚢" : "⚓"} {s.doing}
+                    {isLost(s) ? "☠" : s.doing === TRADE_JOB ? "🚢" : "⚓"} {s.doing}
                   </span>
                 )}
-                {s.doing === TRADE_JOB
-                  ? (s.from || s.to) && (
-                      <span className="shipwhere">
-                        🏝 {s.from || "?"} → {s.to || "?"}
-                      </span>
-                    )
-                  : s.at && <span className="shipwhere">🌍 {s.at}</span>}
-                {(s.cargo || []).map((c) => (
-                  <span className="chip schip cargochip" key={c}>
-                    <GoodIcon name={c} game={game} />
-                    {c}
-                  </span>
-                ))}
+                {/* A ship at the bottom of the sea isn't anywhere and isn't
+                    carrying anything, so a lost row says only what it was. The
+                    route and hold are kept, and come back if you un-sink it. */}
+                {isLost(s) ? null : s.doing === TRADE_JOB ? (
+                  (s.from || s.to) && (
+                    <span className="shipwhere">
+                      🏝 {s.from || "?"} → {s.to || "?"}
+                    </span>
+                  )
+                ) : (
+                  s.at && <span className="shipwhere">🌍 {s.at}</span>
+                )}
+                {!isLost(s) &&
+                  (s.cargo || []).map((c) => (
+                    <span className="chip schip cargochip" key={c}>
+                      <GoodIcon name={c} game={game} />
+                      {c}
+                    </span>
+                  ))}
               </button>
               <button className="plx" title={`Edit ${s.name}`} onClick={() => setEditing(i)}>
                 ✎

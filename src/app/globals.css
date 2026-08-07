@@ -57,6 +57,12 @@ a.plx:hover{color:var(--accent)}
 .shipsum:hover b{color:var(--gold)}
 .shipsum .muted{font-size:12px}
 .shipjob,.shipwhere{font-size:12px;color:var(--muted);white-space:nowrap}
+/* A ship you lost (build 85): still listed, plainly not part of the fleet —
+   same dimmed strike-through as a ticked task. */
+.shiplost{border-style:dashed;background:var(--panel2)}
+.shiplost .shipsum b{opacity:.55;text-decoration:line-through}
+.shiplost .shipsum:hover b{color:inherit}
+.shiplost .shipjob{color:var(--red)}
 .shipdone{white-space:nowrap}
 .fleetsortlbl{font-size:11px;align-self:center;margin-right:2px}
 /* Tally of what you own, by type. Reads across the top like a receipt. */
