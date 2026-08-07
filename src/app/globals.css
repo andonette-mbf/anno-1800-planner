@@ -241,15 +241,13 @@ a.plx:hover{color:var(--accent)}
    changes every number on the page. It replaces `header.top` (logo + title +
    share + sign-in, in the page body); that rule stays in the ported block
    above only because this file is a verbatim port of the legacy stylesheet.
-   Sticky, because the switch is what you reach for after scrolling a long
-   island list, and z-index 100 keeps it under the portalled dropdowns (200)
-   and over the sticky table headers. */
-.topbar{position:sticky;top:0;z-index:100;background:var(--bar);color:#fff;border-bottom:1px solid #000}
+   It scrolls away with the page. It was sticky for one build and that was
+   wrong: an opaque black strip pinned to the top hides a row of whatever you
+   scroll past, and the switch is not something you reach for mid-list. */
+.topbar{background:var(--bar);color:#fff;border-bottom:1px solid #000}
 .topbarin{max-width:1120px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 /* Inverted: on the bar the mark is the white thing. */
 .topbar .logo{width:32px;height:32px;font-size:16px;background:#fff;color:var(--bar);box-shadow:none}
-/* line-height pinned to the logo's 32px so the bar is exactly --barh tall and
-   the sticky table headers below tuck under it with no seam. */
 .topbar h1{font-size:16px;line-height:32px;font-weight:700;color:#fff;margin-right:auto;white-space:nowrap}
 /* The subtitle half of the title drops away first on a narrow screen — the
    game name and the switch are what have to survive. */
@@ -268,16 +266,9 @@ a.plx:hover{color:var(--accent)}
    and the standfirst carries the space the old header had. */
 .wrap{padding-top:0}
 .sub.lead{margin:14px 0 12px;max-width:70ch}
-/* Two things already stick to the top of the viewport — the left panel and
-   every table's header row — and the bar would sit on top of both. They now
-   stop at the bar's height instead. --barh is measured, not derived: 20px of
-   padding + 1px border + the tallest control in the bar, which is a 33px ghost
-   button, NOT the 32px logo. Below 880px the bar would wrap to two or three
-   lines on a phone, so it stops being sticky and the offset goes to 0. */
-:root{--barh:54px}
-.stack{top:calc(var(--barh) + 12px)}
-thead th{top:var(--barh)}
-@media(max-width:880px){:root{--barh:0px}.topbar{position:static}}
+/* The two things that DO stick — the left panel and every table's header row —
+   keep their own offsets from the ported stylesheet, because the bar no longer
+   occupies the top of the viewport for them to clear. */
 /* The last colour in the app isn't CSS: it's the emoji the labels are built
    from and the wiki's goods art. One filter over the page drains both, so
    "black and white" means it. Three containers rather than <body>, because a
@@ -286,3 +277,29 @@ thead th{top:var(--barh)}
    screen-height off, which is why .ddpop wears its own instead of inheriting
    one. Drop these three selectors to get the colour back. */
 .topbarin,.wrap,.ddpop{filter:grayscale(1)}
+
+/* ------------------------------------------------------- Menus (build 90)
+   Colour used to do the lifting here: a cream panel on parchment, with a warm
+   shadow under it. On white cards the same panel is white-on-white and reads
+   as a flat box that has lost its styling — which is exactly what it looked
+   like. Elevation now comes from an ink border and a real shadow, and the row
+   under the cursor inverts to black. Covers both popups: the goods picker
+   (.pop) and the portalled menus (.ddpop). */
+.pop{border-color:#111;box-shadow:0 14px 34px rgba(0,0,0,.28),0 2px 6px rgba(0,0,0,.14)}
+.opt:hover,.ddopt.act{background:#111;color:#fff}
+.opt:hover small,.opt:hover .optlbl span,.ddopt.act .optlbl span{color:#c4c4c4}
+.ddopt.act .optlbl b{color:#fff}
+/* The selected row's tick and its bold label are black; on the inverted row
+   they have to flip too, or the option under the cursor loses its ✓. */
+.ddopt.act.on .optlbl b,.ddopt.act.on::after{color:#fff}
+/* Group headings sit against the inverted rows, so they take the ink band
+   rather than a grey one — the menu reads as one object. */
+.ddgrp{background:#f4f4f4;color:#111;border-bottom:1px solid #e6e6e6}
+/* A disabled row must not look picked when the pointer crosses it. */
+.ddopt.off.act{background:#f4f4f4;color:var(--muted)}
+.ddopt.off.act .optlbl b{color:var(--muted)}
+/* The closed control: a black caret and a black edge on hover, so a menu is
+   visibly a menu among the plain boxes it sits beside. */
+.ddbtn:hover{border-color:#111}
+.ddbtn:hover .ddcar{border-top-color:#111}
+.ddbtn.open{border-color:#111;box-shadow:0 0 0 1px #111}

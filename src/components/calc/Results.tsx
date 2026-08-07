@@ -128,7 +128,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 89 · black and white</span>
+      <span style={{ opacity: 0.55 }}>build 90 · menus lift off the page</span>
     </div>
   );
 }
