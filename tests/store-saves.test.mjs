@@ -172,9 +172,31 @@ check(
 );
 await act(async () => api.deleteSave(second));
 check("down to one", api.saves.length === 1, names());
+
+// Deleting the only save is a fresh start, not a refusal (build 90): the list
+// keeps one entry — the unnamed "" one, so /legacy.html reads the new
+// playthrough too — and the tracker is empty.
 await act(async () => api.deleteSave(""));
-check("the last save can't be deleted", api.saves.length === 1 && api.saveId === "", names());
-check("and its contents are still there", api.data.quests[0]?.t === "Build the zoo");
+check(
+  "the last save is deleted, leaving one empty save",
+  api.saves.length === 1 && api.saves[0].id === "" && api.saveId === "",
+  names()
+);
+check("its quests are gone", (api.data.quests || []).length === 0, JSON.stringify(api.data.quests));
+check("its islands are gone", (api.data.islands || []).length === 0, JSON.stringify(api.data.islands));
+check(
+  "and the bare keys are empty, so /legacy.html sees the fresh save",
+  JSON.parse(localStorage.getItem("anno_quests") || "[]").length === 0 &&
+    JSON.parse(localStorage.getItem("anno_islands") || "[]").length === 0,
+  String(localStorage.getItem("anno_quests"))
+);
+// A save added after the wipe still lands on suffixed keys, leaving "" alone.
+await act(async () => api.addSave("Next run"));
+check(
+  "a new save after the wipe is a second one",
+  api.saves.length === 2 && api.saves[0].id === "",
+  names()
+);
 
 let bad = 0;
 for (const x of results) {

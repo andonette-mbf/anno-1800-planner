@@ -942,14 +942,21 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         })),
       deleteSave: (id) =>
         updateSaves((g) => {
-          // The last save can't go — there'd be nothing to show.
-          if (g.list.length < 2 || !g.list.some((s) => s.id === id)) return g;
-          const list = g.list.filter((s) => s.id !== id);
-          const data = { ...g.data };
-          delete data[id];
+          if (!g.list.some((s) => s.id === id)) return g;
           // saveGame only writes the surviving saves, so blank this one's keys
           // by hand. For "" that also empties what /legacy.html reads.
           saveLocal(EMPTY_DATA, game, id);
+          // Deleting the only save empties it instead of leaving nothing to
+          // show — you finish a playthrough and start the next one on a clean
+          // tracker. It comes back as the unnamed "" save, so a browser that
+          // predates saves (and /legacy.html) reads the fresh one too.
+          if (g.list.length < 2) {
+            if (id) saveLocal(EMPTY_DATA, game, "");
+            return EMPTY_GAME;
+          }
+          const list = g.list.filter((s) => s.id !== id);
+          const data = { ...g.data };
+          delete data[id];
           return { list, cur: g.cur === id ? list[0].id : g.cur, data };
         }),
       sync,

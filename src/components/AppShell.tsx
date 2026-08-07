@@ -208,10 +208,15 @@ function SaveMenu() {
         else if (v === "__rename")
           ask("Rename this save:", name, (n) => renameSave(saveId, n));
         else if (v === "__delete") {
+          // Deleting your only save isn't refused — it clears the tracker for
+          // the next playthrough, which is what "delete" means when there's
+          // one of them.
+          const last = saves.length < 2;
           if (
-            saves.length > 1 &&
             window.confirm(
-              `Delete “${name}” — its quests, islands and inventory? This can't be undone.`
+              `Delete “${name}” — its quests, islands and inventory?` +
+                (last ? " You'll be left with an empty tracker." : "") +
+                " This can't be undone."
             )
           )
             deleteSave(saveId);
@@ -231,9 +236,14 @@ function SaveMenu() {
             { value: "__new", label: "＋ New save…", title: "An empty tracker for a new game" },
             { value: "__dup", label: "⧉ Duplicate…", title: "Copy this save's quests and islands" },
             { value: "__rename", label: "✎ Rename…" },
-            ...(saves.length > 1
-              ? [{ value: "__delete", label: "✕ Delete…", title: "Removes it and its contents" }]
-              : []),
+            {
+              value: "__delete",
+              label: "✕ Delete…",
+              title:
+                saves.length > 1
+                  ? "Removes it and its contents"
+                  : "Clears this save — quests, islands and inventory — ready for a new game",
+            },
           ],
         },
       ]}
