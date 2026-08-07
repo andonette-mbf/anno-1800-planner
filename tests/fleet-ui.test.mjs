@@ -466,6 +466,47 @@ check(
   JSON.stringify(stored()[1])
 );
 
+// --- sold, not sunk (build 88) --------------------------------------------
+// Decommissioning leaves the fleet the same way, but it isn't a loss, so it
+// counts apart and doesn't wear the skull.
+await pickFrom(rowIdx("The Seagull"), ".shipdoing", "Decommissioned");
+await closeEditor();
+const retiredRow = () => rows()[rowIdx("The Seagull")];
+check(
+  "it's saved, and reads as off the fleet",
+  stored()[1]?.doing === "Decommissioned" && retiredRow().classList.contains("shipgone"),
+  JSON.stringify(stored()[1])
+);
+check(
+  "…without the skull, which means lost",
+  !retiredRow().classList.contains("shiplost") &&
+    retiredRow().querySelector(".shipjob")?.textContent.includes("⚑"),
+  retiredRow().querySelector(".shipjob")?.textContent
+);
+check(
+  "it's off the tally too",
+  !tally().includes("Cargo Ship"),
+  tally()
+);
+check(
+  "and counted apart from the ones you lost",
+  /1 ship\b/.test(header()) && /1 retired/.test(header()) && !/lost/.test(header()),
+  header()
+);
+check(
+  "it sits at the bottom with the rest of the record",
+  names()[names().length - 1] === "The Seagull",
+  names().join(" | ")
+);
+// Both kinds gone at once: the count says which is which.
+await fire(skull("Bessie"));
+check(
+  "one of each reads as one of each",
+  /1 lost/.test(header()) && /1 retired/.test(header()) && /0 ships/.test(header()),
+  header()
+);
+await fire(skull("Bessie"));
+
 // --- losing one -----------------------------------------------------------
 confirmAnswer = false;
 await fire([...rows()[0].querySelectorAll("button")].find((b) => b.textContent.trim() === "✕"));
