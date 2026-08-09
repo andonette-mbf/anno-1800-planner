@@ -128,7 +128,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 90 · menus lift off the page</span>
+      <span style={{ opacity: 0.55 }}>build 91 · collections up front, ships by status</span>
     </div>
   );
 }

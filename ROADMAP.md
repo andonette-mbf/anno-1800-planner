@@ -388,6 +388,47 @@ is in CLAUDE.md.
   in 23 chip entries. That also makes it a place a ship can be, so the
   separate `places` list added in build 81 is gone.
 
+- **Fleet and looks, builds 85–90** (recorded late, in one entry). **85 — ships
+  you lost**: "Destroyed" joins the job menu, striking a ship through at the
+  bottom of the list, off the type tally, claiming no place or cargo — the
+  fleet is a record as well as a roster. **86 — quick add from the numbers**.
+  **87 — one tap when a ship goes down**: ☠ on every row, because opening a row
+  to find the job menu is too much ceremony mid-fight; tapping again restores
+  it to its trade route. **88 — sold, not sunk**: "Decommissioned" alongside it,
+  flying ⚑ rather than ☠ and counted apart ("4 ships · 1 lost · 2 retired"),
+  since only one of the two ways off the fleet is a loss. **Delete a
+  playthrough, even your last one**: deleting your only save now empties it
+  instead of refusing — finishing a game is exactly when you have one save.
+  **89 — black and white**: every hue gone; need/lifestyle, rarity and region
+  re-cut as fill, weight and border style, the header moved into a black top
+  bar with the game switch in it, and one grayscale filter over `.wrap`/`.ddpop`
+  to drain the emoji and wiki art too. **90 — menus lift off the page**:
+  dropdowns regained depth (ink border, real shadow, inverting hover row) now
+  that colour can't do it, and the top bar stopped sticking.
+
+- **Collections up front, ships by status** (build 91): "some kind of zoo and
+  museum tracker so I know what's on what island" — which build 64 already
+  does, but two folds deep (inside the island block, inside the building), and
+  only once the island's inventory has a **ticked** Zoo / Museum / Botanical
+  Garden. So the answer moved outside both: a **🏛 Collections row** at the top
+  of the Islands card, one tap-to-open chip per island that has one ("Ditchwater
+  🦁 41/133 ⚑2"), and the same counts on a **folded island's header** beside
+  ⚠ N short — the ⚑ is sets one piece away, the thing worth acting on.
+  `cultureAt` in `culture.ts` is the roll-up; `CULTURE_EMOJI` moved there from
+  the panel, which now imports it. Tapping a chip only ever *opens* an island
+  (and scrolls to it via a new `id` on the block), so a second tap can't fold
+  away what you just asked for.
+  Same session, asked mid-build: **ships filter by status**, and **Patrol**
+  joins the job menu (the standing job an escort isn't). One chip per status
+  actually in use, in the menu's own order, extras then "Not saying" last.
+  Two decisions the tests pin: the filter is **not** remembered across visits
+  the way the sort is (a sort reorders the fleet, a filter hides most of it, and
+  a filtered list on return reads as ships gone missing), and **the row you have
+  open stays visible whatever the filter says** — changing a ship's status is
+  the usual reason it stops matching, and a row vanishing under the tap that
+  changed it reads as a bug. The chip row also survives a status emptying out,
+  or the last ship on patrol becoming idle would take the way back with it.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)

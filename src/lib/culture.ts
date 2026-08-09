@@ -142,6 +142,45 @@ export function buildingProgress(
   };
 }
 
+/** Which picture stands for each building. Lives here rather than in the panel
+ *  because the island header and the cross-island roll-up name them too. */
+export const CULTURE_EMOJI: Record<string, string> = {
+  zoo: "🦁",
+  museum: "🏺",
+  garden: "🌿",
+};
+
+/** One island's culture buildings, summarised. The panel itself is two folds
+ *  deep — inside the island block, inside the building — so "which zoo has
+ *  what" needed an answer you can read without opening anything. */
+export interface CultureAt {
+  b: CultureBuilding;
+  have: number;
+  total: number;
+  complete: number;
+  sets: number;
+  /** Sets one piece short — the number worth acting on. */
+  nearly: number;
+}
+
+export function cultureAt(
+  items: { t: string; done: boolean }[],
+  game: Game,
+  placedIn: (buildingId: string) => string[]
+): CultureAt[] {
+  return cultureOn(items, game).map((b) => {
+    const p = buildingProgress(b, placedIn(b.id));
+    return {
+      b,
+      have: p.have,
+      total: p.total,
+      complete: p.complete,
+      sets: b.sets.length,
+      nearly: nearlyDone(p).length,
+    };
+  });
+}
+
 /** Sets one piece short — the "finish this next" shortlist, best payoff first
  *  (a set you can complete with one common piece beats one needing a
  *  Legendary). Ties break on set size, so the cheaper set leads. */

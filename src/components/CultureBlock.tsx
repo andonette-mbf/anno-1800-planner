@@ -11,6 +11,7 @@
 import React, { useMemo, useState } from "react";
 import {
   buildingProgress,
+  CULTURE_EMOJI,
   cultureOn,
   nearlyDone,
   type CultureBuilding,
@@ -20,8 +21,6 @@ import {
 import type { Game } from "@/lib/games";
 import type { CheckItem } from "@/lib/store";
 import { useCompanion } from "@/lib/store";
-
-const EMOJI: Record<string, string> = { zoo: "🦁", museum: "🏺", garden: "🌿" };
 
 /** Plural of the pack's noun — "6 animals", "1 artifact". */
 const plural = (n: number, noun: string) => `${n} ${noun}${n === 1 ? "" : "s"}`;
@@ -151,7 +150,7 @@ function BuildingPanel({ island, b }: { island: string; b: CultureBuilding }) {
       <button className="cuhd" onClick={() => setOpen(!open)} aria-expanded={open}>
         <span className="cuarrow">{open ? "▾" : "▸"}</span>
         <span className="cunm">
-          {EMOJI[b.id] || "🏛"} {b.label}
+          {CULTURE_EMOJI[b.id] || "🏛"} {b.label}
         </span>
         <span className="muted cusum">
           {prog.have}/{prog.total} · {prog.complete}/{b.sets.length} sets

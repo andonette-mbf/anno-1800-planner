@@ -39,6 +39,13 @@ a.plx:hover{color:var(--accent)}
 .isletog:hover{color:var(--gold)}
 .isleblk.shut{padding-bottom:6px}
 .isleshort{font-size:11px;color:var(--red);font-weight:700;white-space:nowrap}
+/* Collections at a glance (build 91): on a folded island header, and as a row
+   of tap-to-open islands at the top of the card. */
+.isleculture{display:flex;gap:8px;font-size:11px;color:var(--dim);white-space:nowrap}
+.cujumps{align-items:center}
+.cujump{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:11px}
+.cujump b{font-size:12px}
+.cuflag{font-style:normal;font-weight:700;color:var(--ink)}
 /* Fleet rows: name, type, what it's doing. The name earns the most width —
    it's what you're scanning for — and the row wraps on a phone rather than
    squeezing three boxes onto one line. */

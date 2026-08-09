@@ -507,6 +507,49 @@ check(
 );
 await fire(skull("Bessie"));
 
+// --- filtering by status (build 91) ---------------------------------------
+// "Show me the idle ones" is what a manifest gets asked. Give the two ships
+// different jobs — one of them the new Patrol — and narrow to each in turn.
+await pickFrom(0, ".shipdoing", "Patrol");
+await done(0);
+await pickFrom(1, ".shipdoing", "Idle");
+await done(1);
+const rowsFor = () => $(".card")[0].querySelectorAll(".qfilter");
+const showChip = (label) =>
+  [...(rowsFor()[rowsFor().length - 1]?.querySelectorAll(".chip") || [])].find((b) =>
+    b.textContent.trim().startsWith(label)
+  );
+check("Patrol is one of the jobs on offer", !!showChip("Patrol"), "no Patrol chip");
+check("a show row appears with two statuses in play", !!showChip("All"), "no All chip");
+await fire(showChip("Patrol"));
+check(
+  "narrowing to Patrol leaves one ship",
+  rows().length === 1 && names()[0] === "Bessie",
+  names().join(" | ")
+);
+check(
+  "the type tally still counts the whole fleet, not the filtered view",
+  tally().includes("Cargo Ship ×1") && tally().includes("Clipper ×1"),
+  tally()
+);
+// The usual reason a row stops matching is that you just changed its status —
+// so the row you have open has to stay put rather than vanish under the tap.
+await edit(0);
+await pickFrom(0, ".shipdoing", "Idle");
+check("the row you're editing stays on screen after its status changes", rows().length === 1);
+await done(0);
+check("…and drops out once you close it", rows().length === 0, String(rows().length));
+// Nothing is on patrol any more, so the chips would ordinarily go — they stay
+// while a filter is on, or the only way out of an empty list disappears.
+check("the way back is still there", !!showChip("All") && !!$(".card")[0].querySelector(".linkbtn"));
+await fire($(".card")[0].querySelector(".linkbtn"));
+check("show all brings both back", rows().length === 2, String(rows().length));
+// Both idle now, so there is only one status and nothing to choose between.
+check("the chips go away when every ship is doing the same thing", !showChip("All"));
+await pickFrom(0, ".shipdoing", "— not saying");
+await done(0);
+check("ships with no status get their own chip", !!showChip("Not saying"), "no Not saying chip");
+
 // --- losing one -----------------------------------------------------------
 confirmAnswer = false;
 await fire([...rows()[0].querySelectorAll("button")].find((b) => b.textContent.trim() === "✕"));

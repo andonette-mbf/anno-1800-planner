@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { GOODS, POP, REGIONS, TIER_ORDER, fmt } from "@/lib/data";
 import {
   GOODS_117,
@@ -9,6 +9,7 @@ import {
   popSources117,
   type PopSource117,
 } from "@/lib/data117";
+import { cultureAt, CULTURE_EMOJI, type CultureAt } from "@/lib/culture";
 import { CalcState, DEFAULT_STATE } from "@/lib/engine";
 import { GAME_CONTENT, type Game } from "@/lib/games";
 import { buildingOptionsFor, elecCapable, islandLedger, itemGood, siloCapable } from "@/lib/ledger";
@@ -297,6 +298,10 @@ const GROWTH_TIERS_BY_GAME: Record<Game, GrowthTier[]> = {
 // Which island blocks are folded up, per game. Presentation only — never
 // synced, and an absent key means every island is open, as it always was.
 const ISLE_SHUT_KEY = (g: Game) => (g === "anno117" ? "anno117_isle_shut" : "anno_isle_shut");
+/** A handle on an island block, so the collections roll-up can scroll to one.
+ *  Islands are identified by name everywhere else too, so this follows a rename
+ *  for free. */
+const isleDomId = (name: string) => "isle-" + name.replace(/\W+/g, "-").toLowerCase();
 
 const GOOD_NAMES_BY_GAME: Record<Game, string[]> = {
   anno1800: [...new Set(Object.values(GOODS).map((g) => g.name))].sort(),
@@ -693,16 +698,50 @@ export function TrackerView({
     } catch {}
     setIsleShut(shut);
   }, [game]);
+  const writeShut = (next: Record<string, boolean>) => {
+    try {
+      localStorage.setItem(ISLE_SHUT_KEY(game), JSON.stringify(Object.keys(next)));
+    } catch {}
+    return next;
+  };
   const toggleIsle = (name: string) =>
     setIsleShut((cur) => {
       const next = { ...cur };
       if (next[name]) delete next[name];
       else next[name] = true;
-      try {
-        localStorage.setItem(ISLE_SHUT_KEY(game), JSON.stringify(Object.keys(next)));
-      } catch {}
-      return next;
+      return writeShut(next);
     });
+  // Unfold an island and go to it — what the collections roll-up does when you
+  // tap an island. Unfolding alone isn't enough: with several islands the one
+  // you asked for can open below the fold and look like nothing happened.
+  const openIsle = (name: string) => {
+    setIsleShut((cur) => {
+      if (!cur[name]) return cur;
+      const next = { ...cur };
+      delete next[name];
+      return writeShut(next);
+    });
+    setTimeout(() => {
+      document
+        .getElementById(isleDomId(name))
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 0);
+  };
+  // What each island's zoo / museum / botanical garden holds (build 91). The
+  // panel itself is inside the island fold and then inside the building fold,
+  // so the answer to "what's on what island" needed to live outside both.
+  const cultureByIsle = useMemo(() => {
+    const out = new Map<string, CultureAt[]>();
+    for (const n of islands) {
+      const at = cultureAt(
+        (data.islandChecks || {})[n] || [],
+        game,
+        (bid) => (data.islandCulture || {})[n]?.[bid] || []
+      );
+      if (at.length) out.set(n, at);
+    }
+    return out;
+  }, [islands, data.islandChecks, data.islandCulture, game]);
   const savedLabel =
     sync === "synced" ? "synced" : sync === "syncing" ? "syncing…" : "saves automatically";
 
@@ -1403,6 +1442,41 @@ export function TrackerView({
               {islesShort > 0 && <span className="isleshort">⚠ {islesShort} short</span>}
             </p>
           )}
+          {/* What's in which zoo, museum and garden, without opening anything
+              (build 91). Tap an island to go to it — the pieces themselves are
+              still inside its block, since a set only pays when its pieces sit
+              in ONE building and that building is on one island. */}
+          {cultureByIsle.size > 0 && (
+            <p className="fleetsum cujumps">
+              <span className="muted">🏛 Collections</span>
+              {[...cultureByIsle].map(([isle, at]) => (
+                <button
+                  key={isle}
+                  className="chip cujump"
+                  title={
+                    `Go to ${isle} — ` +
+                    at
+                      .map(
+                        (a) =>
+                          `${a.b.label}: ${a.have}/${a.total} ${a.b.noun}s, ` +
+                          `${a.complete}/${a.sets} sets done` +
+                          (a.nearly ? `, ${a.nearly} one piece away` : "")
+                      )
+                      .join(" · ")
+                  }
+                  onClick={() => openIsle(isle)}
+                >
+                  <b>{isle}</b>
+                  {at.map((a) => (
+                    <span key={a.b.id}>
+                      {CULTURE_EMOJI[a.b.id] || "🏛"} {a.have}/{a.total}
+                      {a.nearly > 0 && <em className="cuflag">⚑{a.nearly}</em>}
+                    </span>
+                  ))}
+                </button>
+              ))}
+            </p>
+          )}
           <div className="plrow">
             <Dropdown
               className="qisle"
@@ -1441,8 +1515,13 @@ export function TrackerView({
               const plan = (data.islandPlans || {})[name];
               const shut = !!isleShut[name];
               const short = ledger.filter((r) => r.fix).length;
+              const cul = cultureByIsle.get(name) || [];
               return (
-                <div className={"isleblk" + (shut ? " shut" : "")} key={name}>
+                <div
+                  className={"isleblk" + (shut ? " shut" : "")}
+                  key={name}
+                  id={isleDomId(name)}
+                >
                   {!shut && (
                     <datalist id={`bldgSuggest${idx}`}>
                       {itemSuggestions(region).map((b) => (
@@ -1472,6 +1551,34 @@ export function TrackerView({
                         title="Open it for what to build — the ledger says which goods run short"
                       >
                         ⚠ {short} short
+                      </span>
+                    )}
+                    {/* …and what its collections are up to, for the same
+                        reason: it's a thing you'd otherwise open it to see. */}
+                    {shut && cul.length > 0 && (
+                      <span
+                        className="isleculture"
+                        title={cul
+                          .map(
+                            (a) =>
+                              `${a.b.label}: ${a.have}/${a.total} ${a.b.noun}s, ` +
+                              `${a.complete}/${a.sets} sets done`
+                          )
+                          .join(" · ")}
+                      >
+                        {cul.map((a) => (
+                          <span key={a.b.id}>
+                            {CULTURE_EMOJI[a.b.id] || "🏛"} {a.have}/{a.total}
+                          </span>
+                        ))}
+                        {cul.some((a) => a.nearly > 0) && (
+                          <em
+                            className="cuflag"
+                            title="Sets one piece short — open it for which piece"
+                          >
+                            ⚑{cul.reduce((n, a) => n + a.nearly, 0)}
+                          </em>
+                        )}
                       </span>
                     )}
                     {!shut && (
@@ -1835,6 +1942,9 @@ const SHIP_JOBS = [
   "Expedition",
   "Exploring",
   "Escort",
+  // Build 91: the standing job an escort isn't — a warship left circling your
+  // own waters rather than tied to a convoy.
+  "Patrol",
   "Idle",
   "In for repairs",
   DESTROYED,
@@ -1884,6 +1994,11 @@ const SHIP_SORTS = [
 ] as const;
 type ShipSort = (typeof SHIP_SORTS)[number]["key"];
 const FLEET_SORT_KEY = "anno_fleet_sort";
+/** Filtering by status (build 91). The bucket for ships you've said nothing
+ *  about — they're still a group you'd want to pull up ("what haven't I told
+ *  it about?"), so they get a chip rather than being unreachable. */
+const NO_JOB = "__nojob";
+const shipJob = (s: ShipItem) => (s.doing || "").trim() || NO_JOB;
 
 /** Where a ship counts as being, for sorting: the region you left it in, or
  *  for a trader the island it loads at — a route has no single place. */
@@ -1940,11 +2055,34 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
       localStorage.setItem(FLEET_SORT_KEY, k);
     } catch {}
   };
+  // Which status the list is narrowed to, "" for all (build 91). Deliberately
+  // NOT remembered across visits the way the sort is: a sort reorders the
+  // fleet, a filter hides most of it, and coming back to a filtered list months
+  // later reads as ships having gone missing.
+  const [job, setJob] = useState("");
   const types = GAME_CONTENT[game].shipTypes;
   const regions = GAME_CONTENT[game].regionLabels;
+  // One chip per status actually in use, in the menu's own order so the list
+  // reads the same way the picker does; anything free-typed follows, and the
+  // ships with no status go last.
+  const jobCounts = (() => {
+    const by = new Map<string, number>();
+    for (const s of ships) by.set(shipJob(s), (by.get(shipJob(s)) || 0) + 1);
+    const rank = (k: string) => {
+      if (k === NO_JOB) return SHIP_JOBS.length + 1;
+      const i = SHIP_JOBS.indexOf(k);
+      return i < 0 ? SHIP_JOBS.length : i;
+    };
+    return [...by.entries()].sort((a, b) => rank(a[0]) - rank(b[0]) || a[0].localeCompare(b[0]));
+  })();
   // Rows carry their stored position, so sorting can't send an edit to the
-  // wrong ship.
-  const shown = ships.map((s, i) => ({ s, i })).sort((a, b) => cmpShips(sort, a, b));
+  // wrong ship. The row you have open stays on screen whatever the filter says
+  // — changing a ship's status is the usual reason it stops matching, and a row
+  // vanishing from under the tap that changed it reads as a bug.
+  const shown = ships
+    .map((s, i) => ({ s, i }))
+    .filter(({ s, i }) => !job || shipJob(s) === job || i === editing)
+    .sort((a, b) => cmpShips(sort, a, b));
   const add = () => {
     if (!draft.trim()) return;
     addShip(draft, draftType);
@@ -2018,6 +2156,45 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
               </button>
             ))}
           </div>
+        )}
+        {/* Narrow the list to one status (build 91) — "show me the idle ones"
+            is the question a manifest gets asked most. Only worth chips when
+            there's more than one status to choose between — or a filter is on,
+            since the last ship of a status changing job would otherwise take
+            the row of chips away with it and strand you on an empty list. */}
+        {(jobCounts.length > 1 || job) && (
+          <div className="chips qfilter">
+            <span className="muted fleetsortlbl">Show</span>
+            <button
+              className={"chip" + (job === "" ? " on" : "")}
+              title="Every ship, whatever it's doing"
+              onClick={() => setJob("")}
+            >
+              All {ships.length}
+            </button>
+            {jobCounts.map(([k, n]) => (
+              <button
+                key={k}
+                className={"chip" + (job === k ? " on" : "")}
+                title={
+                  k === NO_JOB
+                    ? "Ships you haven't said what they're doing"
+                    : `Only the ships on ${k.toLowerCase()}`
+                }
+                onClick={() => setJob(job === k ? "" : k)}
+              >
+                {k === NO_JOB ? "Not saying" : k} {n}
+              </button>
+            ))}
+          </div>
+        )}
+        {job && !shown.length && (
+          <p className="muted">
+            No ships on {job === NO_JOB ? "no status" : job.toLowerCase()}.{" "}
+            <button className="linkbtn" onClick={() => setJob("")}>
+              Show all
+            </button>
+          </p>
         )}
         {shown.map(({ s, i }) =>
           editing !== i ? (

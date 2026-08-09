@@ -47,8 +47,19 @@ localStorage.setItem(
       { t: "Bakery", done: true, n: 2 },
       { t: "Sawmill", done: true },
     ],
-    Ditchwater: [{ t: "Lumberjack's Hut", done: true, n: 3 }],
+    // Ditchwater keeps the zoo, so the collections roll-up (build 91) has an
+    // island to point at that isn't the one being folded for the ledger checks.
+    Ditchwater: [
+      { t: "Lumberjack's Hut", done: true, n: 3 },
+      { t: "Zoo", done: true },
+    ],
   })
+);
+// Two of the three Arctic Tundra animals in the zoo — enough placed to count,
+// one short so the ⚑ flag has something to say.
+localStorage.setItem(
+  "anno_island_culture",
+  JSON.stringify({ Ditchwater: { zoo: ["Arctic Wolf", "Boreal Caribou"] } })
 );
 
 const React = (await import("react")).default;
@@ -137,7 +148,7 @@ check(
 );
 check(
   "the other island is untouched",
-  bodyOf("Ditchwater") === 1 && !blocks()[1].classList.contains("shut"),
+  bodyOf("Ditchwater") === 2 && !blocks()[1].classList.contains("shut"),
   String(bodyOf("Ditchwater"))
 );
 
@@ -155,7 +166,7 @@ check(
   blockFor("Crown Falls").classList.contains("shut") && bodyOf("Crown Falls") === 0,
   blocks().map((el) => el.className).join(" | ")
 );
-check("the other island came back open", bodyOf("Ditchwater") === 1);
+check("the other island came back open", bodyOf("Ditchwater") === 2);
 
 // --- and unfolds again ----------------------------------------------------
 await fire(blockFor("Crown Falls").querySelector(".isletog"));
@@ -168,6 +179,51 @@ check(
   "and nothing is left in the saved list",
   JSON.parse(localStorage.getItem("anno_isle_shut") || "[]").length === 0,
   String(localStorage.getItem("anno_isle_shut"))
+);
+
+// --- collections, without opening anything (build 91) ---------------------
+// The panel itself is inside the island fold and then inside the building
+// fold, so "what's on what island" gets answered at the top of the card and on
+// the folded header.
+const jumps = () => $(".cujump");
+check("one collections chip, for the island with the zoo", jumps().length === 1, String(jumps().length));
+check(
+  "it names the island and counts the animals",
+  /Ditchwater/.test(jumps()[0].textContent) && /2\/133/.test(jumps()[0].textContent),
+  jumps()[0]?.textContent
+);
+check(
+  "and flags the set that's one animal short",
+  jumps()[0].querySelector(".cuflag")?.textContent === "⚑1",
+  jumps()[0].querySelector(".cuflag")?.textContent
+);
+check(
+  "Crown Falls has no zoo, so it isn't listed",
+  !jumps().some((el) => /Crown Falls/.test(el.textContent))
+);
+
+await fire(blockFor("Ditchwater").querySelector(".isletog"));
+check(
+  "folded up, the header still says what's in the zoo",
+  blockFor("Ditchwater").querySelector(".isleculture")?.textContent.includes("2/133"),
+  blockFor("Ditchwater").querySelector(".isleculture")?.textContent
+);
+// Tapping the roll-up is the way back in — it only ever opens, so a second tap
+// on an already-open island can't fold it away by accident.
+await fire(jumps()[0]);
+check(
+  "tapping the chip opens the island again",
+  !blockFor("Ditchwater").classList.contains("shut") && bodyOf("Ditchwater") === 2,
+  blockFor("Ditchwater").className
+);
+check(
+  "the collection panel is back with it",
+  !!blockFor("Ditchwater").querySelector(".cuwrap")
+);
+await fire(jumps()[0]);
+check(
+  "tapping it again leaves it open",
+  !blockFor("Ditchwater").classList.contains("shut")
 );
 
 let bad = 0;
