@@ -503,12 +503,16 @@ export function TrackerView({
   // browser (own key, not CompanionData — nothing to sync). Read in an
   // effect so the server render matches the first client render.
   const [hideFin, setHideFin] = useState(false);
+  // Hide the ledger's balanced rows too (net 0, grey) — build 99. What's left
+  // is exactly the surpluses and the shortfalls: what there is to play with.
+  const [hideZero, setHideZero] = useState(false);
   // Show each island's items A→Z. Display-only: the stored order (and every
   // index-based action on a row) is untouched — sorting happens at render.
   const [sortAZ, setSortAZ] = useState(false);
   useEffect(() => {
     try {
       setHideFin(localStorage.getItem("anno_hide_finals") === "1");
+      setHideZero(localStorage.getItem("anno_hide_zero") === "1");
       setSortAZ(localStorage.getItem("anno_sort_az") === "1");
     } catch {}
   }, []);
@@ -516,6 +520,13 @@ export function TrackerView({
     setHideFin((h) => {
       try {
         localStorage.setItem("anno_hide_finals", h ? "0" : "1");
+      } catch {}
+      return !h;
+    });
+  const toggleZero = () =>
+    setHideZero((h) => {
+      try {
+        localStorage.setItem("anno_hide_zero", h ? "0" : "1");
       } catch {}
       return !h;
     });
@@ -1599,7 +1610,6 @@ export function TrackerView({
               const plan = (data.islandPlans || {})[name];
               const shut = !!isleShut[name];
               const tuck = !!isleTuck[name];
-              const short = ledger.filter((r) => r.fix).length;
               const cul = cultureByIsle.get(name) || [];
               return (
                 <div
@@ -1652,16 +1662,8 @@ export function TrackerView({
                         {tuck ? "▸" : "▾"} {have}/{items.length}
                       </button>
                     )}
-                    {/* Folded up, the one thing worth saying is whether it's
-                        short of something — that's what you'd open it to find. */}
-                    {shut && short > 0 && (
-                      <span
-                        className="isleshort"
-                        title="Open it for what to build — the ledger says which goods run short"
-                      >
-                        ⚠ {short} short
-                      </span>
-                    )}
+                    {/* The ledger now shows even folded (build 99), carrying
+                        its own ⚠ line — no separate short badge needed. */}
                     {/* …and what its collections are up to, for the same
                         reason: it's a thing you'd otherwise open it to see. */}
                     {shut && cul.length > 0 && (
@@ -1869,6 +1871,10 @@ export function TrackerView({
                       </button>
                     </div>
                   ))}
+                    </>
+                  )}
+                  {/* The ledger stays OUTSIDE the fold — a collapsed island is
+                      exactly its header plus this production list (build 99). */}
                   {ledger.length > 0 && (
                     <div
                       className="iledger"
@@ -1889,15 +1895,26 @@ export function TrackerView({
                                 : "hide finals"}
                             </button>
                           )}
+                          {ledger.some((r) => Math.abs(r.net) <= 1e-9) && (
+                            <button
+                              className="iledgtgl"
+                              title="Balanced rows (net 0) — hidden, the list is exactly your surpluses and shortfalls."
+                              onClick={toggleZero}
+                            >
+                              {hideZero
+                                ? `show ${ledger.filter((r) => Math.abs(r.net) <= 1e-9).length} balanced`
+                                : "hide 0s"}
+                            </button>
+                          )}
                         </span>
                         <span className="num">makes</span>
                         <span className="num">uses</span>
                         <span className="num">net</span>
                       </div>
-                      {(hideFin
-                        ? ledger.filter((r) => !r.final || r.net < -1e-9)
-                        : ledger
-                      ).map((r) => {
+                      {ledger
+                        .filter((r) => !hideFin || !r.final || r.net < -1e-9)
+                        .filter((r) => !hideZero || Math.abs(r.net) > 1e-9)
+                        .map((r) => {
                         // Is this flow a ticked link (removable here) rather
                         // than a ship route (edited in the Ships tab)?
                         const manual = (from: string, to: string) =>
@@ -1999,6 +2016,8 @@ export function TrackerView({
                       )}
                     </div>
                   )}
+                  {!shut && (
+                    <>
                   {plan &&
                     (() => {
                       const pc = planCheck(plan.st, items);

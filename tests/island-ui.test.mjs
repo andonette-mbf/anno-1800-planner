@@ -125,7 +125,9 @@ check("nothing is folded yet", $(".isleblk.shut").length === 0);
 await fire(blockFor("Crown Falls").querySelector(".isletog"));
 check("the block is marked folded", blocks()[0].classList.contains("shut"));
 check("its buildings are gone from the DOM", bodyOf("Crown Falls") === 0, String(bodyOf("Crown Falls")));
-check("so is its ledger", !blockFor("Crown Falls").querySelector(".iledger"));
+// Build 99: the ledger is the one thing a fold KEEPS — a collapsed island is
+// its header plus the production list, which carries its own ⚠ Short line.
+check("its ledger survives the fold", !!blockFor("Crown Falls").querySelector(".iledger"));
 check("so is the add-building row", !blockFor("Crown Falls").querySelector(".plrow input"));
 check(
   "the built count stays",
@@ -133,11 +135,11 @@ check(
   blockFor("Crown Falls").querySelector(".muted")?.textContent
 );
 check(
-  // Flour for the bakeries and wood for the sawmill: two goods short, so the
-  // count is of goods, not of buildings.
-  "and it still says it's short",
-  blockFor("Crown Falls").querySelector(".isleshort")?.textContent.includes("2 short"),
-  blockFor("Crown Falls").querySelector(".isleshort")?.textContent
+  // Flour for the bakeries and wood for the sawmill — the ledger's own advice
+  // line still shows folded, so no separate badge is needed.
+  "and its ⚠ line still says what's short",
+  blockFor("Crown Falls").querySelector(".iledgfix")?.textContent.includes("Flour"),
+  blockFor("Crown Falls").querySelector(".iledgfix")?.textContent
 );
 check(
   "the ✕ and 👁 are still reachable",
