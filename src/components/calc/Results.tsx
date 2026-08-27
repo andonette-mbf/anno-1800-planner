@@ -128,7 +128,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 94 · colour comes back, items A→Z</span>
+      <span style={{ opacity: 0.55 }}>build 95 · a clean address bar</span>
     </div>
   );
 }

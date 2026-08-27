@@ -84,12 +84,21 @@ export function AppShell() {
 
   // Reflect the ACTIVE game's state into the hash (same format as the legacy
   // app; the game marker is only written for 117, so 1800 links are unchanged).
+  // An UNTOUCHED default plan writes no hash at all — a fresh visit shouldn't
+  // stamp the demo plan into the address bar (build 95), and resetting back to
+  // the default cleans an existing hash away.
   useEffect(() => {
     if (!hydrated.current) return;
     try {
-      history.replaceState(null, "", "#" + encodeHash(st));
+      const h = encodeHash(st);
+      if (h === encodeHash(initialStates()[game])) {
+        if (window.location.hash)
+          history.replaceState(null, "", window.location.pathname + window.location.search);
+      } else {
+        history.replaceState(null, "", "#" + h);
+      }
     } catch {}
-  }, [st]);
+  }, [st, game]);
 
   const patch = useCallback(
     (p: Partial<CalcState>) => setStates((s) => ({ ...s, [game]: { ...s[game], ...p } })),
