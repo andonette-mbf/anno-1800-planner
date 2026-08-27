@@ -128,7 +128,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 97 · trade moves the numbers</span>
+      <span style={{ opacity: 0.55 }}>build 98 · checklists tuck away</span>
     </div>
   );
 }

@@ -305,6 +305,9 @@ const GROWTH_TIERS_BY_GAME: Record<Game, GrowthTier[]> = {
 // Which island blocks are folded up, per game. Presentation only — never
 // synced, and an absent key means every island is open, as it always was.
 const ISLE_SHUT_KEY = (g: Game) => (g === "anno117" ? "anno117_isle_shut" : "anno_isle_shut");
+// Islands whose CHECKLIST is tucked away (build 98) — the block stays open
+// with its ledger and summaries, only the item rows fold.
+const ISLE_TUCK_KEY = (g: Game) => (g === "anno117" ? "anno117_isle_tuck" : "anno_isle_tuck");
 /** A handle on an island block, so the collections roll-up can scroll to one.
  *  Islands are identified by name everywhere else too, so this follows a rename
  *  for free. */
@@ -784,6 +787,27 @@ export function TrackerView({
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 0);
   };
+  // Tucked checklists (build 98) — same shape as the fold above, its own key:
+  // the island stays open, only its item rows collapse, leaving the ledger.
+  const [isleTuck, setIsleTuck] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    let tuck: Record<string, boolean> = {};
+    try {
+      const raw = JSON.parse(localStorage.getItem(ISLE_TUCK_KEY(game)) || "[]");
+      if (Array.isArray(raw)) tuck = Object.fromEntries(raw.map((n) => [String(n), true]));
+    } catch {}
+    setIsleTuck(tuck);
+  }, [game]);
+  const toggleTuck = (name: string) =>
+    setIsleTuck((cur) => {
+      const next = { ...cur };
+      if (next[name]) delete next[name];
+      else next[name] = true;
+      try {
+        localStorage.setItem(ISLE_TUCK_KEY(game), JSON.stringify(Object.keys(next)));
+      } catch {}
+      return next;
+    });
   // What each island's zoo / museum / botanical garden holds (build 91). The
   // panel itself is inside the island fold and then inside the building fold,
   // so the answer to "what's on what island" needed to live outside both.
@@ -1574,6 +1598,7 @@ export function TrackerView({
               const ledger = allLedgers[name] || [];
               const plan = (data.islandPlans || {})[name];
               const shut = !!isleShut[name];
+              const tuck = !!isleTuck[name];
               const short = ledger.filter((r) => r.fix).length;
               const cul = cultureByIsle.get(name) || [];
               return (
@@ -1609,9 +1634,24 @@ export function TrackerView({
                         {shut ? "▸" : "▾"} 🏝 {name}
                       </button>
                     </h4>
-                    <span className="muted">
-                      {have}/{items.length}
-                    </span>
+                    {shut ? (
+                      <span className="muted">
+                        {have}/{items.length}
+                      </span>
+                    ) : (
+                      <button
+                        className="isletuck"
+                        aria-expanded={!tuck}
+                        title={
+                          tuck
+                            ? "Show the checklist"
+                            : "Tuck the checklist away — the ledger stays"
+                        }
+                        onClick={() => toggleTuck(name)}
+                      >
+                        {tuck ? "▸" : "▾"} {have}/{items.length}
+                      </button>
+                    )}
                     {/* Folded up, the one thing worth saying is whether it's
                         short of something — that's what you'd open it to find. */}
                     {shut && short > 0 && (
@@ -1737,7 +1777,8 @@ export function TrackerView({
                   </div>
                   {!shut && (
                     <>
-                  {(sortAZ
+                  {!tuck &&
+                  (sortAZ
                     ? items
                         .map((c, i) => ({ c, i }))
                         .sort((a, b) => a.c.t.localeCompare(b.c.t))
@@ -2022,6 +2063,7 @@ export function TrackerView({
                       );
                     })()}
                   <CultureBlock island={name} items={items} game={game} />
+                  {!tuck && (
                   <div className="plrow">
                     <input
                       placeholder="Add building… e.g. Sheep Farm — Enter to add"
@@ -2036,7 +2078,8 @@ export function TrackerView({
                       }}
                     />
                   </div>
-                  {chips.length > 0 && (
+                  )}
+                  {!tuck && chips.length > 0 && (
                     <div className="ichips">
                       {chipsOpen[name] ? (
                         <>

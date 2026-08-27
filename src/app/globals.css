@@ -131,6 +131,9 @@ a.plx:hover{color:var(--accent)}
 button.trchip{cursor:pointer}
 button.trchip:hover{color:var(--ink);border-color:var(--ink)}
 .ddbtn.trlink{width:auto;display:inline-flex;padding:1px 7px;margin-left:6px;font-size:10px;color:var(--muted);background:0 0;border-color:var(--line)}
+/* Tucked checklist (build 98): the count doubles as the toggle. */
+.isletuck{background:0 0;border:0;padding:0;font:inherit;color:var(--muted);cursor:pointer;white-space:nowrap}
+.isletuck:hover{color:var(--ink)}
 /* "hide finals" toggle in the ledger head — text-sized, dotted like a link. */
 .iledgtgl{background:0 0;border:0;padding:0;margin-left:8px;font:inherit;color:var(--muted);cursor:pointer;text-decoration:underline dotted;text-transform:none;letter-spacing:0}
 .iledgtgl:hover{color:var(--ink)}
