@@ -1757,7 +1757,7 @@ export function TrackerView({
                   {ledger.length > 0 && (
                     <div
                       className="iledger"
-                      title="Ticked buildings only, at 100% productivity. Silo'd farms make double and use feed; ⚡ powered buildings make double. What residents eat isn't counted; use the calculator for that."
+                      title="Ticked buildings only, at 100% productivity. Silo'd farms make double and use feed; ⚡ powered buildings make double. What residents eat isn't counted; use the calculator for that. Greyed rows are end products (pop goods, construction materials) — the chain balance lives in the dark rows, which should net near 0."
                     >
                       <div className="iledgrow iledghead">
                         <span>Ledger — t/min at base rates</span>
@@ -1766,7 +1766,7 @@ export function TrackerView({
                         <span className="num">net</span>
                       </div>
                       {ledger.map((r) => (
-                        <div className="iledgrow" key={r.name}>
+                        <div className={"iledgrow" + (r.final ? " fin" : "")} key={r.name}>
                           <span>
                             <GoodIcon name={r.name} game={game} />
                             {r.name}

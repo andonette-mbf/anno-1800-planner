@@ -128,7 +128,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 91 · collections up front, ships by status</span>
+      <span style={{ opacity: 0.55 }}>build 92 · the ledger dims the finished goods</span>
     </div>
   );
 }

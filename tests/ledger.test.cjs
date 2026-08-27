@@ -149,6 +149,46 @@ const near = (a, b) => Math.abs(a - b) < 1e-9;
   ok("chains, silos and electricity are unchanged");
 }
 
+// --- end products are flagged, intermediates are not ----------------------
+// The UI dims `final` rows (pop goods, construction materials) so the rows
+// that should balance to 0 stand out. Finality is the good's `isFinal` (it
+// has a pop tier), carried through the region-merged display name.
+{
+  const soapChain = rows(
+    [
+      { t: "Rendering Works", n: 2, done: true },
+      { t: "Soap Factory", n: 4, done: true },
+    ],
+    OW
+  );
+  if (soapChain.find((r) => r.name === "Soap")?.final !== true)
+    fail("Soap (a pop need) should be flagged final");
+  for (const g of ["Tallow", "Pigs"])
+    if (soapChain.find((r) => r.name === g)?.final)
+      fail(`${g} is a chain intermediate and should not be flagged final`);
+
+  // Timber has a tier (construction material) even though residents never eat
+  // it; Wood does not — that pair is the whole point of the flag.
+  const timber = rows(
+    [
+      { t: "Sawmill", n: 3, done: true },
+      { t: "Lumberjack's Hut", n: 3, done: true },
+    ],
+    OW
+  );
+  if (timber.find((r) => r.name === "Timber")?.final !== true)
+    fail("Timber (construction material) should be flagged final");
+  if (timber.find((r) => r.name === "Wood")?.final)
+    fail("Wood should not be flagged final");
+
+  // A final consumed as an input keeps its flag on a used-only row: a shampoo
+  // plant with no local soap production still shows Soap as a (dimmed) final.
+  const shampoo = L.islandLedger([{ t: "Chemical Plant: Shampoo", done: true }], "anno1800", OW);
+  if (shampoo.find((r) => r.name === "Soap")?.final !== true)
+    fail("Soap consumed as an input should still be flagged final");
+  ok("end products are flagged final, chain intermediates are not");
+}
+
 if (failures) {
   console.error(`\n${failures} failure(s)`);
   process.exit(1);

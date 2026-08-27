@@ -113,6 +113,13 @@ a.plx:hover{color:var(--accent)}
    used to be green-vs-red. */
 .iledgrow .net{font-weight:600;color:var(--muted)}
 .iledgrow .net.neg{color:#000;font-weight:800}
+/* End products (pop goods, construction materials): dimmed so the chain
+   intermediates — the rows that should balance to 0 — stand out. A short
+   final keeps the .neg alarm below. */
+.iledgrow.fin{color:var(--muted)}
+.iledgrow.fin .gicon{opacity:.55}
+.iledgrow.fin .net{font-weight:400}
+.iledgrow.fin .net.neg{color:#000;font-weight:800}
 .iledgfix{color:var(--red);font-weight:600;margin-top:5px}
 .qfilter{margin:0 0 10px}
 .gicon{width:18px;height:18px;object-fit:contain;vertical-align:-4px;margin-right:3px;display:inline-block}

@@ -60,6 +60,9 @@ interface Index {
   // datalist still offers them everywhere they're real.
   nameRegions: Map<string, Set<number>>;
   goodName: (goodId: string) => string;
+  /** Is this good an end product (it has a pop tier: a need, want or
+   *  construction material) rather than a chain intermediate? */
+  finalGood: (goodId: string) => boolean;
   /** t/min of feed one fitted silo eats. */
   siloFeedRate: number;
   /** Good every fuel-burning building consumes, or null (1800 has none — its
@@ -74,7 +77,13 @@ interface Index {
 
 type IndexCore = Omit<
   Index,
-  "goodName" | "siloFeedRate" | "fuelGood" | "fuelPerMin" | "elecRegion" | "options"
+  | "goodName"
+  | "finalGood"
+  | "siloFeedRate"
+  | "fuelGood"
+  | "fuelPerMin"
+  | "elecRegion"
+  | "options"
 >;
 
 function emptyIndex(): IndexCore {
@@ -198,6 +207,7 @@ function build1800(): Index {
   return {
     ...ix,
     goodName: (id) => GOODS[id]?.name ?? id,
+    finalGood: (id) => !!GOODS[id]?.isFinal,
     siloFeedRate: SILO_FEED,
     fuelGood: null,
     fuelPerMin: 0,
@@ -261,6 +271,7 @@ function build117(): Index {
   return {
     ...ix,
     goodName: (id) => GOODS_117[id]?.name ?? id,
+    finalGood: (id) => !!GOODS_117[id]?.isFinal,
     // The Silo's +100% productivity is the same ×2 the 1800 silo gives, so the
     // output formula below is shared; only the feed rate differs (0.2 t/min of
     // Wheat). tests/pack117 pins the +100% so a re-extraction that changes it
@@ -342,6 +353,10 @@ export interface LedgerRow {
   produced: number; // t/min made by ticked buildings
   used: number; // t/min consumed by ticked buildings (inputs + silo feed)
   net: number;
+  // End product (pop need/want or construction material) rather than a chain
+  // intermediate — the UI dims these so the rows that should balance to 0
+  // stand out. A final can still be consumed locally (Soap → shampoo).
+  final?: boolean;
   // Set when net is negative: how many of the good's producer (or equivalent)
   // would cover the shortfall. 5 silo farms × 0.2 feed = 1× Grain Farm.
   fix?: { building: string; count: number };
@@ -359,6 +374,13 @@ export function islandLedger(
   const I = ix(game);
   const produced: Record<string, number> = {};
   const used: Record<string, number> = {};
+  // Display names of end-product goods seen on this island. Kept by name, not
+  // id, because rows merge regions (wood/wood_nw are both "Wood") — the
+  // regional twins agree on finality, so any id can speak for the name.
+  const finals = new Set<string>();
+  const note = (goodId: string, name: string) => {
+    if (I.finalGood(goodId)) finals.add(name);
+  };
   for (const c of items) {
     if (!c.done) continue;
     const v = I.variants.get(c.t.trim().toLowerCase());
@@ -376,13 +398,16 @@ export function islandLedger(
     const out = (n + sc + ec + Math.min(sc, ec)) * v.rate;
     const gname = I.goodName(v.good);
     produced[gname] = (produced[gname] || 0) + out;
+    note(v.good, gname);
     for (const inp of v.inputs) {
       const nm = I.goodName(inp.good);
       used[nm] = (used[nm] || 0) + out * inp.qty;
+      note(inp.good, nm);
     }
     if (sc > 0 && feedGood) {
       const nm = I.goodName(feedGood);
       used[nm] = (used[nm] || 0) + sc * I.siloFeedRate;
+      note(feedGood, nm);
     }
     // Fuel (117's Coal) is burnt per minute of RUN time, not per ton made, so
     // it scales with the building count and NOT with the silo/power multipliers
@@ -390,6 +415,7 @@ export function islandLedger(
     if (v.fuel && I.fuelGood) {
       const nm = I.goodName(I.fuelGood);
       used[nm] = (used[nm] || 0) + n * I.fuelPerMin;
+      note(I.fuelGood, nm);
     }
   }
   return [...new Set([...Object.keys(produced), ...Object.keys(used)])]
@@ -398,6 +424,7 @@ export function islandLedger(
       const p = produced[name] || 0;
       const u = used[name] || 0;
       const row: LedgerRow = { name, produced: p, used: u, net: p - u };
+      if (finals.has(name)) row.final = true;
       const pr = (region ? I.producerAt.get(`${name}|${region}`) : null) ?? I.producer[name];
       if (row.net < -1e-9 && pr)
         row.fix = { building: pr.building, count: Math.ceil((u - p) / pr.rate - 1e-9) };
