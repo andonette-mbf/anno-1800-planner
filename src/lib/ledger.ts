@@ -360,11 +360,12 @@ export interface LedgerRow {
   // Set when net is negative: how many of the good's producer (or equivalent)
   // would cover the shortfall. 5 silo farms × 0.2 feed = 1× Grain Farm.
   fix?: { building: string; count: number };
-  // Trade (build 96, set by applyTrade): where this good arrives from /
-  // departs to. An imported deficit keeps its numbers but loses `fix` —
-  // "build more" is the wrong advice for a good the boats bring in.
-  imp?: string[];
-  exp?: string[];
+  // Trade (build 96): what arrives from / departs to other islands, with the
+  // t/min actually moved. Amounts are allocated by applyTrade; a covered
+  // deficit's numbers move too (imports count into `produced`, exports into
+  // `used`), so net keeps meaning makes − uses.
+  imp?: { from: string; tpm: number }[];
+  exp?: { to: string; tpm: number }[];
 }
 
 /** The flows applyTrade reads: explicit links (ticked on a ledger row) and
@@ -375,40 +376,77 @@ export interface TradeFlow {
   to: string;
 }
 
-/** Mark one island's ledger rows with the trade that touches them: `imp`
- *  (arrives here — clears a deficit's fix) and `exp` (leaves here). Rows are
- *  matched to flows by good display name, islands by name, both
- *  case-insensitively. Returns the same rows, annotated. */
+/** "Build N× X" for a deficit, priced in the island's own region. */
+function priceFix(
+  I: Index,
+  name: string,
+  region: number,
+  deficit: number
+): LedgerRow["fix"] {
+  const pr = (region ? I.producerAt.get(`${name}|${region}`) : null) ?? I.producer[name];
+  if (!pr) return undefined;
+  return { building: pr.building, count: Math.ceil(deficit / pr.rate - 1e-9) };
+}
+
+/** Move goods along the trade flows, across ALL islands' ledgers at once.
+ *
+ *  Each flow transfers min(source surplus, destination deficit) of its good —
+ *  in flow order, so several importers split one surplus first-come and a
+ *  second link takes what the first left. The moved t/min lands in the
+ *  destination's `produced` and the source's `used` (net stays makes − uses),
+ *  and both rows grow a chip (`imp`/`exp`) naming the other end and the
+ *  amount — 0 when the link exists but nothing is spare to send. Every `fix`
+ *  is then re-priced on the remaining deficit, so a partly-covered island
+ *  asks for the remainder only.
+ *
+ *  `ledgers` and `regions` are keyed by island name; matching is
+ *  case-insensitive on both islands and goods. Rows are annotated in place. */
 export function applyTrade(
-  rows: LedgerRow[],
-  island: string,
-  flows: TradeFlow[]
-): LedgerRow[] {
-  const isle = island.trim().toLowerCase();
-  const imp = new Map<string, string[]>();
-  const exp = new Map<string, string[]>();
-  const add = (m: Map<string, string[]>, good: string, place: string) => {
-    const g = good.trim().toLowerCase();
-    const list = m.get(g) ?? [];
-    if (!list.some((x) => x.toLowerCase() === place.toLowerCase())) list.push(place);
-    m.set(g, list);
-  };
+  ledgers: Record<string, LedgerRow[]>,
+  regions: Record<string, number>,
+  flows: TradeFlow[],
+  game: Game = "anno1800"
+): void {
+  const I = ix(game);
+  const byIsle = new Map<string, { rows: LedgerRow[]; name: string }>();
+  for (const [name, rows] of Object.entries(ledgers))
+    byIsle.set(name.trim().toLowerCase(), { rows, name });
+  const rowOf = (isle: string, good: string) =>
+    byIsle
+      .get(isle.trim().toLowerCase())
+      ?.rows.find((r) => r.name.toLowerCase() === good.trim().toLowerCase());
   for (const f of flows) {
     if (!f.good || !f.from || !f.to) continue;
-    if (f.to.trim().toLowerCase() === isle) add(imp, f.good, f.from.trim());
-    if (f.from.trim().toLowerCase() === isle) add(exp, f.good, f.to.trim());
-  }
-  for (const r of rows) {
-    const g = r.name.toLowerCase();
-    const i = imp.get(g);
-    const e = exp.get(g);
-    if (i) {
-      r.imp = i;
-      delete r.fix;
+    const src = rowOf(f.from, f.good);
+    const dst = rowOf(f.to, f.good);
+    // No consumer row on the destination → the link has nothing to say there,
+    // and without it we can't even name the good's display form. Skip.
+    if (!dst && !src) continue;
+    const spare = src ? Math.max(0, src.net) : 0;
+    const lack = dst ? Math.max(0, -dst.net) : 0;
+    const amt = Math.min(spare, lack);
+    if (src) {
+      src.used += amt;
+      src.net -= amt;
+      (src.exp ??= []).push({ to: f.to.trim(), tpm: amt });
     }
-    if (e) r.exp = e;
+    if (dst) {
+      dst.produced += amt;
+      dst.net += amt;
+      (dst.imp ??= []).push({ from: f.from.trim(), tpm: amt });
+    }
   }
-  return rows;
+  // Re-price every shortfall on what trade left uncovered. An imported row
+  // that is still short keeps a fix for the remainder; a fully covered one
+  // loses it. A row that only EXPORTED into deficit would be self-inflicted —
+  // amounts are capped at the surplus, so that cannot happen.
+  for (const { rows, name } of byIsle.values()) {
+    const region = regions[name] || 0;
+    for (const r of rows) {
+      delete r.fix;
+      if (r.net < -1e-9) r.fix = priceFix(I, r.name, region, -r.net);
+    }
+  }
 }
 
 /** Sum one island's checklist into per-good makes/uses/net rows.
@@ -474,9 +512,7 @@ export function islandLedger(
       const u = used[name] || 0;
       const row: LedgerRow = { name, produced: p, used: u, net: p - u };
       if (finals.has(name)) row.final = true;
-      const pr = (region ? I.producerAt.get(`${name}|${region}`) : null) ?? I.producer[name];
-      if (row.net < -1e-9 && pr)
-        row.fix = { building: pr.building, count: Math.ceil((u - p) / pr.rate - 1e-9) };
+      if (row.net < -1e-9) row.fix = priceFix(I, name, region, u - p);
       return row;
     });
 }

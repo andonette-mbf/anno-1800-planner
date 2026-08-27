@@ -718,20 +718,27 @@ export function TrackerView({
         : []
     ),
   ];
-  const ledgerFor = (n: string) =>
-    applyTrade(
-      islandLedger(
+  // Every island's ledger at once, because trade moves goods BETWEEN them:
+  // an export subtracts from its source's surplus and lands on its
+  // destination, so no island's rows can be finished in isolation.
+  const allLedgers = (() => {
+    const ledgers: Record<string, ReturnType<typeof islandLedger>> = {};
+    const regions: Record<string, number> = {};
+    for (const n of islands) {
+      ledgers[n] = islandLedger(
         (data.islandChecks || {})[n] || [],
         game,
         REGION_NUM[(data.islandRegions || {})[n] || ""] || 0
-      ),
-      n,
-      flows
-    );
+      );
+      regions[n] = REGION_NUM[(data.islandRegions || {})[n] || ""] || 0;
+    }
+    applyTrade(ledgers, regions, flows, game);
+    return ledgers;
+  })();
   // How many islands are missing something. The per-island block works this out
   // again for its own header; doing it here too keeps the tally at the top of
   // the card honest when every island is folded away.
-  const islesShort = islands.filter((n) => ledgerFor(n).some((r) => r.fix)).length;
+  const islesShort = islands.filter((n) => (allLedgers[n] || []).some((r) => r.fix)).length;
   // Landmark quick-add chips, collapsed per island until asked for.
   const [chipsOpen, setChipsOpen] = useState<Record<string, boolean>>({});
   // Folded-up islands (build 72). A settled island's block runs to a screenful
@@ -1564,7 +1571,7 @@ export function TrackerView({
                   (!s.regions || !chipRegion || s.regions.includes(chipRegion)) &&
                   !items.some((c) => c.t.toLowerCase() === s.t.toLowerCase())
               ).map((s) => s.t);
-              const ledger = ledgerFor(name);
+              const ledger = allLedgers[name] || [];
               const plan = (data.islandPlans || {})[name];
               const shut = !!isleShut[name];
               const short = ledger.filter((r) => r.fix).length;
@@ -1862,50 +1869,50 @@ export function TrackerView({
                         const exportable = islands.filter(
                           (o) =>
                             o !== name &&
-                            !r.exp?.some((d) => d.toLowerCase() === o.toLowerCase())
+                            !r.exp?.some((d) => d.to.toLowerCase() === o.toLowerCase())
                         );
                         return (
                         <div className={"iledgrow" + (r.final ? " fin" : "")} key={r.name}>
                           <span>
                             <GoodIcon name={r.name} game={game} />
                             {r.name}
-                            {r.imp?.map((src) =>
-                              manual(src, name) ? (
+                            {r.imp?.map((i) =>
+                              manual(i.from, name) ? (
                                 <button
-                                  key={src}
+                                  key={i.from}
                                   className="trchip"
-                                  title={`Imported from ${src} — tap to unlink`}
-                                  onClick={() => removeIslandLink(r.name, src, name)}
+                                  title={`${fmt(i.tpm)} t/min imported from ${i.from}${i.tpm <= 0 ? " — nothing spare there to send right now" : ""} — tap to unlink`}
+                                  onClick={() => removeIslandLink(r.name, i.from, name)}
                                 >
-                                  🚢← {src} ✕
+                                  🚢← {i.from} {fmt(i.tpm)} ✕
                                 </button>
                               ) : (
                                 <span
-                                  key={src}
+                                  key={i.from}
                                   className="trchip"
-                                  title={`Arrives from ${src} by ship route — edit in the Ships tab`}
+                                  title={`${fmt(i.tpm)} t/min arrives from ${i.from} by ship route — edit in the Ships tab`}
                                 >
-                                  🚢← {src}
+                                  🚢← {i.from} {fmt(i.tpm)}
                                 </span>
                               )
                             )}
-                            {r.exp?.map((dst) =>
-                              manual(name, dst) ? (
+                            {r.exp?.map((e) =>
+                              manual(name, e.to) ? (
                                 <button
-                                  key={dst}
+                                  key={e.to}
                                   className="trchip"
-                                  title={`Exports to ${dst} — tap to unlink`}
-                                  onClick={() => removeIslandLink(r.name, name, dst)}
+                                  title={`${fmt(e.tpm)} t/min exported to ${e.to}${e.tpm <= 0 ? " — no surplus to send right now" : ""} — tap to unlink`}
+                                  onClick={() => removeIslandLink(r.name, name, e.to)}
                                 >
-                                  🚢→ {dst} ✕
+                                  🚢→ {e.to} {fmt(e.tpm)} ✕
                                 </button>
                               ) : (
                                 <span
-                                  key={dst}
+                                  key={e.to}
                                   className="trchip"
-                                  title={`Ships to ${dst} by route — edit in the Ships tab`}
+                                  title={`${fmt(e.tpm)} t/min ships to ${e.to} by route — edit in the Ships tab`}
                                 >
-                                  🚢→ {dst}
+                                  🚢→ {e.to} {fmt(e.tpm)}
                                 </span>
                               )
                             )}
@@ -1930,18 +1937,7 @@ export function TrackerView({
                           <span
                             className={
                               "num net" +
-                              (r.net < -1e-9
-                                ? r.imp
-                                  ? " neg cov"
-                                  : " neg"
-                                : r.net > 1e-9
-                                  ? " pos"
-                                  : "")
-                            }
-                            title={
-                              r.imp && r.net < -1e-9
-                                ? `Covered by imports from ${r.imp.join(", ")}`
-                                : undefined
+                              (r.net < -1e-9 ? " neg" : r.net > 1e-9 ? " pos" : "")
                             }
                           >
                             {(r.net > 1e-9 ? "+" : r.net < -1e-9 ? "−" : "") +

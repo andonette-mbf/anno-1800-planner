@@ -189,42 +189,61 @@ const near = (a, b) => Math.abs(a - b) < 1e-9;
   ok("end products are flagged final, chain intermediates are not");
 }
 
-// --- trade links: two ledgers link up --------------------------------------
-// A good exported island → island covers the destination's deficit: the row
-// keeps its numbers but loses `fix` (build advice is wrong for an import),
-// and the source's surplus row says where it goes. Ship routes with
-// from/to/cargo imply the same flow.
+// --- trade: goods actually move between ledgers ----------------------------
+// A link transfers min(source surplus, destination deficit): the t/min lands
+// in the destination's `produced` and the source's `used`, several importers
+// split one surplus in flow order, and every shortfall is re-priced on what
+// trade left uncovered.
 {
-  const kitchen = [{ t: "Artisanal Kitchen", n: 6, done: true }];
+  // 8 OW Cattle Farms make 4 t/min of Beef; 6 Artisanal Kitchens eat 3.
   const farms = [{ t: "Cattle Farm", n: 8, done: true }];
-  const link = [{ good: "Beef", from: "Pasture", to: "Kitchenia" }];
+  const kitchen = [{ t: "Artisanal Kitchen", n: 6, done: true }];
+  const beef = (ledgers, isle) => ledgers[isle].find((r) => r.name === "Beef");
+  const mk = () => ({
+    Pasture: rows(farms, OW),
+    Kitchenia: rows(kitchen, OW),
+    Snackville: rows(kitchen, OW),
+  });
+  const REG = { Pasture: OW, Kitchenia: OW, Snackville: OW };
 
-  const covered = L.applyTrade(rows(kitchen, OW), "Kitchenia", link);
-  const beefIn = covered.find((r) => r.name === "Beef");
-  if (beefIn.fix) fail("an imported deficit should lose its build-N fix");
-  if (!near(beefIn.net, -3)) fail("an imported deficit keeps its numbers");
-  if ((beefIn.imp || []).join() !== "Pasture")
-    fail(`import should name its source, got ${JSON.stringify(beefIn.imp)}`);
+  // One link: 3 needed, 4 spare → 3 moves; source keeps +1, dest lands on 0.
+  const one = mk();
+  L.applyTrade(one, REG, [{ good: "Beef", from: "Pasture", to: "Kitchenia" }]);
+  const src = beef(one, "Pasture");
+  const dst = beef(one, "Kitchenia");
+  if (!near(src.net, 1) || !near(src.used, 3))
+    fail(`export should move 3 t/min off the source, got net ${src.net}`);
+  if (!near(dst.net, 0) || !near(dst.produced, 3) || dst.fix)
+    fail(`import should land 3 t/min on the destination and clear its fix`);
+  if (src.exp?.[0]?.to !== "Kitchenia" || !near(src.exp[0].tpm, 3))
+    fail(`export chip should carry the amount, got ${JSON.stringify(src.exp)}`);
+  if (dst.imp?.[0]?.from !== "Pasture" || !near(dst.imp[0].tpm, 3))
+    fail(`import chip should carry the amount, got ${JSON.stringify(dst.imp)}`);
+  if (beef(one, "Snackville").fix?.count !== 6)
+    fail("an unlinked island keeps its full shortfall");
 
-  const source = L.applyTrade(rows(farms, OW), "Pasture", link);
-  const beefOut = source.find((r) => r.name === "Beef");
-  if ((beefOut.exp || []).join() !== "Kitchenia")
-    fail(`export should name its destination, got ${JSON.stringify(beefOut.exp)}`);
-  if (beefOut.imp) fail("the source island is not importing its own good");
-
-  // The same flow via a ship's recorded route, case-insensitively.
-  const route = [{ good: "beef", from: "PASTURE", to: "kitchenia" }];
-  const byShip = L.applyTrade(rows(kitchen, OW), "Kitchenia", route);
-  if (byShip.find((r) => r.name === "Beef").fix)
-    fail("a ship route should cover a deficit like a link does");
-
-  // A flow of some OTHER good changes nothing.
-  const other = L.applyTrade(rows(kitchen, OW), "Kitchenia", [
-    { good: "Rum", from: "Pasture", to: "Kitchenia" },
+  // Two importers share one surplus in flow order: 4 spare − 3 to the first
+  // leaves 1 for the second, whose remaining 2 t/min gap is re-priced (OW
+  // Cattle Farm is 0.5 t/min → 4 farms), case-insensitively via a ship route.
+  const two = mk();
+  L.applyTrade(two, REG, [
+    { good: "Beef", from: "Pasture", to: "Kitchenia" },
+    { good: "beef", from: "PASTURE", to: "snackville" },
   ]);
-  if (!other.find((r) => r.name === "Beef").fix)
-    fail("an unrelated flow must not clear a deficit's fix");
-  ok("trade links cover deficits and label both ends");
+  if (!near(beef(two, "Pasture").net, 0))
+    fail("two exports should drain the whole surplus");
+  const second = beef(two, "Snackville");
+  if (!near(second.net, -2) || !near(second.imp?.[0]?.tpm ?? -1, 1))
+    fail(`the second importer gets what's left (1 t/min), got ${JSON.stringify(second.imp)}`);
+  if (second.fix?.count !== 4)
+    fail(`a part-covered gap is priced on the remainder, got ${JSON.stringify(second.fix)}`);
+
+  // A flow of some other good moves nothing.
+  const other = mk();
+  L.applyTrade(other, REG, [{ good: "Rum", from: "Pasture", to: "Kitchenia" }]);
+  if (!beef(other, "Kitchenia").fix || !near(beef(other, "Pasture").net, 4))
+    fail("an unrelated flow must not move goods");
+  ok("trade moves the numbers, splits surpluses, re-prices the remainder");
 }
 
 if (failures) {

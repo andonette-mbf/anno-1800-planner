@@ -128,7 +128,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 96 · islands link up</span>
+      <span style={{ opacity: 0.55 }}>build 97 · trade moves the numbers</span>
     </div>
   );
 }
