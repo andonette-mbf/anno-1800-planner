@@ -491,9 +491,13 @@ export function TrackerView({
   // browser (own key, not CompanionData — nothing to sync). Read in an
   // effect so the server render matches the first client render.
   const [hideFin, setHideFin] = useState(false);
+  // Show each island's items A→Z. Display-only: the stored order (and every
+  // index-based action on a row) is untouched — sorting happens at render.
+  const [sortAZ, setSortAZ] = useState(false);
   useEffect(() => {
     try {
       setHideFin(localStorage.getItem("anno_hide_finals") === "1");
+      setSortAZ(localStorage.getItem("anno_sort_az") === "1");
     } catch {}
   }, []);
   const toggleFin = () =>
@@ -502,6 +506,13 @@ export function TrackerView({
         localStorage.setItem("anno_hide_finals", h ? "0" : "1");
       } catch {}
       return !h;
+    });
+  const toggleSort = () =>
+    setSortAZ((s) => {
+      try {
+        localStorage.setItem("anno_sort_az", s ? "0" : "1");
+      } catch {}
+      return !s;
     });
   const [questDraft, setQuestDraft] = useState("");
   // Saved calculator plans, offered in the 🎯 link dropdown when signed in.
@@ -1510,6 +1521,13 @@ export function TrackerView({
             <button className="linkbtn" onClick={addIslandTagged}>
               ＋ Add
             </button>
+            <button
+              className={"linkbtn" + (sortAZ ? " on" : "")}
+              title="Show every island's items A→Z. Display only — the order you added them in is kept underneath."
+              onClick={toggleSort}
+            >
+              A→Z
+            </button>
           </div>
           {islands.length ? (
             islands.map((name, idx) => {
@@ -1535,9 +1553,18 @@ export function TrackerView({
                 >
                   {!shut && (
                     <datalist id={`bldgSuggest${idx}`}>
-                      {itemSuggestions(region).map((b) => (
-                        <option key={b} value={b} />
-                      ))}
+                      {itemSuggestions(region).map((b) => {
+                        // The good as the option's text, so the browser also
+                        // matches what a building MAKES — typing "Sausages"
+                        // offers the Slaughterhouse. Picking still inserts
+                        // the value (the building), which is what parses.
+                        const g = iconGoodName(b, game);
+                        return (
+                          <option key={b} value={b}>
+                            {g && g !== b ? g : null}
+                          </option>
+                        );
+                      })}
                     </datalist>
                   )}
                   <div className="islehd">
@@ -1679,7 +1706,12 @@ export function TrackerView({
                   </div>
                   {!shut && (
                     <>
-                  {items.map((c, i) => (
+                  {(sortAZ
+                    ? items
+                        .map((c, i) => ({ c, i }))
+                        .sort((a, b) => a.c.t.localeCompare(b.c.t))
+                    : items.map((c, i) => ({ c, i }))
+                  ).map(({ c, i }) => (
                     <div className={"plitem questrow" + (c.done ? "" : " gap")} key={`${i}:${c.t}`}>
                       <label className="qmain" title="Tap to toggle">
                         <input

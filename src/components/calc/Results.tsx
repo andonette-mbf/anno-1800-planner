@@ -128,7 +128,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 93 · blank islands, red and green nets</span>
+      <span style={{ opacity: 0.55 }}>build 94 · colour comes back, items A→Z</span>
     </div>
   );
 }
