@@ -478,16 +478,31 @@ export function TrackerView({
   useEffect(() => {
     setIsleRegion(GAME_CONTENT[game].starters[0].key);
   }, [game]);
-  const addIslandSeeded = () => {
+  // New islands start blank — the region choice is only the 🌍 tag (typing
+  // suggestions, chips, ledger pricing). The inventory is a production ledger,
+  // not a settle-up checklist, so nothing is seeded.
+  const addIslandTagged = () => {
     if (!isleDraft.trim()) return;
-    addIsland(
-      isleDraft,
-      ISLAND_STARTERS.find((r) => r.key === isleRegion)?.items,
-      isleRegion === "none" ? undefined : isleRegion
-    );
+    addIsland(isleDraft, undefined, isleRegion === "none" ? undefined : isleRegion);
     setIsleDraft("");
   };
   const [itemDrafts, setItemDrafts] = useState<Record<string, string>>({});
+  // Hide the ledger's dimmed end-product rows. UI-only preference, per
+  // browser (own key, not CompanionData — nothing to sync). Read in an
+  // effect so the server render matches the first client render.
+  const [hideFin, setHideFin] = useState(false);
+  useEffect(() => {
+    try {
+      setHideFin(localStorage.getItem("anno_hide_finals") === "1");
+    } catch {}
+  }, []);
+  const toggleFin = () =>
+    setHideFin((h) => {
+      try {
+        localStorage.setItem("anno_hide_finals", h ? "0" : "1");
+      } catch {}
+      return !h;
+    });
   const [questDraft, setQuestDraft] = useState("");
   // Saved calculator plans, offered in the 🎯 link dropdown when signed in.
   const [savedPlans, setSavedPlans] = useState<SavedPlanRow[]>([]);
@@ -930,20 +945,16 @@ export function TrackerView({
                 if (v === "__add") {
                   const name = window.prompt("Island name to add:");
                   if (name?.trim()) {
-                    // Same ask-where-it-is + base-task-list as the inventory
-                    // add row, prompt-sized.
+                    // Same ask-where-it-is as the inventory add row, prompt-
+                    // sized. Only the 🌍 tag — new islands start blank.
                     const r = (
                       window.prompt(
-                        "Where is it?\n1 Old World / Cape Trelawney · 2 New World · 3 Arctic · 4 Enbesa\nEnter = blank island",
+                        "Where is it?\n1 Old World / Cape Trelawney · 2 New World · 3 Arctic · 4 Enbesa\nEnter = no region",
                         ""
                       ) || ""
                     ).trim();
                     const key = { "1": "ow", "2": "nw", "3": "ar", "4": "en" }[r];
-                    addIsland(
-                      name,
-                      key ? ISLAND_STARTERS.find((s) => s.key === key)?.items : undefined,
-                      key
-                    );
+                    addIsland(name, undefined, key);
                     setQuestDraft((d) => `${name.trim()}: ${d}`);
                   }
                 } else if (v === "__del") {
@@ -1481,7 +1492,7 @@ export function TrackerView({
             <Dropdown
               className="qisle"
               ariaLabel="Region of the new island"
-              title="Where the new island is — it starts with that region's usual settle-up tasks, unticked"
+              title="Where the new island is — sets which buildings the item box suggests. The island starts blank."
               value={isleRegion}
               onChange={setIsleRegion}
               options={ISLAND_STARTERS.map((r) => ({ value: r.key, label: r.label }))}
@@ -1492,11 +1503,11 @@ export function TrackerView({
               onChange={(e) => setIsleDraft(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  addIslandSeeded();
+                  addIslandTagged();
                 }
               }}
             />
-            <button className="linkbtn" onClick={addIslandSeeded}>
+            <button className="linkbtn" onClick={addIslandTagged}>
               ＋ Add
             </button>
           </div>
@@ -1760,12 +1771,29 @@ export function TrackerView({
                       title="Ticked buildings only, at 100% productivity. Silo'd farms make double and use feed; ⚡ powered buildings make double. What residents eat isn't counted; use the calculator for that. Greyed rows are end products (pop goods, construction materials) — the chain balance lives in the dark rows, which should net near 0."
                     >
                       <div className="iledgrow iledghead">
-                        <span>Ledger — t/min at base rates</span>
+                        <span>
+                          Ledger — t/min at base rates
+                          {/* A SHORT final never hides — count only the healthy ones. */}
+                          {ledger.some((r) => r.final && r.net > -1e-9) && (
+                            <button
+                              className="iledgtgl"
+                              title="End products (pop goods, construction materials) — the greyed rows. Shorts always show."
+                              onClick={toggleFin}
+                            >
+                              {hideFin
+                                ? `show ${ledger.filter((r) => r.final && r.net > -1e-9).length} finals`
+                                : "hide finals"}
+                            </button>
+                          )}
+                        </span>
                         <span className="num">makes</span>
                         <span className="num">uses</span>
                         <span className="num">net</span>
                       </div>
-                      {ledger.map((r) => (
+                      {(hideFin
+                        ? ledger.filter((r) => !r.final || r.net < -1e-9)
+                        : ledger
+                      ).map((r) => (
                         <div className={"iledgrow" + (r.final ? " fin" : "")} key={r.name}>
                           <span>
                             <GoodIcon name={r.name} game={game} />
@@ -1777,7 +1805,12 @@ export function TrackerView({
                           <span className="num muted">
                             {r.used > 0 ? `−${fmt(r.used)}` : ""}
                           </span>
-                          <span className={"num net" + (r.net < -1e-9 ? " neg" : "")}>
+                          <span
+                            className={
+                              "num net" +
+                              (r.net < -1e-9 ? " neg" : r.net > 1e-9 ? " pos" : "")
+                            }
+                          >
                             {(r.net > 1e-9 ? "+" : r.net < -1e-9 ? "−" : "") +
                               fmt(Math.abs(r.net))}
                           </span>

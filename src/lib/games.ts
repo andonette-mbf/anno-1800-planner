@@ -25,8 +25,11 @@ export interface GameContent {
   /** Buildings that make nothing, so the ledger doesn't know them and they
    *  can't be chips without swamping the row — offered as you type instead. */
   services: { t: string; regions?: string[] }[];
-  /** Seeded UNTICKED on island add — red "still to do" gaps. */
-  starters: { key: string; label: string; items: string[] }[];
+  /** Region choices for the add-island row. Purely the 🌍 tag — new islands
+   *  start blank (the inventory is a production ledger, not a settle-up
+   *  checklist; the old starter kits seeded Marketplaces and free-text the
+   *  ledger couldn't read, and got deleted more than ticked). */
+  starters: { key: string; label: string }[];
   /** Fandom wiki search base for the 🔗 lookup on an item. */
   wikiSearch: string;
   /** A region tag that is really another one wearing a different name. Cape
@@ -94,86 +97,13 @@ const ANNO1800: GameContent = {
     { t: "Hacienda Fertiliser Works", regions: ["nw"] },
   ],
   starters: [
-    {
-      key: "ow",
-      label: "Old World",
-      items: [
-        "Marketplace",
-        "Lumberjack's Hut",
-        "Sawmill",
-        "Fishery",
-        "Potato Farm",
-        "Schnapps Distillery",
-        "Sheep Farm",
-        "Framework Knitters",
-        "Fire Station",
-      ],
-    },
-    {
-      // Same buildings as the Old World — it IS the Old World region — but
-      // settled as its own island, so it gets its own starter kit.
-      key: "ct",
-      label: "Cape Trelawney",
-      items: [
-        "Marketplace",
-        "Lumberjack's Hut",
-        "Sawmill",
-        "Fishery",
-        "Potato Farm",
-        "Schnapps Distillery",
-        "Sheep Farm",
-        "Framework Knitters",
-        "Fire Station",
-      ],
-    },
-    {
-      key: "nw",
-      label: "New World",
-      items: [
-        "Marketplace",
-        "Lumberjack's Hut",
-        "Sawmill",
-        "Fish Oil Factory",
-        "Plantain Plantation",
-        "Fried Plantain Kitchen",
-        "Alpaca Farm",
-        "Poncho Darner",
-        "Sugar Cane Plantation",
-        "Rum Distillery",
-        "Fire Station",
-      ],
-    },
-    {
-      key: "ar",
-      label: "The Arctic",
-      items: [
-        "Heaters + coal supply",
-        "Lumberjack's Hut",
-        "Sawmill",
-        "Whaling Station",
-        "Caribou Hunting Cabin",
-        "Pemmican Cookhouse",
-        "Seal Hunting Docks",
-        "Goose Farm",
-        "Sleeping Bag Factory",
-      ],
-    },
-    {
-      key: "en",
-      label: "Enbesa",
-      items: [
-        "Marketplace",
-        "Water wells / irrigation",
-        "Wanza Woodcutter",
-        "Goat Farm",
-        "Sanga Farm",
-        "Salt Works",
-        "Dry-House",
-        "Hibiscus Farm",
-        "Tea Spicer",
-      ],
-    },
-    { key: "none", label: "Blank island", items: [] },
+    { key: "ow", label: "Old World" },
+    // Same region as the Old World in the numbers, its own tag on the map.
+    { key: "ct", label: "Cape Trelawney" },
+    { key: "nw", label: "New World" },
+    { key: "ar", label: "The Arctic" },
+    { key: "en", label: "Enbesa" },
+    { key: "none", label: "No region" },
   ],
   wikiSearch: "https://anno1800.fandom.com/wiki/Special:Search?query=",
   // The ones you actually name and keep. Deliberately not exhaustive — DLC
@@ -223,42 +153,10 @@ const ANNO117: GameContent = {
   ],
   // 117's public buildings are few enough to all be chips.
   services: [],
-  // The first resident tier's full need chains plus the construction-material
-  // basics — building names come straight from data-117.json, so a ticked
-  // starter feeds the ledger.
   starters: [
-    {
-      key: "la",
-      label: "Latium (Liberti)",
-      items: [
-        "Market",
-        "Woodcutter",
-        "Sawmill",
-        "Fishing Hut",
-        "Oat Farm",
-        "Porridge Stand",
-        "Hemp Farm",
-        "Spinner",
-        "Sheep Farm",
-        "Pileus Felter",
-      ],
-    },
-    {
-      key: "al",
-      label: "Albion (Waders)",
-      items: [
-        "Market",
-        "Woodcutter",
-        "Sawmill",
-        "Cockle Picker",
-        "Eel Grabber",
-        "Reed Gatherer",
-        "Shoe Weaver",
-        "Hemp Farm",
-        "Spinner",
-      ],
-    },
-    { key: "none", label: "Blank island", items: [] },
+    { key: "la", label: "Latium" },
+    { key: "al", label: "Albion" },
+    { key: "none", label: "No region" },
   ],
   wikiSearch: "https://anno117.fandom.com/wiki/Special:Search?query=",
   // Rome's ships aren't in the pack and the wiki has no list worth extracting
