@@ -12,7 +12,14 @@ import {
 import { cultureAt, CULTURE_EMOJI, type CultureAt } from "@/lib/culture";
 import { CalcState, DEFAULT_STATE } from "@/lib/engine";
 import { GAME_CONTENT, type Game } from "@/lib/games";
-import { buildingOptionsFor, elecCapable, islandLedger, itemGood, siloCapable } from "@/lib/ledger";
+import {
+  applyTrade,
+  buildingOptionsFor,
+  elecCapable,
+  islandLedger,
+  itemGood,
+  siloCapable,
+} from "@/lib/ledger";
 import { planCheck, planSeed } from "@/lib/plancheck";
 import CultureBlock from "./CultureBlock";
 import { GoodIcon } from "./GoodIcon";
@@ -441,6 +448,8 @@ export function TrackerView({
     seedIslandChecks,
     setIslandPlan,
     setIslandRegion,
+    addIslandLink,
+    removeIslandLink,
   } = useCompanion();
   const { status } = useAuth();
   // Per-game content: region tags, starter kits, inventory chips, wiki base.
@@ -698,16 +707,31 @@ export function TrackerView({
   };
   const [ciOpen, setCiOpen] = useState(false);
   const [ciIsle, setCiIsle] = useState("");
+  // Trade flows (build 96): the links ticked on ledger rows, plus every ship
+  // route whose from/to/cargo are all filled in — a recorded route already
+  // says the same thing, so it links up without any extra bookkeeping.
+  const flows = [
+    ...(data.islandLinks || []),
+    ...(data.ships || []).flatMap((s) =>
+      s.from && s.to && s.cargo?.length
+        ? s.cargo.map((g) => ({ good: g, from: s.from!, to: s.to! }))
+        : []
+    ),
+  ];
+  const ledgerFor = (n: string) =>
+    applyTrade(
+      islandLedger(
+        (data.islandChecks || {})[n] || [],
+        game,
+        REGION_NUM[(data.islandRegions || {})[n] || ""] || 0
+      ),
+      n,
+      flows
+    );
   // How many islands are missing something. The per-island block works this out
   // again for its own header; doing it here too keeps the tally at the top of
   // the card honest when every island is folded away.
-  const islesShort = islands.filter((n) =>
-    islandLedger(
-      (data.islandChecks || {})[n] || [],
-      game,
-      REGION_NUM[(data.islandRegions || {})[n] || ""] || 0
-    ).some((r) => r.fix)
-  ).length;
+  const islesShort = islands.filter((n) => ledgerFor(n).some((r) => r.fix)).length;
   // Landmark quick-add chips, collapsed per island until asked for.
   const [chipsOpen, setChipsOpen] = useState<Record<string, boolean>>({});
   // Folded-up islands (build 72). A settled island's block runs to a screenful
@@ -1540,7 +1564,7 @@ export function TrackerView({
                   (!s.regions || !chipRegion || s.regions.includes(chipRegion)) &&
                   !items.some((c) => c.t.toLowerCase() === s.t.toLowerCase())
               ).map((s) => s.t);
-              const ledger = islandLedger(items, game, REGION_NUM[region] || 0);
+              const ledger = ledgerFor(name);
               const plan = (data.islandPlans || {})[name];
               const shut = !!isleShut[name];
               const short = ledger.filter((r) => r.fix).length;
@@ -1825,11 +1849,77 @@ export function TrackerView({
                       {(hideFin
                         ? ledger.filter((r) => !r.final || r.net < -1e-9)
                         : ledger
-                      ).map((r) => (
+                      ).map((r) => {
+                        // Is this flow a ticked link (removable here) rather
+                        // than a ship route (edited in the Ships tab)?
+                        const manual = (from: string, to: string) =>
+                          (data.islandLinks || []).some(
+                            (l) =>
+                              l.good.toLowerCase() === r.name.toLowerCase() &&
+                              l.from.toLowerCase() === from.toLowerCase() &&
+                              l.to.toLowerCase() === to.toLowerCase()
+                          );
+                        const exportable = islands.filter(
+                          (o) =>
+                            o !== name &&
+                            !r.exp?.some((d) => d.toLowerCase() === o.toLowerCase())
+                        );
+                        return (
                         <div className={"iledgrow" + (r.final ? " fin" : "")} key={r.name}>
                           <span>
                             <GoodIcon name={r.name} game={game} />
                             {r.name}
+                            {r.imp?.map((src) =>
+                              manual(src, name) ? (
+                                <button
+                                  key={src}
+                                  className="trchip"
+                                  title={`Imported from ${src} — tap to unlink`}
+                                  onClick={() => removeIslandLink(r.name, src, name)}
+                                >
+                                  🚢← {src} ✕
+                                </button>
+                              ) : (
+                                <span
+                                  key={src}
+                                  className="trchip"
+                                  title={`Arrives from ${src} by ship route — edit in the Ships tab`}
+                                >
+                                  🚢← {src}
+                                </span>
+                              )
+                            )}
+                            {r.exp?.map((dst) =>
+                              manual(name, dst) ? (
+                                <button
+                                  key={dst}
+                                  className="trchip"
+                                  title={`Exports to ${dst} — tap to unlink`}
+                                  onClick={() => removeIslandLink(r.name, name, dst)}
+                                >
+                                  🚢→ {dst} ✕
+                                </button>
+                              ) : (
+                                <span
+                                  key={dst}
+                                  className="trchip"
+                                  title={`Ships to ${dst} by route — edit in the Ships tab`}
+                                >
+                                  🚢→ {dst}
+                                </span>
+                              )
+                            )}
+                            {r.net > 1e-9 && exportable.length > 0 && (
+                              <Dropdown
+                                className="trlink"
+                                ariaLabel={`Export ${r.name} to another island`}
+                                title={`Surplus ${r.name} — link it to the island that imports it, and that ledger stops alarming`}
+                                placeholder="→ export…"
+                                value=""
+                                onChange={(v) => v && addIslandLink(r.name, name, v)}
+                                options={exportable.map((o) => ({ value: o, label: o }))}
+                              />
+                            )}
                           </span>
                           <span className="num muted">
                             {r.produced > 0 ? `+${fmt(r.produced)}` : ""}
@@ -1840,14 +1930,26 @@ export function TrackerView({
                           <span
                             className={
                               "num net" +
-                              (r.net < -1e-9 ? " neg" : r.net > 1e-9 ? " pos" : "")
+                              (r.net < -1e-9
+                                ? r.imp
+                                  ? " neg cov"
+                                  : " neg"
+                                : r.net > 1e-9
+                                  ? " pos"
+                                  : "")
+                            }
+                            title={
+                              r.imp && r.net < -1e-9
+                                ? `Covered by imports from ${r.imp.join(", ")}`
+                                : undefined
                             }
                           >
                             {(r.net > 1e-9 ? "+" : r.net < -1e-9 ? "−" : "") +
                               fmt(Math.abs(r.net))}
                           </span>
                         </div>
-                      ))}
+                        );
+                      })}
                       {ledger.some((r) => r.fix) && (
                         <div className="iledgfix">
                           ⚠ Short — build{" "}

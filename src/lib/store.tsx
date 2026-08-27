@@ -153,6 +153,34 @@ export interface ShipItem {
   cargo?: string[];
 }
 
+/** One good flowing between two islands (build 96): ticked on a surplus row
+ *  in the source island's ledger. The two ledgers link up — the source shows
+ *  the good as exported, the destination stops alarming on its deficit.
+ *  `good` is the ledger row's display name; islands are their given names. */
+export interface TradeLink {
+  good: string;
+  from: string;
+  to: string;
+}
+
+function parseLinks(raw: unknown): TradeLink[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const out: TradeLink[] = [];
+  for (const x of raw) {
+    const o = x as { good?: unknown; from?: unknown; to?: unknown };
+    const good = String(o?.good ?? "").trim();
+    const from = String(o?.from ?? "").trim();
+    const to = String(o?.to ?? "").trim();
+    if (!good || !from || !to || from.toLowerCase() === to.toLowerCase()) continue;
+    const key = `${good}|${from}|${to}`.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ good, from, to });
+  }
+  return out;
+}
+
 /** A route's goods. Takes the list it writes now, or the one free-text string
  *  it wrote before — "Rum, Coffee & Sugar" becomes three goods. */
 function parseCargo(raw: unknown): string[] {
@@ -231,6 +259,10 @@ export interface CompanionData {
   // their own rather than island inventory: what it's called, what it is, and
   // what it's doing right now.
   ships: ShipItem[];
+  // Goods flowing island → island (build 96), ticked on the ledger's surplus
+  // rows. Complements the ships' routes, which imply the same thing when
+  // from/to/cargo are filled in.
+  islandLinks: TradeLink[];
 }
 
 // findIndex, but "no match" means "the end" — the insertion point that keeps
@@ -468,6 +500,10 @@ function loadLocal(game: Game = "anno1800", id = ""): CompanionData {
   try {
     ships = parseShips(JSON.parse(ls.get(k("anno_ships")) || "[]"));
   } catch {}
+  let islandLinks: TradeLink[] = [];
+  try {
+    islandLinks = parseLinks(JSON.parse(ls.get(k("anno_island_links")) || "[]"));
+  } catch {}
   try {
     const q = JSON.parse(ls.get(k("anno_quests")) || "[]");
     if (Array.isArray(q))
@@ -509,6 +545,7 @@ function loadLocal(game: Game = "anno1800", id = ""): CompanionData {
     islandRegions,
     islandCulture,
     ships,
+    islandLinks,
   };
 }
 
@@ -526,6 +563,7 @@ function saveLocal(d: CompanionData, game: Game = "anno1800", id = "") {
   ls.set(k("anno_island_regions"), JSON.stringify(d.islandRegions || {}));
   ls.set(k("anno_island_culture"), JSON.stringify(d.islandCulture || {}));
   ls.set(k("anno_ships"), JSON.stringify(d.ships || []));
+  ls.set(k("anno_island_links"), JSON.stringify(d.islandLinks || []));
 }
 
 const EMPTY_DATA: CompanionData = {
@@ -541,6 +579,7 @@ const EMPTY_DATA: CompanionData = {
   islandRegions: {},
   islandCulture: {},
   ships: [],
+  islandLinks: [],
 };
 
 /** One game's saves: the list (never empty), which one is showing, and the
@@ -628,6 +667,7 @@ function fromBlob(blob: SyncBlob, local: Record<Game, GameSaves>): Record<Game, 
     ),
     islandCulture: parseCulture(d.islandCulture),
     ships: parseShips(d.ships),
+    islandLinks: parseLinks(d.islandLinks),
     quests: ringTimers(healBlockers(d.quests || [])),
   });
   const forGame = (game: Game, legacy: CompanionData | undefined): GameSaves => {
@@ -749,6 +789,10 @@ interface CompanionCtx {
   addShip: (name: string, type?: string) => void;
   setShip: (i: number, patch: Partial<ShipItem>) => void;
   removeShip: (i: number) => void;
+  /** Link a good's flow between two islands (build 96): the source ledger
+   *  shows it exported, the destination's deficit stops alarming. */
+  addIslandLink: (good: string, from: string, to: string) => void;
+  removeIslandLink: (good: string, from: string, to: string) => void;
 }
 
 const CompanionContext = createContext<CompanionCtx | null>(null);
@@ -1246,6 +1290,10 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             islandPlans,
             islandRegions,
             islandCulture,
+            // Links to or from a removed island go with it.
+            islandLinks: (d.islandLinks || []).filter(
+              (l) => l.from.toLowerCase() !== n && l.to.toLowerCase() !== n
+            ),
           };
         }),
       addIslandCheck: (island, t) => {
@@ -1425,6 +1473,23 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         }),
       removeShip: (i) =>
         update((d) => ({ ...d, ships: (d.ships || []).filter((_, j) => j !== i) })),
+      addIslandLink: (good, from, to) =>
+        update((d) => ({
+          ...d,
+          // parseLinks dedupes and drops self-links, so adding is just
+          // appending and re-parsing.
+          islandLinks: parseLinks([...(d.islandLinks || []), { good, from, to }]),
+        })),
+      removeIslandLink: (good, from, to) =>
+        update((d) => {
+          const key = `${good}|${from}|${to}`.toLowerCase();
+          return {
+            ...d,
+            islandLinks: (d.islandLinks || []).filter(
+              (l) => `${l.good}|${l.from}|${l.to}`.toLowerCase() !== key
+            ),
+          };
+        }),
     }),
     [data, game, gs, setGame, sync, update, updateSaves]
   );

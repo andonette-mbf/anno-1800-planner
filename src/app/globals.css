@@ -125,6 +125,13 @@ a.plx:hover{color:var(--accent)}
 .iledgrow.fin .net{font-weight:400}
 .iledgrow.fin .net.neg{font-weight:800}
 .iledgfix{color:var(--red);font-weight:600;margin-top:5px}
+/* Trade (build 96): a deficit covered by imports keeps its number but stops
+   shouting — the chip beside the good says where it comes from. */
+.iledgrow .net.neg.cov{color:var(--muted);font-weight:600}
+.trchip{font:inherit;font-size:10px;border:1px solid var(--line);background:0 0;color:var(--muted);padding:1px 5px;margin-left:6px;white-space:nowrap;cursor:default}
+button.trchip{cursor:pointer}
+button.trchip:hover{color:var(--ink);border-color:var(--ink)}
+.ddbtn.trlink{width:auto;display:inline-flex;padding:1px 7px;margin-left:6px;font-size:10px;color:var(--muted);background:0 0;border-color:var(--line)}
 /* "hide finals" toggle in the ledger head — text-sized, dotted like a link. */
 .iledgtgl{background:0 0;border:0;padding:0;margin-left:8px;font:inherit;color:var(--muted);cursor:pointer;text-decoration:underline dotted;text-transform:none;letter-spacing:0}
 .iledgtgl:hover{color:var(--ink)}

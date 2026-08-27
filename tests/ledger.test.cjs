@@ -189,6 +189,44 @@ const near = (a, b) => Math.abs(a - b) < 1e-9;
   ok("end products are flagged final, chain intermediates are not");
 }
 
+// --- trade links: two ledgers link up --------------------------------------
+// A good exported island → island covers the destination's deficit: the row
+// keeps its numbers but loses `fix` (build advice is wrong for an import),
+// and the source's surplus row says where it goes. Ship routes with
+// from/to/cargo imply the same flow.
+{
+  const kitchen = [{ t: "Artisanal Kitchen", n: 6, done: true }];
+  const farms = [{ t: "Cattle Farm", n: 8, done: true }];
+  const link = [{ good: "Beef", from: "Pasture", to: "Kitchenia" }];
+
+  const covered = L.applyTrade(rows(kitchen, OW), "Kitchenia", link);
+  const beefIn = covered.find((r) => r.name === "Beef");
+  if (beefIn.fix) fail("an imported deficit should lose its build-N fix");
+  if (!near(beefIn.net, -3)) fail("an imported deficit keeps its numbers");
+  if ((beefIn.imp || []).join() !== "Pasture")
+    fail(`import should name its source, got ${JSON.stringify(beefIn.imp)}`);
+
+  const source = L.applyTrade(rows(farms, OW), "Pasture", link);
+  const beefOut = source.find((r) => r.name === "Beef");
+  if ((beefOut.exp || []).join() !== "Kitchenia")
+    fail(`export should name its destination, got ${JSON.stringify(beefOut.exp)}`);
+  if (beefOut.imp) fail("the source island is not importing its own good");
+
+  // The same flow via a ship's recorded route, case-insensitively.
+  const route = [{ good: "beef", from: "PASTURE", to: "kitchenia" }];
+  const byShip = L.applyTrade(rows(kitchen, OW), "Kitchenia", route);
+  if (byShip.find((r) => r.name === "Beef").fix)
+    fail("a ship route should cover a deficit like a link does");
+
+  // A flow of some OTHER good changes nothing.
+  const other = L.applyTrade(rows(kitchen, OW), "Kitchenia", [
+    { good: "Rum", from: "Pasture", to: "Kitchenia" },
+  ]);
+  if (!other.find((r) => r.name === "Beef").fix)
+    fail("an unrelated flow must not clear a deficit's fix");
+  ok("trade links cover deficits and label both ends");
+}
+
 if (failures) {
   console.error(`\n${failures} failure(s)`);
   process.exit(1);

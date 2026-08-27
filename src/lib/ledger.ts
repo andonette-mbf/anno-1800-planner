@@ -360,6 +360,55 @@ export interface LedgerRow {
   // Set when net is negative: how many of the good's producer (or equivalent)
   // would cover the shortfall. 5 silo farms × 0.2 feed = 1× Grain Farm.
   fix?: { building: string; count: number };
+  // Trade (build 96, set by applyTrade): where this good arrives from /
+  // departs to. An imported deficit keeps its numbers but loses `fix` —
+  // "build more" is the wrong advice for a good the boats bring in.
+  imp?: string[];
+  exp?: string[];
+}
+
+/** The flows applyTrade reads: explicit links (ticked on a ledger row) and
+ *  ship routes, which imply the same when from/to/cargo are all filled in. */
+export interface TradeFlow {
+  good: string;
+  from: string;
+  to: string;
+}
+
+/** Mark one island's ledger rows with the trade that touches them: `imp`
+ *  (arrives here — clears a deficit's fix) and `exp` (leaves here). Rows are
+ *  matched to flows by good display name, islands by name, both
+ *  case-insensitively. Returns the same rows, annotated. */
+export function applyTrade(
+  rows: LedgerRow[],
+  island: string,
+  flows: TradeFlow[]
+): LedgerRow[] {
+  const isle = island.trim().toLowerCase();
+  const imp = new Map<string, string[]>();
+  const exp = new Map<string, string[]>();
+  const add = (m: Map<string, string[]>, good: string, place: string) => {
+    const g = good.trim().toLowerCase();
+    const list = m.get(g) ?? [];
+    if (!list.some((x) => x.toLowerCase() === place.toLowerCase())) list.push(place);
+    m.set(g, list);
+  };
+  for (const f of flows) {
+    if (!f.good || !f.from || !f.to) continue;
+    if (f.to.trim().toLowerCase() === isle) add(imp, f.good, f.from.trim());
+    if (f.from.trim().toLowerCase() === isle) add(exp, f.good, f.to.trim());
+  }
+  for (const r of rows) {
+    const g = r.name.toLowerCase();
+    const i = imp.get(g);
+    const e = exp.get(g);
+    if (i) {
+      r.imp = i;
+      delete r.fix;
+    }
+    if (e) r.exp = e;
+  }
+  return rows;
 }
 
 /** Sum one island's checklist into per-good makes/uses/net rows.
