@@ -390,14 +390,23 @@ function priceFix(
 
 /** Move goods along the trade flows, across ALL islands' ledgers at once.
  *
- *  Each flow transfers min(source surplus, destination deficit) of its good —
- *  in flow order, so several importers split one surplus first-come and a
- *  second link takes what the first left. The moved t/min lands in the
- *  destination's `produced` and the source's `used` (net stays makes − uses),
- *  and both rows grow a chip (`imp`/`exp`) naming the other end and the
- *  amount — 0 when the link exists but nothing is spare to send. Every `fix`
- *  is then re-priced on the remaining deficit, so a partly-covered island
- *  asks for the remainder only.
+ *  Exported means GONE. Two passes:
+ *
+ *  1. Tracked shortfalls first, in flow order — each link ships
+ *     min(remaining surplus, what its destination is short of), so several
+ *     importers split one surplus first-come.
+ *  2. Whatever the source still has spare ships anyway, along the good's
+ *     FIRST link — a route carries the whole surplus whether or not the
+ *     other end's consumers are tracked (cotton sent to Cape Trelawney for
+ *     furs is spoken for even though no tracked building eats it). It lands
+ *     as stock on the destination, whose row is created if it has no local
+ *     maker or user of the good.
+ *
+ *  Moved t/min lands in the destination's `produced` and the source's `used`
+ *  (net stays makes − uses); both rows grow a chip (`imp`/`exp`) naming the
+ *  other end and the total carried — 0 when a link exists but nothing was
+ *  there to send. Every `fix` is then re-priced on what trade left
+ *  uncovered, so a part-covered island asks for the remainder only.
  *
  *  `ledgers` and `regions` are keyed by island name; matching is
  *  case-insensitive on both islands and goods. Rows are annotated in place. */
@@ -415,32 +424,69 @@ export function applyTrade(
     byIsle
       .get(isle.trim().toLowerCase())
       ?.rows.find((r) => r.name.toLowerCase() === good.trim().toLowerCase());
-  for (const f of flows) {
-    if (!f.good || !f.from || !f.to) continue;
+  // A destination can receive a good nothing there makes or uses yet — give
+  // it a row so the stock shows up. `display` keeps the source row's casing.
+  const ensureRow = (isle: string, display: string) => {
+    const entry = byIsle.get(isle.trim().toLowerCase());
+    if (!entry) return undefined;
+    let row = entry.rows.find((r) => r.name.toLowerCase() === display.toLowerCase());
+    if (!row) {
+      row = { name: display, produced: 0, used: 0, net: 0 };
+      entry.rows.push(row);
+    }
+    return row;
+  };
+  // Chip amounts accumulate across both passes, one chip per link.
+  const carried = new Map<string, { f: TradeFlow; amt: number }>();
+  const note = (f: TradeFlow, amt: number) => {
+    const k = `${f.good}|${f.from}|${f.to}`.toLowerCase();
+    const t = carried.get(k);
+    if (t) t.amt += amt;
+    else carried.set(k, { f, amt });
+  };
+  const move = (src: LedgerRow, dst: LedgerRow, amt: number) => {
+    src.used += amt;
+    src.net -= amt;
+    dst.produced += amt;
+    dst.net += amt;
+  };
+  const valid = flows.filter((f) => f.good && f.from && f.to);
+  // Pass 1 — tracked shortfalls, in flow order.
+  for (const f of valid) {
     const src = rowOf(f.from, f.good);
     const dst = rowOf(f.to, f.good);
-    // No consumer row on the destination → the link has nothing to say there,
-    // and without it we can't even name the good's display form. Skip.
-    if (!dst && !src) continue;
-    const spare = src ? Math.max(0, src.net) : 0;
-    const lack = dst ? Math.max(0, -dst.net) : 0;
-    const amt = Math.min(spare, lack);
-    if (src) {
-      src.used += amt;
-      src.net -= amt;
-      (src.exp ??= []).push({ to: f.to.trim(), tpm: amt });
-    }
-    if (dst) {
-      dst.produced += amt;
-      dst.net += amt;
-      (dst.imp ??= []).push({ from: f.from.trim(), tpm: amt });
-    }
+    if (!src && !dst) continue;
+    const amt = Math.min(
+      src ? Math.max(0, src.net) : 0,
+      dst ? Math.max(0, -dst.net) : 0
+    );
+    if (amt > 0) move(src!, dst!, amt);
+    note(f, amt);
   }
-  // Re-price every shortfall on what trade left uncovered. An imported row
-  // that is still short keeps a fix for the remainder; a fully covered one
-  // loses it. A row that only EXPORTED into deficit would be self-inflicted —
-  // amounts are capped at the surplus, so that cannot happen.
+  // Pass 2 — the leftovers ride the good's first link.
+  const firstDone = new Set<string>();
+  for (const f of valid) {
+    const sk = `${f.good}|${f.from}`.toLowerCase();
+    if (firstDone.has(sk)) continue;
+    firstDone.add(sk);
+    const src = rowOf(f.from, f.good);
+    if (!src || src.net <= 1e-9) continue;
+    const dst = ensureRow(f.to, src.name);
+    if (!dst) continue;
+    const rest = src.net;
+    move(src, dst, rest);
+    note(f, rest);
+  }
+  for (const { f, amt } of carried.values()) {
+    const src = rowOf(f.from, f.good);
+    const dst = rowOf(f.to, f.good);
+    if (src) (src.exp ??= []).push({ to: f.to.trim(), tpm: amt });
+    if (dst) (dst.imp ??= []).push({ from: f.from.trim(), tpm: amt });
+  }
+  // Re-price every shortfall on what trade left uncovered, and keep the rows
+  // alphabetical — pass 2 can have appended new ones.
   for (const { rows, name } of byIsle.values()) {
+    rows.sort((a, b) => a.name.localeCompare(b.name));
     const region = regions[name] || 0;
     for (const r of rows) {
       delete r.fix;

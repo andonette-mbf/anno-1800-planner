@@ -206,25 +206,44 @@ const near = (a, b) => Math.abs(a - b) < 1e-9;
   });
   const REG = { Pasture: OW, Kitchenia: OW, Snackville: OW };
 
-  // One link: 3 needed, 4 spare → 3 moves; source keeps +1, dest lands on 0.
+  // One link: 3 needed, 4 spare → all 4 move (exported means gone). The
+  // destination's need is met and the extra 1 t/min piles up there as stock.
   const one = mk();
   L.applyTrade(one, REG, [{ good: "Beef", from: "Pasture", to: "Kitchenia" }]);
   const src = beef(one, "Pasture");
   const dst = beef(one, "Kitchenia");
-  if (!near(src.net, 1) || !near(src.used, 3))
-    fail(`export should move 3 t/min off the source, got net ${src.net}`);
-  if (!near(dst.net, 0) || !near(dst.produced, 3) || dst.fix)
-    fail(`import should land 3 t/min on the destination and clear its fix`);
-  if (src.exp?.[0]?.to !== "Kitchenia" || !near(src.exp[0].tpm, 3))
+  if (!near(src.net, 0) || !near(src.used, 4))
+    fail(`export should move the whole surplus off the source, got net ${src.net}`);
+  if (!near(dst.net, 1) || !near(dst.produced, 4) || dst.fix)
+    fail(`import should land 4 t/min on the destination and clear its fix`);
+  if (src.exp?.[0]?.to !== "Kitchenia" || !near(src.exp[0].tpm, 4))
     fail(`export chip should carry the amount, got ${JSON.stringify(src.exp)}`);
-  if (dst.imp?.[0]?.from !== "Pasture" || !near(dst.imp[0].tpm, 3))
+  if (dst.imp?.[0]?.from !== "Pasture" || !near(dst.imp[0].tpm, 4))
     fail(`import chip should carry the amount, got ${JSON.stringify(dst.imp)}`);
   if (beef(one, "Snackville").fix?.count !== 6)
     fail("an unlinked island keeps its full shortfall");
 
-  // Two importers share one surplus in flow order: 4 spare − 3 to the first
-  // leaves 1 for the second, whose remaining 2 t/min gap is re-priced (OW
-  // Cattle Farm is 0.5 t/min → 4 farms), case-insensitively via a ship route.
+  // The Bombins case: a destination with NO tracked consumer of the good
+  // still takes the whole surplus — the source reads 0 (it's spoken for) and
+  // the stock shows up on the destination, on a row created for it.
+  const raw = {
+    Bombins: rows([{ t: "Cotton Plantation", n: 4, done: true }], NW),
+    "Cape T": rows([{ t: "Bakery", done: true }], OW),
+  };
+  L.applyTrade(raw, { Bombins: NW, "Cape T": OW }, [
+    { good: "Cotton", from: "Bombins", to: "Cape T" },
+  ]);
+  const cottonHome = raw.Bombins.find((r) => r.name === "Cotton");
+  const cottonAway = raw["Cape T"].find((r) => r.name === "Cotton");
+  if (!near(cottonHome.net, 0))
+    fail(`an export with no tracked consumer still empties the source, got ${cottonHome.net}`);
+  if (!cottonAway || !near(cottonAway.net, cottonHome.produced))
+    fail(`the stock should land on the destination, got ${JSON.stringify(cottonAway)}`);
+
+  // Two importers split by NEED first (in flow order): 4 spare − 3 to the
+  // first leaves 1 for the second, whose remaining 2 t/min gap is re-priced
+  // (OW Cattle Farm is 0.5 t/min → 4 farms), case-insensitively via a ship
+  // route. Nothing is left over for pass 2, so needs-splitting still works.
   const two = mk();
   L.applyTrade(two, REG, [
     { good: "Beef", from: "Pasture", to: "Kitchenia" },
@@ -232,6 +251,8 @@ const near = (a, b) => Math.abs(a - b) < 1e-9;
   ]);
   if (!near(beef(two, "Pasture").net, 0))
     fail("two exports should drain the whole surplus");
+  if (!near(beef(two, "Kitchenia").net, 0))
+    fail("with both destinations in need, the first gets its need and no more");
   const second = beef(two, "Snackville");
   if (!near(second.net, -2) || !near(second.imp?.[0]?.tpm ?? -1, 1))
     fail(`the second importer gets what's left (1 t/min), got ${JSON.stringify(second.imp)}`);
