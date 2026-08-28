@@ -140,6 +140,7 @@ const ANNO117: GameContent = {
     { t: "Forum", regions: ["la"] },
     { t: "Library", regions: ["la"] },
     { t: "Amphitheatre", regions: ["la"] },
+    { t: "Hippodrome", regions: ["la"] },
     { t: "Bardic Hearth", regions: ["al"] },
     { t: "Fanum", regions: ["al"] },
     { t: "Alder Council", regions: ["al"] },

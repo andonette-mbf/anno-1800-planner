@@ -1,6 +1,6 @@
 {
  "_C": {
-  "version": "117 pack 2",
+  "version": "117 pack 3",
   "game": "anno117",
   "g": [
    [
@@ -19,7 +19,16 @@
     "",
     "Armourer",
     90,
-    "iron|leather"
+    "leather|iron"
+   ],
+   [
+    "aurochs",
+    "Aurochs",
+    2,
+    "",
+    "Auroch Farm",
+    60,
+    ""
    ],
    [
     "barley",
@@ -70,7 +79,7 @@
     "bread",
     "Bread",
     3,
-    "plebeians",
+    "liberti",
     "Bakery",
     60,
     "flour"
@@ -136,7 +145,7 @@
     "smiths",
     "Dairy",
     120,
-    "ochs"
+    "aurochs"
    ],
    [
     "clan_shields",
@@ -226,7 +235,7 @@
     "smiths",
     "Horner",
     120,
-    "ochs|tin_ore"
+    "aurochs|tin_ore"
    ],
    [
     "dye_plants",
@@ -270,7 +279,7 @@
     3,
     "",
     "Grain Mill",
-    30,
+    20,
     "wheat"
    ],
    [
@@ -394,7 +403,7 @@
     "horses",
     "Horses",
     3,
-    "",
+    "equites",
     "Horse Breeder",
     120,
     ""
@@ -538,7 +547,7 @@
     "necklaces",
     "Necklaces",
     1,
-    "patricians",
+    "aldermen",
     "Jeweller",
     90,
     "minerals|gold"
@@ -559,15 +568,6 @@
     "",
     null,
     0,
-    ""
-   ],
-   [
-    "ochs",
-    "Ochs",
-    2,
-    "",
-    "Ochs Farm",
-    60,
     ""
    ],
    [
@@ -691,10 +691,10 @@
     "roast_beef",
     "Roast Beef",
     2,
-    "aldermen",
+    "equites",
     "Earth Oven",
     120,
-    "saltwort|ochs"
+    "saltwort|aurochs"
    ],
    [
     "rope",
@@ -853,7 +853,7 @@
     "statuettes",
     "Statuettes",
     1,
-    "equites",
+    "plebeians",
     "Caelator",
     180,
     "obsidian|uncut_marble"
@@ -988,7 +988,7 @@
     "wigs",
     "Wigs",
     2,
-    "nobles",
+    "patricians",
     "Wig Maker",
     90,
     "horses|head_piece"
@@ -997,7 +997,7 @@
     "wine",
     "Wine",
     3,
-    "equites",
+    "plebeians",
     "Vintner",
     45,
     "grapes|honeycombs"
@@ -1038,6 +1038,11 @@
       0.01388,
       0,
       2
+     ],
+     "bread": [
+      0.016185,
+      1,
+      3
      ],
      "tunics": [
       0.01785,
@@ -1149,13 +1154,18 @@
       1
      ],
      "bread": [
-      0.01079,
+      0.016185,
       1,
-      2
+      3
      ],
      "garum": [
       0.0087,
       1,
+      0
+     ],
+     "wine": [
+      0.015385,
+      2,
       0
      ],
      "sandals": [
@@ -1176,6 +1186,11 @@
      "olive_oil": [
       0.007353,
       1,
+      1
+     ],
+     "statuettes": [
+      0.004285,
+      2,
       1
      ]
     },
@@ -1327,9 +1342,9 @@
       1
      ],
      "bread": [
-      0.00915,
+      0.013725,
       1,
-      2
+      3
      ],
      "garum": [
       0.00714,
@@ -1366,6 +1381,11 @@
       2,
       2
      ],
+     "roast_beef": [
+      0.00519,
+      2,
+      3
+     ],
      "togas": [
       0.01,
       2,
@@ -1385,6 +1405,11 @@
       0.004922,
       2,
       0
+     ],
+     "horses": [
+      0.00515,
+      2,
+      2
      ],
      "statuettes": [
       0.003529,
@@ -1532,6 +1557,11 @@
       2,
       0
      ],
+     "necklaces": [
+      0.0054645,
+      3,
+      0
+     ],
      "chariots": [
       0.005102,
       2,
@@ -1639,9 +1669,9 @@
       1
      ],
      "bread": [
-      0.007935,
+      0.011907,
       1,
-      2
+      3
      ],
      "garum": [
       0.00606,
@@ -1678,6 +1708,11 @@
       2,
       2
      ],
+     "roast_beef": [
+      0.004425,
+      2,
+      3
+     ],
      "togas": [
       0.0085,
       2,
@@ -1697,6 +1732,11 @@
       0.004228,
       2,
       0
+     ],
+     "horses": [
+      0.004395,
+      2,
+      2
      ],
      "statuettes": [
       0.003,
@@ -1722,6 +1762,11 @@
       0.008658,
       3,
       2
+     ],
+     "wigs": [
+      0.005495,
+      2,
+      0
      ],
      "loungers": [
       0.0043745,
@@ -1824,6 +1869,13 @@
       "cat": 3,
       "pop": 3,
       "wonder": true
+     },
+     {
+      "id": "hippodrome",
+      "lbl": "Hippodrome",
+      "cat": 3,
+      "pop": 4,
+      "wonder": true
      }
     ]
    },
@@ -1859,9 +1911,9 @@
       0
      ],
      "bread": [
-      0.01034,
+      0.016185,
       1,
-      2
+      3
      ],
      "sausages": [
       0.0105,
@@ -1953,9 +2005,9 @@
       0
      ],
      "bread": [
-      0.00883,
+      0.013725,
       1,
-      2
+      3
      ],
      "sausages": [
       0.0089,
@@ -2016,6 +2068,11 @@
       0.005303,
       2,
       0
+     ],
+     "loungers": [
+      0.0043745,
+      3,
+      1
      ]
     },
     "services": [
@@ -2478,7 +2535,7 @@
   "flour": [
    {
     "building": "Grain Mill",
-    "time": 30,
+    "time": 20,
     "inputs": "wheat",
     "region": 1
    },
@@ -2722,7 +2779,7 @@
    {
     "building": "Armourer",
     "time": 90,
-    "inputs": "iron|leather",
+    "inputs": "leather|iron",
     "region": 3,
     "fuel": true
    }
@@ -2886,9 +2943,9 @@
     "region": 2
    }
   ],
-  "ochs": [
+  "aurochs": [
    {
-    "building": "Ochs Farm",
+    "building": "Auroch Farm",
     "time": 60,
     "inputs": "",
     "region": 2,
@@ -2994,7 +3051,7 @@
    {
     "building": "Dairy",
     "time": 120,
-    "inputs": "ochs",
+    "inputs": "aurochs",
     "region": 2
    }
   ],
@@ -3011,7 +3068,7 @@
    {
     "building": "Earth Oven",
     "time": 120,
-    "inputs": "saltwort|ochs",
+    "inputs": "saltwort|aurochs",
     "region": 2,
     "fuel": true
    }
@@ -3061,7 +3118,7 @@
    {
     "building": "Horner",
     "time": 120,
-    "inputs": "ochs|tin_ore",
+    "inputs": "aurochs|tin_ore",
     "region": 2
    }
   ],
@@ -3130,8 +3187,8 @@
  "presets": [],
  "source": {
   "repo": "anno-mods/anno-117-calculator",
-  "commit": "c6a6e7525d16927f74d4f554dde5831b84fa287c",
-  "upstreamVersion": "2.1",
+  "commit": "28969c3f92c1e93113bb743e66e9d321dd43fc15",
+  "upstreamVersion": "3.0",
   "licence": "MIT (tooling); game values © Ubisoft",
   "extractedBy": "scripts/extract-117.mjs"
  }

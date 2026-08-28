@@ -46,7 +46,6 @@ const EXTRA_NAMES = {
   Handmirrors: "Icon_Handmirros.png",
   "Head Piece": "Icon_Wig_Base.png",
   Marble: "Icon_Marble_Blocks.png",
-  Ochs: "Icon_Auroch.png",
   "Oysters with Caviar": "Icon_Oysters_And_Caviar.png",
   "Sandarac Wood": "Icon_Cypress_Wood.png",
   Saltwort: "Icon_Samphire.png",

@@ -20,9 +20,9 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 // Bump when re-extracting from a newer upstream — the pack version is what the
 // app shows and what a saved 117 plan is pinned to.
-const PACK = 2;
-// anno-mods/anno-117-calculator @ v2.1, the commit this pack was cut from.
-const PINNED_SHA = "c6a6e7525d16927f74d4f554dde5831b84fa287c";
+const PACK = 3;
+// anno-mods/anno-117-calculator @ Release 3.0, the commit this pack was cut from.
+const PINNED_SHA = "28969c3f92c1e93113bb743e66e9d321dd43fc15";
 const RAW = (sha) =>
   `https://raw.githubusercontent.com/anno-mods/anno-117-calculator/${sha}/js/params.js`;
 
@@ -339,7 +339,7 @@ const out = {
   source: {
     repo: "anno-mods/anno-117-calculator",
     commit: sha,
-    upstreamVersion: "2.1",
+    upstreamVersion: "3.0",
     licence: "MIT (tooling); game values © Ubisoft",
     extractedBy: "scripts/extract-117.mjs",
   },

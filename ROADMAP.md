@@ -462,6 +462,29 @@ is in CLAUDE.md.
   its build-91 checks now drive the culink row and folded-header score
   instead.
 
+- **117 pack 3** (build 104, `/rome-pack3`): data-117.json re-based onto
+  upstream Release 3.0 (`28969c3`, 2026-08-20) so M11c's items pack can pin
+  the same commit. The scary-sounding upstream growth (146 products, 144
+  factories, a third region) melted on inspection: the +33 products are 26
+  abstract service buildings and 7 currencies/permits the extractor already
+  drops, the third region is a factory-less Worldmap pseudo-region, and the
+  new "Egyptian" tags on 61 goods are trade-region teasers with no factories
+  or population behind them — still 113 goods, 118 producers, 9 tiers, and
+  `REGION_ID`/bitmask handling untouched. What actually changed is a re-tune:
+  `ochs` → `aurochs` (Ochs Farm is now the Auroch Farm; icon re-fetched, the
+  `Ochs` EXTRA_NAMES special-case retired since "Aurochs" de-pluralises to
+  the wiki's `Icon_Auroch.png` on its own), **Grain Mill 30s → 20s** (Latium
+  Flour is 3/min now — engine117's expectation re-derived, not just renumbered),
+  Bread promoted to a Liberti-onward need worth +3/house, seven of nine tiers
+  gained or re-priced needs (Wine and Statuettes to Plebeians, Roast Beef and
+  Horses to Equites, Necklaces to Aldermen, Wigs to Patricians, Loungers to
+  Nobles), and Patricians got the **Hippodrome**, a +4/house wonder — which
+  raised pack117's 0..3 pop ceiling to 0..4 (consciously; the Liberti
+  porridge+sardines wiki pin passed unchanged) and joined the Latium chips in
+  `games.ts`. Fuel stayed coal @120s across the same 23 merged producers (28
+  raw factories, 5 of them two-region merges). 1800 untouched: golden tests
+  and `test:games` pass as-is.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)

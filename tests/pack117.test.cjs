@@ -128,7 +128,9 @@ const splitInputs = (s) => (s || "").split("|").filter(Boolean);
 // rather than silently restating how big everyone's town is.
 {
   let bad = 0;
-  const intPop = (p) => Number.isInteger(p) && p >= 0 && p <= 3;
+  // 0..3 through pack 2; pack 3 (upstream 3.0) added the Hippodrome, a
+  // Patrician wonder worth +4/house — the new ceiling.
+  const intPop = (p) => Number.isInteger(p) && p >= 0 && p <= 4;
   for (const [tid, tier] of Object.entries(D._C.POP)) {
     for (const [gid, need] of Object.entries(tier.n)) {
       if (need.length !== 3) fail(`${tid}/${gid} need tuple has ${need.length} parts, want 3`), bad++;
@@ -143,7 +145,7 @@ const splitInputs = (s) => (s || "").split("|").filter(Boolean);
         fail(`${tid}/${s.id} service category ${s.cat} out of range`), bad++;
     }
   }
-  if (!bad) ok("population — every need and service carries a 0..3 resident value");
+  if (!bad) ok("population — every need and service carries a 0..4 resident value");
 }
 
 // --- the wiki cross-check ------------------------------------------------

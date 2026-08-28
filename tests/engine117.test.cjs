@@ -72,15 +72,16 @@ const ALBION = 2;
 
 // ---------------------------------------------------------------------------
 // 2. The same good, a different building and RATE per region. Flour is a Grain
-//    Mill (30s = 2/min) in Latium and a Donkey Mill (60s = 1/min) in Albion, so
-//    4 t/min of Flour is 2 buildings there and 4 here. Wheat demand is 4 t/min
-//    either way, and Wheat Farm is 60s = 1/min, so 4 farms in both.
+//    Mill (20s = 3/min since pack 3; 30s in pack 2) in Latium and a Donkey Mill
+//    (60s = 1/min) in Albion, so 4 t/min of Flour is ceil(4/3) = 2 buildings
+//    there and 4 here. Wheat demand is 4 t/min either way, and Wheat Farm is
+//    60s = 1/min, so 4 farms in both.
 // ---------------------------------------------------------------------------
 {
   const sel = { flour: { mode: "tpm", val: 4 } };
   const la = rome({ regionFilter: LATIUM, sel });
   const al = rome({ regionFilter: ALBION, sel });
-  eq(eng.effRate(la, "flour"), 2, "Latium flour rate");
+  eq(eng.effRate(la, "flour"), 3, "Latium flour rate");
   eq(eng.effRate(al, "flour"), 1, "Albion flour rate");
   eq(eng.buildingName(la, "flour"), "Grain Mill", "Latium flour building");
   eq(eng.buildingName(al, "flour"), "Donkey Mill", "Albion flour building");
@@ -89,7 +90,7 @@ const ALBION = 2;
   eq(eng.compute(la).demand.wheat, 4, "Latium wheat demand");
   eq(eng.compute(al).demand.wheat, 4, "Albion wheat demand");
   eq(eng.buildingRows(la).byId.wheat.cnt, 4, "Latium wheat farms");
-  ok("Flour: Grain Mill 2/min in Latium vs Donkey Mill 1/min in Albion");
+  ok("Flour: Grain Mill 3/min in Latium vs Donkey Mill 1/min in Albion");
 }
 
 // ---------------------------------------------------------------------------
