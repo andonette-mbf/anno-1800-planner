@@ -1,0 +1,25 @@
+{
+  "// why": [
+    "ItemsBlock imports through the @/* alias, which the single-file tsc",
+    "invocations the pack tests use cannot resolve. This compiles the",
+    "component and everything it pulls in to CommonJS under tests/build so the",
+    "jsdom test can require it."
+  ],
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": false,
+    "outDir": "./build",
+    "rootDir": "../src",
+    "baseUrl": "..",
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "files": ["../src/components/ItemsBlock.tsx"]
+}

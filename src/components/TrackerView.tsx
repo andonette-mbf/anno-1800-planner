@@ -22,6 +22,8 @@ import {
 } from "@/lib/ledger";
 import { planCheck, planSeed } from "@/lib/plancheck";
 import CultureBlock from "./CultureBlock";
+import ItemsBlock from "./ItemsBlock";
+import { itemIn, itemTitle, shipSocket } from "@/lib/items";
 import { GoodIcon } from "./GoodIcon";
 import { Dropdown } from "./ui/Dropdown";
 import {
@@ -2080,6 +2082,16 @@ export function TrackerView({
                       <span className="muted">→ 🏛 Culture</span>
                     </button>
                   )}
+                  {/* Who's socketed in the island's item buildings (M11b) —
+                      appears once a Trade Union / Town Hall / Harbourmaster's
+                      Office / Arctic Lodge is ticked above. */}
+                  <ItemsBlock
+                    island={name}
+                    items={items}
+                    game={game}
+                    domId={isleDomId(name)}
+                  />
+
                   {!tuck && (
                   <div className="plrow">
                     <input
@@ -2350,6 +2362,9 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
   const [job, setJob] = useState("");
   const types = GAME_CONTENT[game].shipTypes;
   const regions = GAME_CONTENT[game].regionLabels;
+  // The ship-items pack (M11b), or null for a game with no list — 117 gets no
+  // picker, same gate as the island sockets and the culture panel.
+  const shipItems = shipSocket(game);
   // One chip per status actually in use, in the menu's own order so the list
   // reads the same way the picker does; anything free-typed follows, and the
   // ships with no status go last.
@@ -2533,6 +2548,25 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
                       {c}
                     </span>
                   ))}
+                {/* Socketed items (M11b) — kept apart from cargo: these are
+                    the ship's slots, not its hold, so they show even on a
+                    ship that isn't trading. */}
+                {!isGone(s) &&
+                  (s.items || []).map((n) => {
+                    const it = shipItems ? itemIn(shipItems, n) : null;
+                    return (
+                      <span
+                        className={
+                          "chip schip cuitem" +
+                          (it ? " rar" + it.r.replace(/\W+/g, "") : "")
+                        }
+                        title={it ? itemTitle(it) : undefined}
+                        key={n}
+                      >
+                        🎖 {n}
+                      </span>
+                    );
+                  })}
               </button>
               <button className="plx" title={`Edit ${s.name}`} onClick={() => setEditing(i)}>
                 ✎
@@ -2695,6 +2729,58 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
                 onChange={(v) => setShip(i, { at: v === CLEAR ? "" : v })}
                 options={placeOptions(regions, s.at)}
               />
+            )}
+            {/* What's socketed aboard (M11b) — every ship has slots, whatever
+                its job, so this sits outside the trade-route fork. Tap a chip
+                to take the item out; the picker groups by rarity and puts the
+                effect on the hover, since the name alone rarely says. */}
+            {shipItems && (
+              <>
+                {(s.items || []).map((n) => {
+                  const it = itemIn(shipItems, n);
+                  return (
+                    <button
+                      key={n}
+                      className={
+                        "chip schip cuitem" +
+                        (it ? " rar" + it.r.replace(/\W+/g, "") : "")
+                      }
+                      title={
+                        (it ? itemTitle(it) + " — " : "") + "tap to take it off the ship"
+                      }
+                      onClick={() =>
+                        setShip(i, { items: (s.items || []).filter((x) => x !== n) })
+                      }
+                    >
+                      🎖 {n} ✕
+                    </button>
+                  );
+                })}
+                {(() => {
+                  const aboard = new Set((s.items || []).map((n) => n.toLowerCase()));
+                  const byRarity = new Map<string, { value: string; label: string; title?: string }[]>();
+                  for (const it of shipItems.items) {
+                    if (aboard.has(it.n.toLowerCase())) continue;
+                    const g = byRarity.get(it.r) || [];
+                    g.push({ value: it.n, label: it.n, title: it.fx });
+                    byRarity.set(it.r, g);
+                  }
+                  return byRarity.size ? (
+                    <Dropdown
+                      className="shipcargo"
+                      ariaLabel={`Items socketed in ${s.name}`}
+                      title="Who's socketed aboard — captains, navigators, ship items."
+                      placeholder="🎖 item…"
+                      value=""
+                      onChange={(v) => setShip(i, { items: [...(s.items || []), v] })}
+                      options={[...byRarity.entries()].map(([r, options]) => ({
+                        group: r,
+                        options: options.sort((a, b) => a.label.localeCompare(b.label)),
+                      }))}
+                    />
+                  ) : null;
+                })()}
+              </>
             )}
             <button
               className="linkbtn shipdone"

@@ -230,6 +230,8 @@ button.trchip:hover{color:var(--ink);border-color:var(--ink)}
 .cuitem.rarEpic{border-left-color:#6e6e6e}
 .cuitem.rarLegendary{border-left-color:#000}
 .cuitem.rarQuest{border-left-color:#6e6e6e;border-left-style:dashed}
+/* The one Harbourmaster curiosity the wiki files under its own tier. */
+.cuitem.rarCharacterItem{border-left-color:#6e6e6e;border-left-style:dotted}
 .cuitem.on{background:#111;border-color:#111;color:#fff;font-weight:700}
 .cunone{margin:4px 0}
 .cumiss{margin:0 0 6px;font-size:11.5px;line-height:1.5}
@@ -238,6 +240,17 @@ button.trchip:hover{color:var(--ink);border-color:var(--ink)}
    An island is a heading here, not another collapse. The island block keeps a
    one-line score that links across. */
 .cuisle{margin:0 0 14px}
+/* Item sockets (M11b): one short panel per Trade Union / Town Hall /
+   Harbourmaster / Arctic Lodge an island has ticked — a placed-list and a
+   typed add, not the culture panel's chip wall. */
+.itwrap{display:flex;flex-direction:column;gap:6px}
+.itsock{border-top:1px dashed var(--line);padding-top:4px}
+.itsock:first-child{border-top:0;padding-top:0}
+.ithd{display:flex;align-items:baseline;gap:7px}
+.ithd .muted{flex:1;font-size:11px}
+.itnm{font-weight:700}
+.itsock .plrow{margin-top:4px}
+.itsock .chips{margin:2px 0}
 .cuisle:last-child{margin-bottom:0}
 .cuislehd{margin:0 0 4px;padding:4px 0;border-bottom:1px solid var(--line);font-size:14px}
 .culink{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;width:100%;background:0 0;border:0;border-top:1px dashed var(--line);cursor:pointer;text-align:left;font:inherit;color:var(--ink)}

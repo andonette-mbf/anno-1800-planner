@@ -429,26 +429,47 @@ is in CLAUDE.md.
   changed it reads as a bug. The chip row also survives a status emptying out,
   or the last ship on patrol becoming idle would take the way back with it.
 
+- **M11b — items in use** (build 103): which specialist sits in which Trade
+  Union / Town Hall / Harbourmaster's Office / Arctic Lodge / ship — the thing
+  you forget between sessions and re-derive by clicking round the map.
+  `scripts/extract-items.mjs` (the culture extractor's fetch spine, a new
+  parser for the wiki's per-item `item-box` templates) pulls all thirteen
+  pages into `src/lib/items-1800.json`: 1,063 items — TU 445, TH 297, HM 88,
+  Ships 183, Arctic Lodge 50 — each with rarity, what it affects and a
+  one-line effect ("Charcoal Kiln · Productivity: +10%"), icon file names
+  recorded for a later pictures pass like culture's. The open questions were
+  settled in-session: **pooled per socket type per island**, not per building
+  instance — same call as culture's one-zoo list, naming "Trade Union #3" is
+  ceremony the recall question doesn't need (`anno_island_items`, the same
+  island → id → names shape as `anno_island_culture`, so a later per-instance
+  split can suffix ids without a migration); and the **effect text is kept** —
+  it's the reason you socketed the thing, and it doubles as search text (the
+  datalist matches what an item *does*, so typing "riots" finds the Bag of
+  Money). Not the culture panel's chip wall: a Trade Union holds four items
+  out of a thousand, so it's a typed add with the pack as suggestions, placed
+  items as rarity-tinted chips, free text kept untinted (items newer than the
+  pack still deserve remembering). The panel hangs off the island block once a
+  socket building is ticked ("Arctic Lodge" joined the typed suggestions);
+  **ship items live on the ship** (`ShipItem.items`, build 75's promised
+  wiring) — a 🎖 rarity-grouped picker in the fleet row editor, chips on the
+  read line, and names are never comma-split the way cargo text was, because
+  half the specialists are "Someone, the Something". 117 gets nothing yet, on
+  purpose — its specialists are real but the wiki publishes no list; M11c's
+  research session owns that question. `npm run test:items` (pack coherence +
+  spot checks against hand-read wiki values) and `npm run test:items-ui` (the
+  real panel and store in jsdom). Also fixed in passing: `test:islands` had
+  been broken since build 101 moved the collections row to the Culture tab —
+  its build-91 checks now drive the culink row and folded-header score
+  instead.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)
 
-- **M11b — items in use** (next; the other half of the Aug 2026 ask, split off
-  so the collections half could ship on its own). Which specialist sits in
-  which Trade Union / Town Hall / Harbourmaster's Office / ship, per island —
-  the thing you forget between sessions and re-derive by clicking round the
-  map. Sources exist and are bigger than the culture pack: the wiki has
-  `Trade Union items: common…legendary` and `Town Hall items: common…
-  legendary` (five rarity pages each), plus `List of Harbourmaster's Office
-  items`, `List of Ship items` and `List of Arctic Lodge items` — reuse
-  `scripts/extract-culture.mjs`'s fetch/parse spine. Open questions for the
-  session: whether a slot is modelled per building instance ("Trade Union #3")
-  or as one pooled list per island, and how much of an item's effect text is
-  worth carrying. 117 **does** have specialists (the wiki names Epona and the
-  Arboreal Rhizome Veneration) but publishes no list, so 117 would be
-  free-text with no datalist — confirm that's wanted before building it.
-- **M11c — collections for Rome** (asked Aug 2026, right after builds 101–102:
-  "I would like all this implementing for rome as much as is available"). "All
+- **M11c — collections for Rome** (next; asked Aug 2026, right after builds
+  101–102: "I would like all this implementing for rome as much as is
+  available"). **Session prompt: `/rome-collections`** — it carries the
+  research plan, the gates to flip and the gotchas. "All
   this" = the 🏛 Culture tab experience — per-island collection tracking with
   flat panels, three-weight done/started/untouched contrast, ⚑ one-piece-away,
   the works — for Anno 117, to whatever extent 117 actually has collections.

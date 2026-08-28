@@ -81,6 +81,8 @@ const ANNO1800: GameContent = {
     { t: "Marketplace", regions: ["ow", "nw", "en"] },
     { t: "Depot" },
     { t: "Harbourmaster's Office", regions: ["ow", "nw", "en"] },
+    // The Arctic's item building (M11b) — its label is what socketsOn matches.
+    { t: "Arctic Lodge", regions: ["ar"] },
     { t: "Pub", regions: ["ow"] },
     { t: "Church", regions: ["ow"] },
     { t: "School", regions: ["ow"] },

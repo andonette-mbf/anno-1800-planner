@@ -122,13 +122,14 @@ function Footer({ st }: { st: CalcState }) {
       ) : (
         <>
           Base data: production times &amp; chains from the open-source Anno 1800 calculator
-          community data, cross-checked against the Anno&nbsp;1800 Wiki. Goods pictures from the
-          Anno&nbsp;1800 Wiki (game art © Ubisoft). Late-game / DLC recipes may vary by patch —
-          every rate is editable in the model. Not affiliated with Ubisoft.
+          community data, cross-checked against the Anno&nbsp;1800 Wiki. Goods pictures, culture
+          collections and specialist items from the Anno&nbsp;1800 Wiki (CC-BY-SA; game art &amp;
+          values © Ubisoft). Late-game / DLC recipes may vary by patch — every rate is editable
+          in the model. Not affiliated with Ubisoft.
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 102 · done and missing read apart</span>
+      <span style={{ opacity: 0.55 }}>build 103 · items in use</span>
     </div>
   );
 }

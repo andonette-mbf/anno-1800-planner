@@ -183,26 +183,28 @@ check(
   String(localStorage.getItem("anno_isle_shut"))
 );
 
-// --- collections, without opening anything (build 91) ---------------------
-// The panel itself is inside the island fold and then inside the building
-// fold, so "what's on what island" gets answered at the top of the card and on
-// the folded header.
-const jumps = () => $(".cujump");
-check("one collections chip, for the island with the zoo", jumps().length === 1, String(jumps().length));
+// --- collections, without opening anything (build 91 → 101) ----------------
+// The full panel moved to the 🏛 Culture tab in build 101; what the island
+// block keeps is the score — a link row while open, the same counts on the
+// folded header — so "what's on what island" is still answered here. (This
+// section originally drove the build-91 top-of-card chip row, which build 101
+// moved to the Culture tab's own header.)
+const culink = (n) => blockFor(n).querySelector(".culink");
 check(
-  "it names the island and counts the animals",
-  /Ditchwater/.test(jumps()[0].textContent) && /2\/133/.test(jumps()[0].textContent),
-  jumps()[0]?.textContent
+  "the island with the zoo shows its score",
+  /2\/133/.test(culink("Ditchwater")?.textContent || ""),
+  culink("Ditchwater")?.textContent
 );
 check(
   "and flags the set that's one animal short",
-  jumps()[0].querySelector(".cuflag")?.textContent === "⚑1",
-  jumps()[0].querySelector(".cuflag")?.textContent
+  culink("Ditchwater")?.querySelector(".cuflag")?.textContent === "⚑1",
+  culink("Ditchwater")?.querySelector(".cuflag")?.textContent
 );
 check(
-  "Crown Falls has no zoo, so it isn't listed",
-  !jumps().some((el) => /Crown Falls/.test(el.textContent))
+  "the row points across to the Culture tab",
+  (culink("Ditchwater")?.textContent || "").includes("Culture")
 );
+check("Crown Falls has no zoo, so no link row", !culink("Crown Falls"));
 
 await fire(blockFor("Ditchwater").querySelector(".isletog"));
 check(
@@ -210,22 +212,17 @@ check(
   blockFor("Ditchwater").querySelector(".isleculture")?.textContent.includes("2/133"),
   blockFor("Ditchwater").querySelector(".isleculture")?.textContent
 );
-// Tapping the roll-up is the way back in — it only ever opens, so a second tap
-// on an already-open island can't fold it away by accident.
-await fire(jumps()[0]);
 check(
-  "tapping the chip opens the island again",
-  !blockFor("Ditchwater").classList.contains("shut") && bodyOf("Ditchwater") === 2,
+  "…and keeps the ⚑",
+  blockFor("Ditchwater").querySelector(".isleculture .cuflag")?.textContent === "⚑1",
+  blockFor("Ditchwater").querySelector(".isleculture")?.textContent
+);
+check("the link row went with the fold", !culink("Ditchwater"));
+await fire(blockFor("Ditchwater").querySelector(".isletog"));
+check(
+  "open again, the link row is back",
+  !!culink("Ditchwater") && bodyOf("Ditchwater") === 2,
   blockFor("Ditchwater").className
-);
-check(
-  "the collection panel is back with it",
-  !!blockFor("Ditchwater").querySelector(".cuwrap")
-);
-await fire(jumps()[0]);
-check(
-  "tapping it again leaves it open",
-  !blockFor("Ditchwater").classList.contains("shut")
 );
 
 let bad = 0;

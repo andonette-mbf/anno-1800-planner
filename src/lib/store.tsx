@@ -151,6 +151,10 @@ export interface ShipItem {
   // goods (build 80). Free text typed before that is split on commas so a
   // "Rum, Coffee" turns into two goods rather than one odd one.
   cargo?: string[];
+  // What's socketed aboard (M11b) — item names from the ship-items pack.
+  // Distinct from cargo: cargo is the hold, these are the crew slots. NOT
+  // comma-split like cargo, because item names legitimately contain commas.
+  items?: string[];
 }
 
 /** One good flowing between two islands (build 96): ticked on a surplus row
@@ -212,6 +216,7 @@ function parseShips(raw: unknown): ShipItem[] {
         from?: unknown;
         to?: unknown;
         cargo?: unknown;
+        items?: unknown;
       };
       const name = String(o?.name ?? "").trim();
       const type = String(o?.type ?? "").trim();
@@ -220,6 +225,9 @@ function parseShips(raw: unknown): ShipItem[] {
       const from = String(o?.from ?? "").trim();
       const to = String(o?.to ?? "").trim();
       const cargo = parseCargo(o?.cargo);
+      // Socketed items (M11b): trim + dedupe only — no comma splitting, since
+      // item names contain commas ("Dario, the Vintner" would shear in two).
+      const items = parseBlockers(o?.items);
       return {
         name,
         ...(type ? { type } : {}),
@@ -228,6 +236,7 @@ function parseShips(raw: unknown): ShipItem[] {
         ...(from ? { from } : {}),
         ...(to ? { to } : {}),
         ...(cargo.length ? { cargo } : {}),
+        ...(items.length ? { items } : {}),
       };
     })
     .filter((s) => s.name);
@@ -255,6 +264,13 @@ export interface CompanionData {
   // building id ("zoo"|"museum"|"garden") → the item names placed there. Per
   // island because a set only pays out when it is complete in ONE building.
   islandCulture: Record<string, Record<string, string[]>>;
+  // Who is socketed in this island's Trade Union / Town Hall / Harbourmaster's
+  // Office / Arctic Lodge (M11b), keyed island → socket id ("tu"|"th"|"hm"|
+  // "al") → item names. One pooled list per socket TYPE per island, not per
+  // building instance — same call as culture's one-zoo list: naming "Trade
+  // Union #3" is ceremony the recall question doesn't need. Ship items live on
+  // the ship (ShipItem.items), because ships move.
+  islandItems: Record<string, Record<string, string[]>>;
   // The fleet (build 75). Ships move between islands, so they're a list of
   // their own rather than island inventory: what it's called, what it is, and
   // what it's doing right now.
@@ -418,7 +434,8 @@ function parseChecks(raw: unknown): CheckItem[] {
 // the game's own item card says), so the only cleaning needed is dropping
 // blanks and duplicates; unknown building ids are kept rather than dropped, so
 // a future pack that adds a fourth culture building doesn't lose a save made
-// by a newer client.
+// by a newer client. islandItems (M11b) is the same shape — island → socket id
+// → placed names — and goes through this same parser.
 function parseCulture(raw: unknown): Record<string, Record<string, string[]>> {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
   const out: Record<string, Record<string, string[]>> = {};
@@ -496,6 +513,10 @@ function loadLocal(game: Game = "anno1800", id = ""): CompanionData {
   try {
     islandCulture = parseCulture(JSON.parse(ls.get(k("anno_island_culture")) || "{}"));
   } catch {}
+  let islandItems: Record<string, Record<string, string[]>> = {};
+  try {
+    islandItems = parseCulture(JSON.parse(ls.get(k("anno_island_items")) || "{}"));
+  } catch {}
   let ships: ShipItem[] = [];
   try {
     ships = parseShips(JSON.parse(ls.get(k("anno_ships")) || "[]"));
@@ -544,6 +565,7 @@ function loadLocal(game: Game = "anno1800", id = ""): CompanionData {
     islandPlans,
     islandRegions,
     islandCulture,
+    islandItems,
     ships,
     islandLinks,
   };
@@ -562,6 +584,7 @@ function saveLocal(d: CompanionData, game: Game = "anno1800", id = "") {
   ls.set(k("anno_island_plans"), JSON.stringify(d.islandPlans || {}));
   ls.set(k("anno_island_regions"), JSON.stringify(d.islandRegions || {}));
   ls.set(k("anno_island_culture"), JSON.stringify(d.islandCulture || {}));
+  ls.set(k("anno_island_items"), JSON.stringify(d.islandItems || {}));
   ls.set(k("anno_ships"), JSON.stringify(d.ships || []));
   ls.set(k("anno_island_links"), JSON.stringify(d.islandLinks || []));
 }
@@ -578,6 +601,7 @@ const EMPTY_DATA: CompanionData = {
   islandPlans: {},
   islandRegions: {},
   islandCulture: {},
+  islandItems: {},
   ships: [],
   islandLinks: [],
 };
@@ -666,6 +690,7 @@ function fromBlob(blob: SyncBlob, local: Record<Game, GameSaves>): Record<Game, 
       Object.entries(d.islandChecks || {}).map(([k, v]) => [k, parseChecks(v)])
     ),
     islandCulture: parseCulture(d.islandCulture),
+    islandItems: parseCulture(d.islandItems),
     ships: parseShips(d.ships),
     islandLinks: parseLinks(d.islandLinks),
     quests: ringTimers(healBlockers(d.quests || [])),
@@ -783,6 +808,13 @@ interface CompanionCtx {
   ) => void;
   /** Empty one culture building on one island. */
   clearIslandCulture: (island: string, building: string) => void;
+  /** Socket (or unsocket) a specialist item in one of an island's item
+   *  buildings (M11b). `socket` is the pack's socket id ("tu"|"th"|"hm"|"al");
+   *  `item` is the item's display name — free text the pack doesn't know is
+   *  stored too, for items newer than the pack. */
+  setIslandItem: (island: string, socket: string, item: string, on: boolean) => void;
+  /** Empty one socket building on one island. */
+  clearIslandItems: (island: string, socket: string) => void;
   /** Fleet list (build 75). Ships are named, so `name` is the row's identity;
    *  re-adding a name you already have is refused rather than silently
    *  duplicating it. */
@@ -1283,6 +1315,9 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           const islandCulture = { ...(d.islandCulture || {}) };
           for (const k of Object.keys(islandCulture))
             if (k.toLowerCase() === n) delete islandCulture[k];
+          const islandItems = { ...(d.islandItems || {}) };
+          for (const k of Object.keys(islandItems))
+            if (k.toLowerCase() === n) delete islandItems[k];
           return {
             ...d,
             islands: (d.islands || []).filter((x) => x.toLowerCase() !== n),
@@ -1290,6 +1325,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             islandPlans,
             islandRegions,
             islandCulture,
+            islandItems,
             // Links to or from a removed island go with it.
             islandLinks: (d.islandLinks || []).filter(
               (l) => l.from.toLowerCase() !== n && l.to.toLowerCase() !== n
@@ -1437,6 +1473,36 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           else delete all[island];
           return { ...d, islandCulture: all };
         }),
+      // Same shape and rules as the culture pair above, on the item sockets.
+      setIslandItem: (island, socket, item, on) => {
+        const name = item.trim();
+        if (!name) return;
+        update((d) => {
+          const all = { ...(d.islandItems || {}) };
+          const cur = all[island]?.[socket] || [];
+          const has = cur.some((x) => x.toLowerCase() === name.toLowerCase());
+          if (on === has) return d;
+          const next = on
+            ? [...cur, name]
+            : cur.filter((x) => x.toLowerCase() !== name.toLowerCase());
+          const byS = { ...(all[island] || {}) };
+          if (next.length) byS[socket] = next;
+          else delete byS[socket];
+          if (Object.keys(byS).length) all[island] = byS;
+          else delete all[island];
+          return { ...d, islandItems: all };
+        });
+      },
+      clearIslandItems: (island, socket) =>
+        update((d) => {
+          const all = { ...(d.islandItems || {}) };
+          if (!all[island]?.[socket]) return d;
+          const byS = { ...all[island] };
+          delete byS[socket];
+          if (Object.keys(byS).length) all[island] = byS;
+          else delete all[island];
+          return { ...d, islandItems: all };
+        }),
       addShip: (name, type) => {
         const n = name.trim();
         if (!n) return;
@@ -1468,6 +1534,12 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             const c = parseCargo(patch.cargo);
             if (c.length) next.cargo = c;
             else delete next.cargo;
+          }
+          // Socketed items likewise — but never comma-split (names have them).
+          if ("items" in patch) {
+            const it = parseBlockers(patch.items);
+            if (it.length) next.items = it;
+            else delete next.items;
           }
           return { ...d, ships: ships.map((s, j) => (j === i ? next : s)) };
         }),
