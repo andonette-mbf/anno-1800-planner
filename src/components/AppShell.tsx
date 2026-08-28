@@ -13,14 +13,17 @@ import { Dropdown } from "./ui/Dropdown";
 
 // The Tracker's three cards are three tabs of their own (build 84) — one page
 // of all three was a long scroll, and you are only ever in one of them.
-type View = "calc" | "tasks" | "islands" | "ships";
-export type TrackerSection = "tasks" | "islands" | "ships";
+// Culture got its own tab in build 101: inside the island block it sat three
+// folds deep (island → building → set), which made it unusable mid-game.
+type View = "calc" | "tasks" | "islands" | "culture" | "ships";
+export type TrackerSection = "tasks" | "islands" | "culture" | "ships";
 
 const VIEW_KEY = "anno_view";
 const VIEWS: [View, string][] = [
   ["calc", "🧮 Calculator"],
   ["tasks", "📜 Tasks"],
   ["islands", "🏝 Islands"],
+  ["culture", "🏛 Culture"],
   ["ships", "🚢 Ships"],
 ];
 
@@ -159,7 +162,9 @@ export function AppShell() {
           {rome && " Pick the region you're building in: Rome's recipes differ by province."}
         </div>
         <nav className="appnav" id="appnav">
-          {VIEWS.map(([v, label]) => (
+          {/* 117 has no zoo/museum/garden (cultureFor returns null), so the
+              tab would be permanently empty — hide it there instead. */}
+          {(rome ? VIEWS.filter(([v]) => v !== "culture") : VIEWS).map(([v, label]) => (
             <button
               key={v}
               className={`chip ${view === v ? "on" : ""}`}
@@ -193,7 +198,13 @@ export function AppShell() {
         {/* Kept mounted rather than swapped, so the boxes you were half way
             through typing in survive a tab change. */}
         <div style={{ display: view === "calc" ? "none" : "block" }}>
-          <TrackerView calcState={st} section={view as TrackerSection} />
+          {/* Switching to 117 while on the (1800-only) Culture tab lands on
+              Islands, where those buildings live. */}
+          <TrackerView
+            calcState={st}
+            section={rome && view === "culture" ? "islands" : (view as TrackerSection)}
+            go={go}
+          />
         </div>
       </div>
     </>

@@ -128,7 +128,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 100 · exported means gone</span>
+      <span style={{ opacity: 0.55 }}>build 101 · culture gets its own tab</span>
     </div>
   );
 }

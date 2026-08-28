@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { GOODS, POP, REGIONS, TIER_ORDER, fmt } from "@/lib/data";
 import {
   GOODS_117,
@@ -418,11 +418,14 @@ interface SavedPlanRow {
 export function TrackerView({
   calcState,
   section,
+  go,
 }: {
   calcState: CalcState;
-  /** Which of the three the tab row is showing (build 84). All three stay
-   *  mounted; only the one asked for is drawn. */
-  section: "tasks" | "islands" | "ships";
+  /** Which of the four the tab row is showing (build 84; Culture split out of
+   *  Islands in build 101). Only the one asked for is drawn. */
+  section: "tasks" | "islands" | "culture" | "ships";
+  /** Switch tab — the island blocks link across to 🏛 Culture with it. */
+  go?: (v: "tasks" | "islands" | "culture" | "ships") => void;
 }) {
   const {
     data,
@@ -834,6 +837,8 @@ export function TrackerView({
     }
     return out;
   }, [islands, data.islandChecks, data.islandCulture, game]);
+  // Where each island's card sits on the 🏛 tab, for the jump chips up top.
+  const cultRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const savedLabel =
     sync === "synced" ? "synced" : sync === "syncing" ? "syncing…" : "saves automatically";
 
@@ -1530,41 +1535,9 @@ export function TrackerView({
               {islesShort > 0 && <span className="isleshort">⚠ {islesShort} short</span>}
             </p>
           )}
-          {/* What's in which zoo, museum and garden, without opening anything
-              (build 91). Tap an island to go to it — the pieces themselves are
-              still inside its block, since a set only pays when its pieces sit
-              in ONE building and that building is on one island. */}
-          {cultureByIsle.size > 0 && (
-            <p className="fleetsum cujumps">
-              <span className="muted">🏛 Collections</span>
-              {[...cultureByIsle].map(([isle, at]) => (
-                <button
-                  key={isle}
-                  className="chip cujump"
-                  title={
-                    `Go to ${isle} — ` +
-                    at
-                      .map(
-                        (a) =>
-                          `${a.b.label}: ${a.have}/${a.total} ${a.b.noun}s, ` +
-                          `${a.complete}/${a.sets} sets done` +
-                          (a.nearly ? `, ${a.nearly} one piece away` : "")
-                      )
-                      .join(" · ")
-                  }
-                  onClick={() => openIsle(isle)}
-                >
-                  <b>{isle}</b>
-                  {at.map((a) => (
-                    <span key={a.b.id}>
-                      {CULTURE_EMOJI[a.b.id] || "🏛"} {a.have}/{a.total}
-                      {a.nearly > 0 && <em className="cuflag">⚑{a.nearly}</em>}
-                    </span>
-                  ))}
-                </button>
-              ))}
-            </p>
-          )}
+          {/* The zoo/museum/garden roll-up that used to sit here moved with
+              the pieces to the 🏛 Culture tab (build 101) — inside this card
+              they were three folds deep. */}
           <div className="plrow">
             <Dropdown
               className="qisle"
@@ -2081,7 +2054,32 @@ export function TrackerView({
                         </div>
                       );
                     })()}
-                  <CultureBlock island={name} items={items} game={game} />
+                  {/* The full collection panel lives in the 🏛 Culture tab
+                      now (build 101) — here just the score and a way there. */}
+                  {cul.length > 0 && (
+                    <button
+                      className="iledger culink"
+                      title={
+                        cul
+                          .map(
+                            (a) =>
+                              `${a.b.label}: ${a.have}/${a.total} ${a.b.noun}s, ` +
+                              `${a.complete}/${a.sets} sets done` +
+                              (a.nearly ? `, ${a.nearly} one piece away` : "")
+                          )
+                          .join(" · ") + " — open the Culture tab to place pieces"
+                      }
+                      onClick={() => go?.("culture")}
+                    >
+                      {cul.map((a) => (
+                        <span key={a.b.id}>
+                          {CULTURE_EMOJI[a.b.id] || "🏛"} {a.have}/{a.total}
+                          {a.nearly > 0 && <em className="cuflag">⚑{a.nearly}</em>}
+                        </span>
+                      ))}
+                      <span className="muted">→ 🏛 Culture</span>
+                    </button>
+                  )}
                   {!tuck && (
                   <div className="plrow">
                     <input
@@ -2141,6 +2139,71 @@ export function TrackerView({
               No islands yet — add your first above. The quest tracker&apos;s 🏝 dropdown shares
               this list.
             </div>
+          )}
+        </div>
+      </div>
+      )}
+      {/* Build 101: the zoo/museum/garden panels, out from under the island
+          fold. One island heading, buildings already open, sets one tap away —
+          versus the three folds deep they sat on the Islands tab. Tracking is
+          still per (island, building): that's what the game pays bonuses on. */}
+      {section === "culture" && (
+      <div className="card">
+        <div className="hd">
+          <h2>🏛 Culture Collections</h2>
+          <span className="muted">{savedLabel}</span>
+        </div>
+        <div className="bd doc">
+          {cultureByIsle.size === 0 ? (
+            <div className="empty">
+              Nothing to curate yet — on the 🏝 Islands tab, tick a Zoo, Museum
+              or Botanical Garden on an island and its collections appear here.
+            </div>
+          ) : (
+            <>
+              {cultureByIsle.size > 1 && (
+                <p className="fleetsum cujumps">
+                  {[...cultureByIsle].map(([isle, at]) => (
+                    <button
+                      key={isle}
+                      className="chip cujump"
+                      title={`Jump to ${isle}'s collections`}
+                      onClick={() =>
+                        cultRefs.current[isle]?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "start",
+                        })
+                      }
+                    >
+                      <b>{isle}</b>
+                      {at.map((a) => (
+                        <span key={a.b.id}>
+                          {CULTURE_EMOJI[a.b.id] || "🏛"} {a.have}/{a.total}
+                          {a.nearly > 0 && <em className="cuflag">⚑{a.nearly}</em>}
+                        </span>
+                      ))}
+                    </button>
+                  ))}
+                </p>
+              )}
+              {[...cultureByIsle.keys()].map((isle) => (
+                <div
+                  key={isle}
+                  className="cuisle"
+                  ref={(el) => {
+                    cultRefs.current[isle] = el;
+                  }}
+                >
+                  <h3 className="cuislehd">🏝 {isle}</h3>
+                  <CultureBlock
+                    island={isle}
+                    items={(data.islandChecks || {})[isle] || []}
+                    game={game}
+                    flat
+                  />
+                </div>
+              ))}
+            </>
           )}
         </div>
       </div>

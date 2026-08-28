@@ -115,9 +115,19 @@ function SetRow({
   );
 }
 
-function BuildingPanel({ island, b }: { island: string; b: CultureBuilding }) {
+function BuildingPanel({
+  island,
+  b,
+  flat,
+}: {
+  island: string;
+  b: CultureBuilding;
+  flat?: boolean;
+}) {
   const { data, setIslandCulture, clearIslandCulture } = useCompanion();
-  const [open, setOpen] = useState(false);
+  // On the Culture tab the building IS the subject, so it starts open — the
+  // fold only exists to get a finished zoo out of the way.
+  const [open, setOpen] = useState(!!flat);
   const [q, setQ] = useState("");
   const [openSets, setOpenSets] = useState<Record<string, boolean>>({});
 
@@ -259,20 +269,24 @@ export default function CultureBlock({
   island,
   items,
   game,
+  flat,
 }: {
   island: string;
   items: CheckItem[];
   game: Game;
+  /** Culture-tab mode: buildings start open and the island-ledger framing is
+   *  dropped, since the tab supplies its own island headers. */
+  flat?: boolean;
 }) {
   const built = cultureOn(items, game);
   if (!built.length) return null;
   return (
     <div
-      className="iledger cuwrap"
+      className={(flat ? "" : "iledger ") + "cuwrap"}
       title="Culture collections on this island. Sets only pay their bonus when every piece is in ONE building, which is why this hangs off the island rather than being one global list."
     >
       {built.map((b) => (
-        <BuildingPanel key={b.id} island={island} b={b} />
+        <BuildingPanel key={b.id} island={island} b={b} flat={flat} />
       ))}
     </div>
   );

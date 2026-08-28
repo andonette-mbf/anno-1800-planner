@@ -226,6 +226,15 @@ button.trchip:hover{color:var(--ink);border-color:var(--ink)}
 .cuitem.rarQuest{border-left-color:#6e6e6e;border-left-style:dashed}
 .cuitem.on{background:#111;border-color:#111;color:#fff;font-weight:700}
 .cunone{margin:4px 0}
+/* Culture tab (build 101): the panels moved out from under the island fold.
+   An island is a heading here, not another collapse. The island block keeps a
+   one-line score that links across. */
+.cuisle{margin:0 0 14px}
+.cuisle:last-child{margin-bottom:0}
+.cuislehd{margin:0 0 4px;padding:4px 0;border-bottom:1px solid var(--line);font-size:14px}
+.culink{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;width:100%;background:0 0;border:0;border-top:1px dashed var(--line);cursor:pointer;text-align:left;font:inherit;color:var(--ink)}
+.culink:hover{color:var(--gold)}
+.culink .muted{font-size:11px}
 /* Dropdown (build 65): replaces every native <select>, so the open list is
    ours — parchment, sepia ink, square — instead of the OS popup. The base is
    :where() so it carries ZERO specificity: the size variants that used to sit
