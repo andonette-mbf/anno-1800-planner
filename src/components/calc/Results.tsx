@@ -128,7 +128,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 101 · culture gets its own tab</span>
+      <span style={{ opacity: 0.55 }}>build 102 · done and missing read apart</span>
     </div>
   );
 }

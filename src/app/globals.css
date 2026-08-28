@@ -210,12 +210,18 @@ button.trchip:hover{color:var(--ink);border-color:var(--ink)}
 .cuset:first-of-type{border-top:0}
 .cusetnm{flex:1;min-width:0}
 .cuset.done .cusetnm{color:var(--ink);font-weight:700}
-.cucount{color:var(--muted);flex:0 0 auto;font-size:11px}
-.cucount.ok{color:var(--ink);font-weight:700}
+/* The count is the complete/missing signal, so it reads in three weights
+   (build 102): untouched grey, started bold ink, done a filled black pill. */
+.cucount{color:var(--muted);flex:0 0 auto;font-size:12px}
+.cucount.part{color:var(--ink);font-weight:700}
+.cucount.ok{background:#111;color:#fff;font-weight:700;padding:1px 7px}
 .cusethd .pill{flex:0 0 auto;font-size:10px}
 .cusetbd{padding:2px 0 8px 17px}
 .cueffect{margin:0 0 6px;color:var(--muted);font-size:11.5px;line-height:1.4}
-.cuitem{font-size:11.5px;padding:4px 8px;border-left-width:3px}
+/* Unplaced pieces read as ink-on-white (build 102) so a placed piece — white
+   on black, ✓-prefixed — is unmistakable next to them. The muted-on-grey
+   default chip left the two states nearly the same weight. */
+.cuitem{font-size:11.5px;padding:4px 8px;border-left-width:3px;background:#fff;color:var(--ink)}
 /* Black and white (build 89): rarity was five hues, so it is now five tones of
    the same black — light for common, solid for legendary — and Quest, which is
    a kind rather than a step on that ladder, is dashed instead. */
@@ -226,6 +232,8 @@ button.trchip:hover{color:var(--ink);border-color:var(--ink)}
 .cuitem.rarQuest{border-left-color:#6e6e6e;border-left-style:dashed}
 .cuitem.on{background:#111;border-color:#111;color:#fff;font-weight:700}
 .cunone{margin:4px 0}
+.cumiss{margin:0 0 6px;font-size:11.5px;line-height:1.5}
+.cusum b{color:var(--ink)}
 /* Culture tab (build 101): the panels moved out from under the island fold.
    An island is a heading here, not another collapse. The island block keeps a
    one-line score that links across. */

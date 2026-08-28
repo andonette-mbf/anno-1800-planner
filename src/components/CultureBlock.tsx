@@ -51,6 +51,7 @@ function ItemChip({
       aria-pressed={on}
       onClick={() => toggle(!on)}
     >
+      {on ? "✓ " : ""}
       {item.n}
     </button>
   );
@@ -87,7 +88,13 @@ function SetRow({
             {sp.set.dlc}
           </span>
         )}
-        <span className={"num cucount" + (sp.done ? " ok" : "")}>
+        {/* Three states you can tell apart at a glance (build 102): done is a
+            filled black pill, started is bold ink, untouched stays grey. */}
+        <span
+          className={
+            "num cucount" + (sp.done ? " ok" : sp.have > 0 ? " part" : "")
+          }
+        >
           {sp.have}/{sp.total}
         </span>
       </button>
@@ -97,6 +104,19 @@ function SetRow({
             <p className="cueffect" title="What completing the whole set does">
               {sp.done ? "✓ " : ""}
               {sp.set.effect}
+            </p>
+          )}
+          {/* A started set names what it still needs (build 102) — the chips
+              say it too, but not in a way you can read in one line. */}
+          {sp.have > 0 && !sp.done && !filter && (
+            <p className="cumiss">
+              Missing:{" "}
+              {sp.missing.map((i, k) => (
+                <React.Fragment key={i.n}>
+                  {k > 0 && ", "}
+                  <b>{i.n}</b> <span className="muted">({i.r})</span>
+                </React.Fragment>
+              ))}
             </p>
           )}
           <div className="chips">
@@ -163,7 +183,7 @@ function BuildingPanel({
           {CULTURE_EMOJI[b.id] || "🏛"} {b.label}
         </span>
         <span className="muted cusum">
-          {prog.have}/{prog.total} · {prog.complete}/{b.sets.length} sets
+          <b>{prog.have}</b>/{prog.total} · <b>{prog.complete}</b>/{b.sets.length} sets
           {prog.attract > 0 ? ` · +${prog.attract} attr` : ""}
         </span>
       </button>
