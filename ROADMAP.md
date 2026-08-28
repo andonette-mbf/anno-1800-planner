@@ -447,6 +447,37 @@ is in CLAUDE.md.
   worth carrying. 117 **does** have specialists (the wiki names Epona and the
   Arboreal Rhizome Veneration) but publishes no list, so 117 would be
   free-text with no datalist — confirm that's wanted before building it.
+- **M11c — collections for Rome** (asked Aug 2026, right after builds 101–102:
+  "I would like all this implementing for rome as much as is available"). "All
+  this" = the 🏛 Culture tab experience — per-island collection tracking with
+  flat panels, three-weight done/started/untouched contrast, ⚑ one-piece-away,
+  the works — for Anno 117, to whatever extent 117 actually has collections.
+  **What we knew when M11a shipped (Aug 2026, game was new):** 117 has no
+  zoo/museum/garden-style building and its wiki carried no item data — that is
+  why `cultureFor` returns null for it. So the FIRST session on this is
+  research, not code:
+  1. **What does 117 actually collect?** Inventory the real mechanics —
+     deities/temples, wonders, specialists (M11b notes the wiki names some but
+     publishes no list), any museum-like set-completion system Ubisoft has
+     patched in since. Check the upstream data pack
+     (anno-mods/anno-117-calculator, pinned commit in the M10 notes) for
+     item/collection assets the wiki doesn't render, and RE-CHECK the wiki —
+     it was thin because the game was young, and it will have grown.
+  2. **Only promise what has a source** — same rule as M12: machine-readable
+     and clearly licensed before a feature is announced. If 117 turns out to
+     have no set-collection mechanic at all, say so on the tab rather than
+     faking one, and consider whether M11b's items-in-use is the thing the
+     user actually wants for Rome.
+  **The code is already shaped for it.** `cultureFor(game)` is the single
+  gate: hand it a 117 `CultureBuilding[]` pack (versioned like
+  `culture-1800.json`, own extractor, own `test:culture`-style test) and the
+  panel, the roll-up, the island links and the tab all light up. Two
+  deliberate 117-blocks must be flipped when a pack lands: AppShell hides the
+  🏛 tab for `rome` (VIEWS filter, build 101) and remaps a stored `culture`
+  view to `islands` — both were written for "117 has nothing", not forever.
+  `cultureOn` matches building labels against island checklist items, so the
+  117 buildings need entries in `games.ts`' inventory chips too. Tentative —
+  confirm scope with the user once the research says what exists.
 - **M8 — residents per island**: per-tier population counts on each island
   block; the ledger adds resident consumption from `POP` need rates (gated
   by unlock thresholds like `popTargets`) so net = production − chains −
@@ -492,6 +523,9 @@ is in CLAUDE.md.
   5. Wording: the footer's data credits, the page title and logo, and the
      region wording in the left panel all check for 117. Each game should
      supply its own text.
+  6. AppShell hides the 🏛 Culture tab for 117 (build 101). The general rule
+     is "a game whose `cultureFor` is null has no tab" — per-game capability,
+     not a 117 check. M11c wants this flipped for 117 anyway.
 
   **Then, for each game added:** the data pack and the script that extracts it,
   a test for that pack (only 1800 has the legacy app to check against, so every
