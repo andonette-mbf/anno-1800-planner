@@ -1,61 +1,71 @@
 ---
-description: M11c — collections (and items) for Anno 117. Research first; only promise what has a source.
+description: M11c — items (and patrons) for Anno 117 from upstream Release 3.0. Scope confirmed research done Aug 2026; confirm shape with the user, then build.
 ---
 
-Bring the 🏛 Culture-tab experience — and, if the data exists, M11b's item
-sockets — to Anno 117, "as much as is available" (the user's words, Aug 2026).
-Today both packs are 1800-only **by design**: `cultureFor` (`src/lib/culture.ts`)
-and `itemsFor` (`src/lib/items.ts`) return `null` for 117, and everything
-downstream renders nothing.
+Bring "as much as is available" of the 🏛 Culture / M11b items experience to
+Anno 117. **The research phase already ran (28 Aug 2026, this repo's session
+102–103 window) — don't redo it. Findings:**
 
-**The first job is research, not code.** When M11a shipped (Aug 2026, the game
-was new), 117 had no zoo/museum/garden-style building and its wiki carried no
-item data. The game has been patching since; verify what is true NOW:
+- **The 117 wiki is a dead end and stayed one.** 40 pages total
+  (anno117.fandom.com, open `api.php`, same UA rules as ever), no item lists,
+  no set data. Nothing to extract there.
+- **The upstream pack moved and now carries the data.**
+  anno-mods/anno-117-calculator is at **Release 3.0** (commit `28969c3`,
+  2026-08-20) — two releases past our pinned `c6a6e75`. Its `js/params.js`
+  now holds, alongside everything we already extract:
+  - **`items`: 172** — `{name/locaText, rarity (Common…Legendary), targets:
+    [building guids], buffs: [guids into buildingBuffs/effects], effectScope,
+    dlcUnlocks}`. Real specialists ("Elephant Handler", "Servia Bellia, Lily
+    of the Coast"). Effect text must be resolved by joining `buffs` →
+    `buildingBuffs`(355)/`effects`(105); target names by joining guids
+    against factories/buildings.
+  - **`patrons`: 8** — the deities (Mars, Ceres, Neptune, Mercury-Lugus,
+    Epona, Cernunnos, Minerva, Vulcan) with `localEffects`/
+    `dominantEffects`/`wonder`. This is 117's Religion system: ONE patron per
+    island, devotion buffs. **Epona is a deity, not a specialist** — the old
+    wiki mention that seeded M11b's note was misleading.
+  - Also new since our pack 2: `products` 146 (was 113), `factories` 144
+    (was 118) with `needsFuelInput` and `modulesLimit`, `fertilities` 26,
+    `techs`, a third region slot and a `Global` session (Prophecies of Ash
+    DLC). Factories still carry **no workforce** — M10's out-of-scope call
+    stands. Re-basing data-117.json onto 3.0 is `/rome-pack3`, a separate
+    session; run it FIRST if both are wanted, so the items pack pins the
+    same commit.
 
-1. **What does 117 actually collect?** Inventory the real mechanics — deities/
-   temples, wonders, specialists, any museum-like set-completion system added
-   in patches. Distinguish "a set you complete for a bonus" (culture-shaped)
-   from "an item you socket in a building" (items-shaped, M11b) — they map to
-   different packs and different panels, and 117 may have one, both, or
-   neither.
-2. **Check the upstream data pack** — anno-mods/anno-117-calculator, pinned at
-   `c6a6e75` in the M10 notes; check whether HEAD has moved and whether it now
-   carries item/collection assets the wiki doesn't render.
-3. **Re-check the 117 wiki** (`anno117.fandom.com`). It was thin because the
-   game was young. Same rules as every extraction so far: the **API
-   (`api.php`) is open even where the rendered site blocks scrapers**, and
-   **Fandom 403s a default user-agent** — copy the `UA` header from
-   `scripts/extract-culture.mjs` or `scripts/extract-items.mjs`. 117's
-   specialists are real (the wiki names Epona and the Arboreal Rhizome
-   Veneration) but published no list as of M11b — that may have changed.
-4. **Only promise what has a source** — machine-readable and clearly licensed
-   BEFORE a feature is announced (the rule 117's own data pack followed). If
-   117 turns out to have no set-collection mechanic at all, say so on the tab
-   rather than faking one.
+**So 117 has no set-collection mechanic** — nothing culture-shaped to fake.
+What it has is (a) **socketable items** → M11b's `ItemsBlock`/fleet picker can
+light up via `itemsFor`, and (b) **patrons** → at most a small per-island
+"patron" pick with its two buff lines (closest 117 gets to the Culture tab).
+**Put that scope choice to the user before building:** items only, items +
+patrons, or hold.
 
-**Then put what you found to me and confirm scope before building.**
+Build notes, once scope is confirmed:
 
-The code is already shaped for it — hand it a pack and it lights up:
-
-- **Culture:** `cultureFor(game)` is the single gate. A 117
-  `CultureBuilding[]` pack (versioned like `culture-1800.json`, its own
-  extractor and `test:culture`-style test) turns on the panel, the roll-up,
-  the island links and the tab. Two deliberate 117-blocks must then be
-  flipped: AppShell hides the 🏛 tab for `rome` (the `VIEWS` filter, build
-  101) and remaps a stored `culture` view to `islands` — both were written for
-  "117 has nothing", not forever. `cultureOn` matches building labels against
-  island checklist items, so the 117 buildings also need entries in
-  `games.ts`' inventory chips.
-- **Items (M11b, build 103):** `itemsFor(game)` is the same kind of gate. A
-  117 pack in `items-1800.json`'s shape (sockets → items with `n`/`r`/`tgt`/
-  `fx`) turns on `ItemsBlock` on the island cards and the 🎖 picker in the
-  fleet rows. The socket buildings' labels must match 117 inventory chip
-  names, the way "Trade Union"/"Arctic Lodge" do for 1800. If the wiki still
-  publishes no list, DON'T build a free-text-only version without asking —
-  that was left out of M11b on purpose.
+- **Extractor**: a `scripts/extract-items-117.mjs` reading the pinned upstream
+  commit the way `scripts/extract-117.mjs` does (raw.githubusercontent.com,
+  pinned SHA in the script, `pack` + provenance in the JSON). Resolve buff
+  guids to one compact `fx` line and target guids to building names at
+  extraction time — ship names, not guids, in the pack.
+- **Open question the data must answer: which SOCKET do 117 items go in?**
+  1800's pack is keyed by socket building (Trade Union…). 117's items carry
+  `effectScope`/`targets` instead; find the equipping building(s) in the
+  upstream source (`src/buffs.ts`, `docs/`, the `itemsEquipped` translate
+  logs) before choosing the pack shape. If 117 items all socket in one kind
+  of building, `itemsFor("anno117")` can return one socket and the whole
+  M11b UI works unchanged; the socket building's label must then exist in
+  `games.ts`' 117 chips so `socketsOn` can match it.
+- **Gates to flip** (all written for "117 has nothing", not forever):
+  `itemsFor` in `src/lib/items.ts`; for patrons-as-culture, `cultureFor` in
+  `src/lib/culture.ts` plus AppShell's `VIEWS` filter hiding the 🏛 tab for
+  `rome` and the stored-`culture`-view remap to `islands` (build 101). Don't
+  bolt patrons into the culture shape if it fights it — a patron is one
+  choice per island, not a set to complete; a small dedicated block on the
+  island card may be honest where a fake "collection" isn't.
+- **Tests**: a pack test in the `tests/items.test.cjs` mould (floors, spot
+  checks against hand-read upstream values, provenance pinned) and UI checks
+  in the `items-ui` mould. `npm run test:games` guards the 1800/117 split.
 
 **Start with `/carry-on`'s sync + collision check.** Verify with
-`npm run test:culture`, `test:culture-ui`, `test:items`, `test:items-ui` and
-`test:games` (plus a new pack test for anything extracted — pin provenance
-revids like the other packs). Bump the build tag in
-`src/components/calc/Results.tsx`. Stage explicit paths — never `git add -A`.
+`npm run test:items`, `test:items-ui`, `test:117`, `test:games`. Bump the
+build tag in `src/components/calc/Results.tsx`. Stage explicit paths — never
+`git add -A`. Ask before pushing.

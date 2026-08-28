@@ -468,8 +468,18 @@ is in CLAUDE.md.
 
 - **M11c — collections for Rome** (next; asked Aug 2026, right after builds
   101–102: "I would like all this implementing for rome as much as is
-  available"). **Session prompt: `/rome-collections`** — it carries the
-  research plan, the gates to flip and the gotchas. "All
+  available"). **Session prompt: `/rome-collections` — the research phase
+  already ran (28 Aug 2026) and its findings are folded into the prompt.**
+  Short form: the 117 wiki stayed a dead end (40 pages, no item data), but
+  upstream anno-mods/anno-117-calculator is now at **Release 3.0**
+  (`28969c3`, 2026-08-20) and carries `items` (172 specialists with rarity/
+  targets/buffs) and `patrons` (the 8 deities — 117's Religion system, its
+  closest thing to "collections"; Epona is a deity, not a specialist). So 117
+  has no set-collection mechanic to mirror; the buildable things are M11b's
+  item sockets via `itemsFor`, and optionally a per-island patron pick —
+  scope choice sits with the user. **`/rome-pack3`** (re-base data-117.json
+  onto Release 3.0 — 146 products, fuel flags, a third region slot) should
+  run first if both are wanted, so both packs pin the same commit. "All
   this" = the 🏛 Culture tab experience — per-island collection tracking with
   flat panels, three-weight done/started/untouched contrast, ⚑ one-piece-away,
   the works — for Anno 117, to whatever extent 117 actually has collections.
@@ -499,21 +509,25 @@ is in CLAUDE.md.
   `cultureOn` matches building labels against island checklist items, so the
   117 buildings need entries in `games.ts`' inventory chips too. Tentative —
   confirm scope with the user once the research says what exists.
-- **M8 — residents per island**: per-tier population counts on each island
-  block; the ledger adds resident consumption from `POP` need rates (gated
-  by unlock thresholds like `popTargets`) so net = production − chains −
-  residents. This makes deficits real for final goods. Decide in-session:
-  lifestyle toggle and consumption slider per island, or global.
-- **M9 — trade routes**: cross-island view matching surpluses to deficits
-  ("ship 2 t/min Rum: New World → Crown Falls") once M8 makes final-goods
-  demand honest. Start read-only (suggested flows from the ledgers); manual
-  route records only if the suggestions aren't enough.
-- **M6** — backup & restore: one-button JSON export/import of all companion
-  state; phone polish (touch targets, PWA install). Now that saves exist, the
-  export should be per save (and an import should land as a new one).
+- **M8 — residents per island** (session prompt: `/m8-residents`): per-tier
+  population counts on each island block; the ledger adds resident
+  consumption from `POP` need rates (gated by unlock thresholds like
+  `popTargets`) so net = production − chains − residents. This makes deficits
+  real for final goods. Decide in-session: lifestyle toggle and consumption
+  slider per island, or global.
+- **M9 — trade routes** (session prompt: `/m9-trade-routes`; needs M8 first):
+  cross-island suggestions matching surpluses to deficits ("ship 2 t/min Rum:
+  New World → Crown Falls") once M8 makes final-goods demand honest. Manual
+  route records already exist (builds 96–100 trade links + ship routes), so
+  this is purely the read-only suggestion layer with one-tap accept.
+- **M6** — backup & restore (session prompt: `/m6-backup`): one-button JSON
+  export/import of all companion state; phone polish (touch targets, PWA
+  install). Now that saves exist, the export should be per save (and an
+  import should land as a new one).
 
 - **M12 — any Anno, not just two** (asked for Aug 2026: "plan to do this for
-  any and all annos"). Adding Anno 117 made the app work for two games. This is
+  any and all annos"; session prompt: `/m12-any-anno`). Adding Anno 117 made
+  the app work for two games. This is
   what it would take for a third, fourth or fifth to be **a data pack and some
   settings, with no changes to the code that does the work**. This isn't a
   redesign: it's a list of the places that still name Anno 117 directly.
