@@ -1,0 +1,1164 @@
+{
+ "pack": 1,
+ "source": {
+  "upstream": "https://github.com/anno-mods/anno-117-calculator",
+  "commit": "28969c3f92c1e93113bb743e66e9d321dd43fc15",
+  "note": "Item and patron values © Ubisoft; data assembled by the anno-mods calculator project (MIT). Same commit as data-117.json's pack."
+ },
+ "rarity": [
+  "Common",
+  "Rare",
+  "Epic",
+  "Legendary",
+  "Mythic",
+  "Unique"
+ ],
+ "sockets": [
+  {
+   "id": "villa",
+   "label": "Villa",
+   "noun": "specialist"
+  },
+  {
+   "id": "gh",
+   "label": "Guesthouse",
+   "noun": "specialist"
+  }
+ ],
+ "items": [
+  {
+   "n": "Amalgamist",
+   "r": "Common",
+   "tgt": "Furnace, Glass Smelter, Bronze Smelter, Silver Forge, Goldsmith",
+   "fx": "-25% workforce upkeep"
+  },
+  {
+   "n": "Bookkeeper",
+   "r": "Common",
+   "tgt": "Apiary, Tabulus, Sandarac Nursery",
+   "fx": "+10% productivity",
+   "dlc": "The Hippodrome"
+  },
+  {
+   "n": "Busy Sprout",
+   "r": "Common",
+   "tgt": "Barley Farm, Malthouse, Brewery",
+   "fx": "+10% productivity"
+  },
+  {
+   "n": "Carapacer",
+   "r": "Common",
+   "tgt": "Shell Gatherer",
+   "fx": "grants Sea Shell Population at 50% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Caustic Renderer",
+   "r": "Common",
+   "tgt": "Lavender Grower, Pig Farm, Soap Maker, Renderer",
+   "fx": "+10% productivity"
+  },
+  {
+   "n": "Cold Presser",
+   "r": "Common",
+   "tgt": "Olive Grower, Olive Press",
+   "fx": "+10% productivity"
+  },
+  {
+   "n": "Constructivist",
+   "r": "Common",
+   "tgt": "Sawmill, Tiler, Concrete Mixer, Marble Mason, Tessera Works, Labourer's Yard +1 more",
+   "fx": "-25% workforce upkeep"
+  },
+  {
+   "n": "Diviner of Dough",
+   "r": "Common",
+   "tgt": "Wheat Farm, Grain Mill, Bakery, Donkey Mill",
+   "fx": "+10% productivity"
+  },
+  {
+   "n": "Essentialist",
+   "r": "Common",
+   "tgt": "Salt Ponds, Dye Works, Grain Mill, Mineral Crusher, Greenhands, Renderer +4 more",
+   "fx": "-25% workforce upkeep"
+  },
+  {
+   "n": "Flaxcutter",
+   "r": "Common",
+   "tgt": "Flax Farm",
+   "fx": "grants Flax Fertility at 50% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Gleaner",
+   "r": "Common",
+   "tgt": "Apiary, Saltwort Picker, Cockle Picker, Reed Gatherer, Shell Gatherer",
+   "fx": "-25% workforce upkeep"
+  },
+  {
+   "n": "Grape Picker",
+   "r": "Common",
+   "tgt": "Vineyard",
+   "fx": "grants Grape Fertility at 50% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Handler",
+   "r": "Common",
+   "tgt": "Clay Pit, Potter, Mud Drier, Resin Tapper",
+   "fx": "+10% productivity"
+  },
+  {
+   "n": "Kingfisher",
+   "r": "Common",
+   "tgt": "Scomber's Shack",
+   "fx": "grants Mackerel Population at 50% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Lavendulist",
+   "r": "Common",
+   "tgt": "Lavender Grower",
+   "fx": "grants Lavender Fertility at 50% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Measurer",
+   "r": "Common",
+   "tgt": "Spinner, Sandal Maker, Loom Weavery, Hosier, Shoe Weaver, Birrus Stitcher",
+   "fx": "-25% workforce upkeep"
+  },
+  {
+   "n": "Mellarius",
+   "r": "Common",
+   "tgt": "Apiary, Tabulus, Sandarac Nursery",
+   "fx": "+10% productivity"
+  },
+  {
+   "n": "Milliner",
+   "r": "Common",
+   "tgt": "Sheep Farm, Pileus Felter",
+   "fx": "+10% productivity"
+  },
+  {
+   "n": "Mudlark",
+   "r": "Common",
+   "tgt": "Eel Grabber",
+   "fx": "+10% productivity"
+  },
+  {
+   "n": "Netter",
+   "r": "Common",
+   "tgt": "Fishing Hut",
+   "fx": "+10% productivity"
+  },
+  {
+   "n": "Oat Roller",
+   "r": "Common",
+   "tgt": "Oat Farm, Porridge Stand",
+   "fx": "+10% productivity"
+  },
+  {
+   "n": "Obtorquist",
+   "r": "Common",
+   "tgt": "Tin Mine, Bronze Smelter, Wire-Twister",
+   "fx": "+10% productivity"
+  },
+  {
+   "n": "Olive Reaper",
+   "r": "Common",
+   "tgt": "Olive Grower",
+   "fx": "grants Olive Fertility at 50% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Piscine Docent",
+   "r": "Common",
+   "tgt": "Scomber's Shack, Salt Ponds, Garum Works",
+   "fx": "+10% productivity"
+  },
+  {
+   "n": "Plaiter",
+   "r": "Common",
+   "tgt": "Shoe Weaver, Reed Gatherer",
+   "fx": "+10% productivity"
+  },
+  {
+   "n": "Reangler",
+   "r": "Common",
+   "tgt": "Fishing Hut, Scomber's Shack",
+   "fx": "-25% workforce upkeep, staffed by Plebeian Workforce instead of Libertus Workforce"
+  },
+  {
+   "n": "Renaturer",
+   "r": "Common",
+   "tgt": "Herb Garden, Barley Farm",
+   "fx": "-25% workforce upkeep, staffed by Smith Workforce instead of Wader Workforce"
+  },
+  {
+   "n": "Renavigator",
+   "r": "Common",
+   "tgt": "Cockle Picker, Saltwort Picker",
+   "fx": "-25% workforce upkeep, staffed by Mercators Workforce instead of Wader Workforce"
+  },
+  {
+   "n": "Resin Harvester",
+   "r": "Common",
+   "tgt": "Resin Tapper",
+   "fx": "grants Resin Fertility at 50% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Reunionist",
+   "r": "Common",
+   "tgt": "Oat Farm, Olive Grower",
+   "fx": "-25% workforce upkeep, staffed by Plebeian Workforce instead of Libertus Workforce"
+  },
+  {
+   "n": "Sailer",
+   "r": "Common",
+   "tgt": "Sailmaker, Sheep Farm",
+   "fx": "+10% productivity"
+  },
+  {
+   "n": "Samphirer",
+   "r": "Common",
+   "tgt": "Saltwort Picker",
+   "fx": "grants Saltwort Fertility at 50% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Seamster",
+   "r": "Common",
+   "tgt": "Spinner, Hemp Farm",
+   "fx": "+10% productivity"
+  },
+  {
+   "n": "Shellpicker",
+   "r": "Common",
+   "tgt": "Cockle Picker",
+   "fx": "+10% productivity"
+  },
+  {
+   "n": "Stableboy",
+   "r": "Common",
+   "tgt": "Horse Breeder, Horsecatcher",
+   "fx": "+15% productivity",
+   "dlc": "The Hippodrome"
+  },
+  {
+   "n": "Tawer",
+   "r": "Common",
+   "tgt": "Pig Farm, Tannery, Sandal Maker",
+   "fx": "+10% productivity"
+  },
+  {
+   "n": "Tidefarmer",
+   "r": "Common",
+   "tgt": "Snailery",
+   "fx": "grants Murex Snail Population at 50% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Twiner",
+   "r": "Common",
+   "tgt": "Ropemaker, Hemp Farm",
+   "fx": "+10% productivity"
+  },
+  {
+   "n": "Vesseler",
+   "r": "Common",
+   "tgt": "Vintner, Garum Works, Soap Maker, Potter, Olive Press, Malthouse +1 more",
+   "fx": "-25% workforce upkeep"
+  },
+  {
+   "n": "Woodwright",
+   "r": "Common",
+   "tgt": "Sawmill",
+   "fx": "+1 extra output every 20 cycles (Tiles)",
+   "dlc": "The Hippodrome"
+  },
+  {
+   "n": "Adept Arborist",
+   "r": "Rare",
+   "tgt": "Sandarac Nursery",
+   "fx": "grants Sandarac Fertility at 75% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Artisan Allsmelter",
+   "r": "Rare",
+   "tgt": "Mineral Quarry, Sand Refinery, Glass Smelter, Mineral Crusher, Glassblower",
+   "fx": "+20% productivity"
+  },
+  {
+   "n": "Attendant Graver",
+   "r": "Rare",
+   "tgt": "Marble Mason, Caelator",
+   "fx": "+20% productivity",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Axle Wheeler",
+   "r": "Rare",
+   "tgt": "Woodcutter, Chassis Builder, Chariot Workshop, Horsecatcher",
+   "fx": "+20% productivity"
+  },
+  {
+   "n": "Barley-Shaker",
+   "r": "Rare",
+   "tgt": "Barley Farm",
+   "fx": "-20% workforce upkeep, +1 extra output every 3 cycles"
+  },
+  {
+   "n": "Capillary Coiffurist",
+   "r": "Rare",
+   "tgt": "Flax Farm, Horse Breeder, Headpiece Maker, Wig Maker",
+   "fx": "+20% productivity"
+  },
+  {
+   "n": "Cereal Cropper",
+   "r": "Rare",
+   "tgt": "Barley Farm",
+   "fx": "grants Barley Fertility at 75% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Chiseled Cutter",
+   "r": "Rare",
+   "tgt": "Granite Quarry",
+   "fx": "grants Granite Deposit at 75% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Concretist Claywright",
+   "r": "Rare",
+   "tgt": "Tiler",
+   "fx": "+5% productivity, +1 extra output every 15 cycles (Concrete)",
+   "dlc": "The Hippodrome"
+  },
+  {
+   "n": "Cuddly Herdmaster",
+   "r": "Rare",
+   "tgt": "Horsecatcher",
+   "fx": "grants Pony Population at 75% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Divergent Factor",
+   "r": "Rare",
+   "fx": "-25% workforce upkeep, staffed by Plebeian Workforce instead of Libertus Workforce"
+  },
+  {
+   "n": "Dubious Dambreaker",
+   "r": "Rare",
+   "tgt": "Beaver Trapper",
+   "fx": "grants Beaver Population at 75% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Elephant Handler",
+   "r": "Rare",
+   "tgt": "Oat Farm, Flax Farm, Wheat Farm, Barley Farm, Hemp Farm",
+   "fx": "+20% productivity"
+  },
+  {
+   "n": "Hard-hitting Hammerer",
+   "r": "Rare",
+   "tgt": "Iron Mine",
+   "fx": "grants Iron Deposit at 75% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Hephaestian Polysmith",
+   "r": "Rare",
+   "tgt": "Weaponsmith, Armourer",
+   "fx": "-33% workforce upkeep"
+  },
+  {
+   "n": "Herb Lorekeeper",
+   "r": "Rare",
+   "tgt": "Herb Garden",
+   "fx": "grants Herbs Fertility at 75% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Hestian Culinarian",
+   "r": "Rare",
+   "tgt": "Porridge Stand, Bakery, Epicure of Water, Epicure of Air, Salsicium, Dairy +1 more",
+   "fx": "-33% workforce upkeep"
+  },
+  {
+   "n": "Ironclad Distributor",
+   "r": "Rare",
+   "fx": "-25% workforce upkeep, staffed by Smith Workforce instead of Wader Workforce"
+  },
+  {
+   "n": "Laconic Swordsmith",
+   "r": "Rare",
+   "tgt": "Iron Mine, Furnace, Weaponsmith",
+   "fx": "+20% productivity"
+  },
+  {
+   "n": "Lamellary Armourer",
+   "r": "Rare",
+   "tgt": "Pig Farm, Iron Mine, Salt Ponds, Tannery, Furnace, Armourer +1 more",
+   "fx": "+20% productivity"
+  },
+  {
+   "n": "Listing Litster",
+   "r": "Rare",
+   "tgt": "Weld Crop",
+   "fx": "grants Dye Plant Fertility at 75% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Lucky Washerwoman",
+   "r": "Rare",
+   "tgt": "Gold Mine",
+   "fx": "grants Gold Ore Deposit at 75% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Marvellous Sculptor",
+   "r": "Rare",
+   "tgt": "Marble Quarry",
+   "fx": "grants Marble Deposit at 75% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Nearsighted Knapper",
+   "r": "Rare",
+   "tgt": "Marble Mason, Caelator, Gilder, Sandarac Nursery, Gold Washer, Goldsmith +2 more",
+   "fx": "+20% productivity, +1 extra output every 20 cycles (Obsidian)",
+   "dlc": "The Hippodrome"
+  },
+  {
+   "n": "Nice Naturalist",
+   "r": "Rare",
+   "tgt": "Vineyard, Lavender Grower, Olive Grower, Weld Crop, Herb Garden",
+   "fx": "+20% productivity",
+   "dlc": "The Hippodrome"
+  },
+  {
+   "n": "Nomadic Herder",
+   "r": "Rare",
+   "tgt": "Sheep Farm, Pig Farm, Horse Breeder, Auroch Farm, Snailery",
+   "fx": "-33% workforce upkeep"
+  },
+  {
+   "n": "Orating Lodepicker",
+   "r": "Rare",
+   "tgt": "Copper Mine",
+   "fx": "grants Copper Deposit at 75% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Piecemeal Ludologist",
+   "r": "Rare",
+   "tgt": "Gilder, Sandarac Nursery, Gold Washer, Goldsmith, Gold Mine, Latrunculi Workshop",
+   "fx": "+20% productivity",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Pragmatic Aegis",
+   "r": "Rare",
+   "tgt": "Weld Crop, Tin Mine, Bronze Smelter, Shieldbeater",
+   "fx": "+20% productivity"
+  },
+  {
+   "n": "Prefect of Aurochs",
+   "r": "Rare",
+   "tgt": "Saltwort Picker, Auroch Farm, Earth Oven",
+   "fx": "+20% productivity"
+  },
+  {
+   "n": "Prime Mantler",
+   "r": "Rare",
+   "tgt": "Sheep Farm, Weld Crop, Copper Mine, Greenhands, Birrus Stitcher",
+   "fx": "+20% productivity"
+  },
+  {
+   "n": "Princeps of Porphyry",
+   "r": "Rare",
+   "tgt": "Flax Farm, Dye Works, Weaver, Loom Weavery, Snailery",
+   "fx": "+20% productivity"
+  },
+  {
+   "n": "Progressive Storekeeper",
+   "r": "Rare",
+   "fx": "-25% workforce upkeep, staffed by Mercators Workforce instead of Wader Workforce"
+  },
+  {
+   "n": "Reappraising Codifier",
+   "r": "Rare",
+   "fx": "-25% workforce upkeep, staffed by Plebeian Workforce instead of Libertus Workforce"
+  },
+  {
+   "n": "Ruthless Aviarist",
+   "r": "Rare",
+   "tgt": "Bird Charmer",
+   "fx": "grants Small Bird Population at 75% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Salty Slurper",
+   "r": "Rare",
+   "tgt": "Oyster Bed",
+   "fx": "grants Oyster Population at 75% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Saturnine Smelter",
+   "r": "Rare",
+   "tgt": "Silver Forge, Fibularium, Silver Mine",
+   "fx": "+20% productivity"
+  },
+  {
+   "n": "Seasoned Snatcher",
+   "r": "Rare",
+   "tgt": "Sturgeon Hatchery",
+   "fx": "grants Sturgeon Population at 75% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Silver Seeker",
+   "r": "Rare",
+   "tgt": "Silver Mine",
+   "fx": "grants Silver Deposit at 75% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Snappy Snaremaker",
+   "r": "Rare",
+   "tgt": "Saltwort Picker, Beaver Trapper, Beaver Hatter, Saltwort Burner",
+   "fx": "+20% productivity"
+  },
+  {
+   "n": "Student of the Shore",
+   "r": "Rare",
+   "tgt": "Sturgeon Hatchery, Epicure of Water, Oyster Bed, Fish Gutter",
+   "fx": "+20% productivity"
+  },
+  {
+   "n": "Student of Whey",
+   "r": "Rare",
+   "tgt": "Auroch Farm, Dairy",
+   "fx": "+20% productivity"
+  },
+  {
+   "n": "Supplementary Surveyor",
+   "r": "Rare",
+   "tgt": "Mineral Quarry",
+   "fx": "grants Mineral Deposit at 75% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "The Bifurcator",
+   "r": "Rare",
+   "tgt": "Weld Crop, Hosier, Sheep Farm",
+   "fx": "+20% productivity"
+  },
+  {
+   "n": "Tiny Miner",
+   "r": "Rare",
+   "tgt": "Tin Mine",
+   "fx": "grants Tin Deposit at 75% yield",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Venator of Artemis",
+   "r": "Rare",
+   "tgt": "Bird Charmer, Horsecatcher, Beaver Trapper, Fishing Hut, Scomber's Shack, Sturgeon Hatchery +2 more",
+   "fx": "-33% workforce upkeep"
+  },
+  {
+   "n": "Vinecrusher",
+   "r": "Rare",
+   "tgt": "Vintner, Vineyard, Apiary",
+   "fx": "+20% productivity"
+  },
+  {
+   "n": "Virtuous Volunteer",
+   "r": "Rare",
+   "tgt": "Sawmill, Tiler, Concrete Mixer, Marble Mason, Tessera Works, Labourer's Yard +1 more",
+   "fx": "+15% productivity, -25% workforce upkeep"
+  },
+  {
+   "n": "Abeer, Sirdar of Scents",
+   "r": "Epic",
+   "tgt": "Lavender Grower",
+   "fx": "grants Lavender Fertility",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Apion Mochthos Apicius, of Apeiron Appetite",
+   "r": "Epic",
+   "tgt": "Porridge Stand, Bakery, Epicure of Water, Epicure of Air, Salsicium, Dairy +1 more",
+   "fx": "+25% productivity"
+  },
+  {
+   "n": "Asherah, Walker of Seas",
+   "r": "Epic",
+   "tgt": "Shell Gatherer",
+   "fx": "grants Sea Shell Population",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Boar Whisperer",
+   "r": "Epic",
+   "tgt": "Salsicium, Pig Farm, Herb Garden",
+   "fx": "+35% productivity"
+  },
+  {
+   "n": "Búri, Who Knows The Past",
+   "r": "Epic",
+   "tgt": "Resin Tapper",
+   "fx": "grants Resin Fertility",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Cairbre Uí Murchad, Bonny Beastherd",
+   "r": "Epic",
+   "tgt": "Auroch Farm, Sheep Farm, Pig Farm",
+   "fx": "-35% workforce upkeep, staffed by Nobles Workforce instead of Wader Workforce"
+  },
+  {
+   "n": "Comhnall Tine, Chariot Ablaze",
+   "r": "Epic",
+   "tgt": "Chariot Workshop",
+   "fx": "+35% productivity, +1 extra output every 2 cycles (Coal)",
+   "dlc": "The Hippodrome"
+  },
+  {
+   "n": "Cranncriomhthann, Oaken Nonagenarian",
+   "r": "Epic",
+   "fx": "-35% workforce upkeep, staffed by Alderman Workforce instead of Wader Workforce"
+  },
+  {
+   "n": "Diara Tógáil, Statuesque Stonewright",
+   "r": "Epic",
+   "tgt": "Granite Cutter",
+   "fx": "+10% productivity, +1 extra output every 12 cycles (Marble)",
+   "dlc": "The Hippodrome"
+  },
+  {
+   "n": "Dibblorix, Optima Lixa",
+   "r": "Epic",
+   "fx": "-50% workforce upkeep"
+  },
+  {
+   "n": "Exuperata, Popular Assemblist",
+   "r": "Epic",
+   "tgt": "Gilder, Chair Maker, Tabulus, Lythier, Chassis Builder, Chariot Workshop +2 more",
+   "fx": "-40% workforce upkeep"
+  },
+  {
+   "n": "Fausta Festinia Foetida, Domina of Fragrance",
+   "r": "Epic",
+   "tgt": "Scomber's Shack",
+   "fx": "grants Mackerel Population",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Gisella, Wine Whisperer",
+   "r": "Epic",
+   "tgt": "Vineyard",
+   "fx": "grants Grape Fertility",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Gygaea of Megaria, Eupalinian Reservist",
+   "r": "Epic",
+   "tgt": "Iron Mine, Copper Mine, Tin Mine, Silver Mine, Gold Mine, Coal Mine",
+   "fx": "+1 extra output every 8 cycles"
+  },
+  {
+   "n": "Hosta Vulpius, Silencer of Song",
+   "r": "Epic",
+   "tgt": "Pig Farm, Renderer, Tongue Plucker, Epicure of Air, Bird Charmer",
+   "fx": "+35% productivity"
+  },
+  {
+   "n": "Iélassu Ma'Rine, The Gaulish Fury",
+   "r": "Epic",
+   "tgt": "Snailery",
+   "fx": "grants Murex Snail Population",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Léire, Queen of the Saltfoots ",
+   "r": "Epic",
+   "tgt": "Saltwort Picker",
+   "fx": "grants Saltwort Fertility",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Marix, Who Knows The Merrows ",
+   "r": "Epic",
+   "tgt": "Silver Forge, Narcissium, Silver Mine, Shell Gatherer",
+   "fx": "+35% productivity"
+  },
+  {
+   "n": "Maxima Cottius, Upholsterer of Atlas",
+   "r": "Epic",
+   "tgt": "Flax Farm, Dye Works, Chair Maker, Sandarac Nursery, Snailery, Cushion Stuffer",
+   "fx": "+35% productivity"
+  },
+  {
+   "n": "Menna, Field Overseer",
+   "r": "Epic",
+   "tgt": "Flax Farm",
+   "fx": "grants Flax Fertility",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Nero Vulius Fama, Pastoralist Pastor",
+   "r": "Epic",
+   "tgt": "Snailery, Sheep Farm, Pig Farm",
+   "fx": "-35% workforce upkeep, staffed by Equites Workforce instead of Libertus Workforce"
+  },
+  {
+   "n": "Olympiodoros, Oleaster-Gifted",
+   "r": "Epic",
+   "tgt": "Olive Grower",
+   "fx": "grants Olive Fertility",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Palaephaesta, Dextrous Demiurgus",
+   "r": "Epic",
+   "tgt": "Pileus Felter, Jeweller, Glassblower, Fibularium, Wire-Twister, Narcissium +4 more",
+   "fx": "-40% workforce upkeep"
+  },
+  {
+   "n": "Primus Tremellius Valens, of Towering Ivory",
+   "r": "Epic",
+   "fx": "-35% workforce upkeep, staffed by Equites Workforce instead of Libertus Workforce"
+  },
+  {
+   "n": "Proseita Weorthan, of the Cushioned Chariot",
+   "r": "Epic",
+   "tgt": "Tannery, Weaver, Ropemaker, Sailmaker, Stringer, Cushion Stuffer +1 more",
+   "fx": "-40% workforce upkeep",
+   "dlc": "The Hippodrome"
+  },
+  {
+   "n": "Publius Quintus, Amphipraetorian",
+   "r": "Epic",
+   "fx": "-25% workforce upkeep"
+  },
+  {
+   "n": "Rhea Proserpina, Dis Mater",
+   "r": "Epic",
+   "tgt": "Iron Mine, Copper Mine, Tin Mine, Silver Mine, Gold Mine, Coal Mine +4 more",
+   "fx": "-40% workforce upkeep"
+  },
+  {
+   "n": "Sabazius, Dionysian Devotee",
+   "r": "Epic",
+   "tgt": "Libertus Residence, Plebeian Residence, Eques Residence, Patrician Residence, Wader Residence, Smith Residence +3 more",
+   "dlc": "The Hippodrome"
+  },
+  {
+   "n": "Servia Bellia, Lily of the Coast",
+   "r": "Epic",
+   "tgt": "Saltwort Picker, Fishing Hut, Scomber's Shack, Salt Ponds, Sand Refinery, Cockle Picker +3 more",
+   "fx": "+25% productivity"
+  },
+  {
+   "n": "Spéir Níc Réalta, Scheming Angler",
+   "r": "Epic",
+   "tgt": "Fishing Hut, Scomber's Shack, Sturgeon Hatchery, Eel Grabber, Oyster Bed",
+   "fx": "+30% productivity",
+   "dlc": "The Hippodrome"
+  },
+  {
+   "n": "The Aeolian Modist",
+   "r": "Epic",
+   "tgt": "Sheep Farm, Gilder, Lythier, Stringer, Sandarac Nursery, Gold Washer +2 more",
+   "fx": "+35% productivity"
+  },
+  {
+   "n": "The Lapidarius Aureate",
+   "r": "Epic",
+   "tgt": "Mineral Quarry, Jeweller, Gold Washer, Goldsmith, Gold Mine",
+   "fx": "+35% productivity"
+  },
+  {
+   "n": "Tirechán Ua Aergol, Tireless Tiller",
+   "r": "Epic",
+   "tgt": "Vineyard, Lavender Grower, Olive Grower, Weld Crop, Herb Garden",
+   "fx": "-40% workforce upkeep"
+  },
+  {
+   "n": "Tullus Caecilius Cornutus, Arval Brother of Insitor",
+   "r": "Epic",
+   "tgt": "Oat Farm, Flax Farm, Wheat Farm, Barley Farm, Hemp Farm",
+   "fx": "-40% workforce upkeep"
+  },
+  {
+   "n": "Xeno of Phillipopolis, Hipparchon",
+   "r": "Epic",
+   "tgt": "Horse Breeder",
+   "fx": "+35% productivity"
+  },
+  {
+   "n": "Aisling ui Democritus, Hermeneutician",
+   "r": "Legendary",
+   "tgt": "Mercator Residence",
+   "fx": "also employs Smith Workforce"
+  },
+  {
+   "n": "Ancharia, Darling of the Lares Compitales",
+   "r": "Legendary",
+   "tgt": "Libertus Residence, Plebeian Residence, Eques Residence, Patrician Residence, Wader Residence, Smith Residence +3 more",
+   "fx": "-5% consumption, +2 population"
+  },
+  {
+   "n": "Aneirin Gwawdrydd, Smith Weard",
+   "r": "Legendary",
+   "tgt": "Furnace, Glass Smelter, Bronze Smelter, Silver Forge, Goldsmith",
+   "fx": "+25% productivity, +25% fuel duration, +1 extra output every 10 cycles (Coal)"
+  },
+  {
+   "n": "Aulus Aurius Aureus, Auric Auk",
+   "r": "Legendary",
+   "tgt": "Gold Mine",
+   "fx": "+25% productivity, grants Gold Ore Deposit",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Aun, Proselyte of Mars Loucetius",
+   "r": "Legendary",
+   "tgt": "Weaponsmith, Armourer",
+   "fx": "+10% productivity, +35% fuel duration"
+  },
+  {
+   "n": "Basileios of Athens, Epicurian Demagogue",
+   "r": "Legendary",
+   "tgt": "Smith Residence",
+   "fx": "also employs Mercators Workforce"
+  },
+  {
+   "n": "Caderina, Of Extraordinary Prospects",
+   "r": "Legendary",
+   "tgt": "Silver Mine",
+   "fx": "+25% productivity, grants Silver Deposit",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Casponia Casta, Sacerdos Cereris",
+   "r": "Legendary",
+   "tgt": "Oat Farm, Flax Farm, Wheat Farm, Barley Farm, Hemp Farm",
+   "fx": "+25% productivity, +1 extra output every 10 cycles (Flax)"
+  },
+  {
+   "n": "Cattín, Apothegmatic Apothecary",
+   "r": "Legendary",
+   "tgt": "Vineyard, Lavender Grower, Olive Grower, Weld Crop, Herb Garden",
+   "fx": "+25% productivity, +1 extra output every 10 cycles (Herbs)"
+  },
+  {
+   "n": "Ciara Tógáil, Chasm-Blessed Chromatic Terrawright",
+   "r": "Legendary",
+   "tgt": "Gold Mine, Coal Mine",
+   "fx": "+15% productivity, +1 extra output every 3 cycles (Marble), +1 extra output every 3 cycles (Mosaics)",
+   "dlc": "The Hippodrome"
+  },
+  {
+   "n": "Coileán Peucag, Catcher of the Rainbow",
+   "r": "Legendary",
+   "tgt": "Weld Crop",
+   "fx": "+25% productivity, grants Dye Plant Fertility",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Colmcapaill, Pinion of Pony Pedigree ",
+   "r": "Legendary",
+   "tgt": "Horsecatcher",
+   "fx": "+25% productivity, grants Pony Population",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Cutlera, Fastest Blade in Rome",
+   "r": "Legendary",
+   "tgt": "Sturgeon Hatchery",
+   "fx": "+25% productivity, grants Sturgeon Population",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Euphrosyne Patuleia, Plebeian Suffragist",
+   "r": "Legendary",
+   "tgt": "Libertus Residence",
+   "fx": "also employs Plebeian Workforce"
+  },
+  {
+   "n": "Favillus, Survivor of Sands and Sandals",
+   "r": "Legendary",
+   "tgt": "Furnace, Glass Smelter, Bronze Smelter, Silver Forge, Goldsmith, Weaponsmith +1 more",
+   "fx": "+35% productivity, +35% fuel duration"
+  },
+  {
+   "n": "Gaius Critonius Ligneus, Warden of the Woods",
+   "r": "Legendary",
+   "tgt": "Sandarac Nursery",
+   "fx": "+25% productivity, grants Sandarac Fertility",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Lar Syracus, Minedriver",
+   "r": "Legendary",
+   "tgt": "Iron Mine, Copper Mine, Tin Mine, Silver Mine, Gold Mine, Coal Mine",
+   "fx": "-75% workforce upkeep"
+  },
+  {
+   "n": "Lorana, Herbalist of Fable",
+   "r": "Legendary",
+   "tgt": "Herb Garden",
+   "fx": "+25% productivity, grants Herbs Fertility",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Macrobius Minucianus, Microcosmologist",
+   "r": "Legendary",
+   "tgt": "All production buildings",
+   "fx": "+20% productivity, -10% workforce upkeep"
+  },
+  {
+   "n": "Minas Órlámh, the Gilted Touch",
+   "r": "Legendary",
+   "tgt": "Iron Mine, Copper Mine, Tin Mine, Silver Mine, Gold Mine, Coal Mine",
+   "fx": "+25% productivity, +1 extra output every 10 cycles (Gold Ore)"
+  },
+  {
+   "n": "Nanna of the Golden Brew",
+   "r": "Legendary",
+   "tgt": "Barley Farm",
+   "fx": "+25% productivity, grants Barley Fertility",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Orphelia, Orator of the Long Dark",
+   "r": "Legendary",
+   "tgt": "Limestone Quarry, Mineral Quarry, Marble Quarry, Granite Quarry, Sand Refinery, Clay Pit +8 more",
+   "fx": "+50% productivity, -50% workforce upkeep",
+   "dlc": "Prophecies of Ash"
+  },
+  {
+   "n": "Pwyll fab Manawydan, Rhiannon's Postilion",
+   "r": "Legendary",
+   "tgt": "Sheep Farm, Pig Farm, Horse Breeder, Auroch Farm, Snailery",
+   "fx": "+30% productivity, +1 extra output every 10 cycles (Horses)"
+  },
+  {
+   "n": "Sceilg, Eremitic Reductionist",
+   "r": "Legendary",
+   "tgt": "Woodcutter, Charcoal Burner, Sandarac Nursery, Resin Tapper",
+   "fx": "+30% productivity, +1 extra output every 10 cycles"
+  },
+  {
+   "n": "Waronheri Hartbain, Magus of Boosts and Booze",
+   "r": "Legendary",
+   "tgt": "Chariot Workshop",
+   "fx": "-10% productivity, +1 extra output every 10 cycles (Beer), uses Wood instead of Chassis",
+   "dlc": "The Hippodrome"
+  },
+  {
+   "n": "Zorsines, Sarmatian Swordshaper",
+   "r": "Legendary",
+   "tgt": "Weaponsmith, Armourer",
+   "fx": "+30% productivity, +25% fuel duration, +1 extra output every 10 cycles"
+  },
+  {
+   "n": "Adar Lluch Gwen, Sterling Birdcaller",
+   "r": "Mythic",
+   "tgt": "Bird Charmer",
+   "fx": "+40% productivity, +25% workforce upkeep"
+  },
+  {
+   "n": "Boriolanus, Of Siege-Weathered Courage",
+   "r": "Mythic",
+   "tgt": "Weaponsmith, Armourer",
+   "fx": "+45% productivity, +25% workforce upkeep"
+  },
+  {
+   "n": "Brother Brauda, Bread Bravura",
+   "r": "Mythic",
+   "tgt": "Bakery",
+   "fx": "+25% productivity, +75% workforce upkeep"
+  },
+  {
+   "n": "Euryphaessa, Devotee to Crystalline Purity",
+   "r": "Mythic",
+   "tgt": "Glassblower",
+   "fx": "uses undefined instead of Pigments"
+  },
+  {
+   "n": "Finneces Mac Elcmar, All-Knowing Salmonfisher",
+   "r": "Mythic",
+   "tgt": "Fishing Hut, Scomber's Shack, Sturgeon Hatchery, Eel Grabber, Oyster Bed",
+   "fx": "+50% productivity, -50% workforce upkeep"
+  },
+  {
+   "n": "Gabrias, The Only Honest Woodcutter",
+   "r": "Mythic",
+   "tgt": "Gilder",
+   "fx": "+1 extra output every 4 cycles (Gold)"
+  },
+  {
+   "n": "Hlidaskelfo, Sedentary Seer of Quintessence",
+   "r": "Mythic",
+   "tgt": "Tabulus",
+   "fx": "uses Wood instead of Sandarac Wood"
+  },
+  {
+   "n": "Iacchus, Recondite Thyrsus-Bearer",
+   "r": "Mythic",
+   "tgt": "Oat Farm, Flax Farm, Wheat Farm, Barley Farm, Hemp Farm",
+   "fx": "+1 extra output every 10 cycles (Wine), +1 extra output every 6 cycles (Honeycombs)"
+  },
+  {
+   "n": "Iocasta, Breaker of Harmonia's Curse",
+   "r": "Mythic",
+   "tgt": "Jeweller",
+   "fx": "uses Bronze instead of Gold"
+  },
+  {
+   "n": "Iphitus of Iolia, Nessusblood Chitonist",
+   "r": "Mythic",
+   "tgt": "Spinner",
+   "fx": "+1 extra output every 10 cycles (Cloth)"
+  },
+  {
+   "n": "Laevinus, Vulcan's Own Dolabra",
+   "r": "Mythic",
+   "tgt": "Sand Refinery, Clay Pit, Mud Drier, Gold Washer, Limestone Quarry, Mineral Quarry +2 more",
+   "fx": "+100% productivity, +100% workforce upkeep, +1 extra output every 4 cycles (Gold Ore), +1 extra output every 3 cycles (Minerals)"
+  },
+  {
+   "n": "Paldius, Ovine Authority Unquestioned",
+   "r": "Mythic",
+   "tgt": "Sheep Farm",
+   "fx": "+75% workforce upkeep, +1 extra output every 12 cycles (Cheese)"
+  },
+  {
+   "n": "Pantites of Achaea, Hallowed by Deipneus",
+   "r": "Mythic",
+   "tgt": "Libertus Residence, Plebeian Residence, Eques Residence, Patrician Residence, Wader Residence, Smith Residence +3 more",
+   "fx": "-20% Bread consumption"
+  },
+  {
+   "n": "Prokles, Xenic Xoanonist",
+   "r": "Mythic",
+   "tgt": "Caelator, Latrunculi Workshop",
+   "fx": "+35% productivity, +1 extra output every 4 cycles (Obsidian)"
+  },
+  {
+   "n": "Ptoliporthos of Serifos, Polished Catoptromancer",
+   "r": "Mythic",
+   "tgt": "Narcissium",
+   "fx": "+30% productivity, uses Iron instead of Silver"
+  },
+  {
+   "n": "Tiranna, Dyed-In-The-Wool Polychromist",
+   "r": "Mythic",
+   "tgt": "Loom Weavery",
+   "fx": "+35% productivity, +1 extra output every 2 cycles (Tyrian Purple)"
+  },
+  {
+   "n": "Athr Iorgwyn, Once-And-Former King",
+   "r": "Unique",
+   "tgt": "Smith Residence, Alderman Residence",
+   "fx": "also employs Wader Workforce"
+  },
+  {
+   "n": "Concordia, Ashen Vestal",
+   "r": "Unique",
+   "tgt": "Patrician Residence",
+   "fx": "also employs Libertus Workforce"
+  },
+  {
+   "n": "Dorian, Philos of Philhellenes",
+   "r": "Unique",
+   "tgt": "Eques Residence",
+   "fx": "also employs Libertus Workforce"
+  },
+  {
+   "n": "Licia Ma, Trader of Silk and Secrets",
+   "r": "Unique",
+   "tgt": "Eques Residence",
+   "fx": "also employs Plebeian Workforce"
+  },
+  {
+   "n": "Neferneru, Lion In Waiting",
+   "r": "Unique",
+   "tgt": "Mercator Residence, Noble Residence",
+   "fx": "also employs Wader Workforce"
+  },
+  {
+   "n": "Tarragon, Whose Voyages Have Ended",
+   "r": "Unique",
+   "tgt": "Plebeian Residence",
+   "fx": "also employs Libertus Workforce"
+  },
+  {
+   "n": "Zara Nitu, Queen of Mesopotamia",
+   "r": "Unique",
+   "tgt": "Patrician Residence",
+   "fx": "also employs Plebeian Workforce"
+  }
+ ],
+ "patrons": [
+  {
+   "n": "Mars",
+   "fx": [
+    "Armamentum — up to +150% productivity at full devotion · Pig Farm, Charcoal Burner, Iron Mine, Salt Ponds, Tannery, Furnace +4 more"
+   ]
+  },
+  {
+   "n": "Ceres",
+   "fx": [
+    "Ceres Augusta — up to +150% productivity at full devotion · Oat Farm, Wheat Farm, Vineyard, Olive Grower, Apiary, Barley Farm +8 more",
+    "Confarreatio — up to +7 population at full devotion · Libertus Residence, Plebeian Residence, Eques Residence, Patrician Residence, Wader Residence, Smith Residence +3 more"
+   ],
+   "wonder": "Vervactor's Plough"
+  },
+  {
+   "n": "Neptune",
+   "fx": [
+    "Salacia's Fruit — up to +150% productivity at full devotion · Fishing Hut, Scomber's Shack, Salt Ponds, Sturgeon Hatchery, Garum Works, Epicure of Water +4 more"
+   ]
+  },
+  {
+   "n": "Mercury-Lugus",
+   "fx": []
+  },
+  {
+   "n": "Epona",
+   "fx": [
+    "Potnia Theron — up to +150% productivity at full devotion · Sheep Farm, Pig Farm, Horse Breeder, Auroch Farm, Horsecatcher"
+   ]
+  },
+  {
+   "n": "Cernunnos",
+   "fx": [
+    "Wild Nature — up to +150% productivity at full devotion · Woodcutter, Sawmill, Eel Grabber, Mud Drier, Reed Gatherer, Bird Charmer +3 more"
+   ],
+   "wonder": "Arboreal Rhizome"
+  },
+  {
+   "n": "Minerva",
+   "fx": [
+    "Arachne's Spindle — up to +150% productivity at full devotion · Flax Farm, Sheep Farm, Weld Crop, Dye Works, Weaver, Spinner +7 more"
+   ]
+  },
+  {
+   "n": "Vulcan",
+   "fx": [
+    "Lava Forge — up to +150% productivity at full devotion · Charcoal Burner, Limestone Quarry, Iron Mine, Mineral Quarry, Marble Quarry, Copper Mine +6 more"
+   ],
+   "dlc": "Prophecies of Ash"
+  }
+ ]
+}

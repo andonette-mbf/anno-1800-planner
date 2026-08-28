@@ -232,6 +232,11 @@ button.trchip:hover{color:var(--ink);border-color:var(--ink)}
 .cuitem.rarQuest{border-left-color:#6e6e6e;border-left-style:dashed}
 /* The one Harbourmaster curiosity the wiki files under its own tier. */
 .cuitem.rarCharacterItem{border-left-color:#6e6e6e;border-left-style:dotted}
+/* 117's ladder (M11c) tops out past Legendary — Mythic gets the double rule —
+   and Unique is the campaign one-offs, a kind not a step, so dashed like
+   Quest. Its Common/Rare/Epic/Legendary reuse the 1800 tones above. */
+.cuitem.rarMythic{border-left-color:#000;border-left-style:double;border-left-width:4px}
+.cuitem.rarUnique{border-left-color:#6e6e6e;border-left-style:dashed}
 .cuitem.on{background:#111;border-color:#111;color:#fff;font-weight:700}
 .cunone{margin:4px 0}
 .cumiss{margin:0 0 6px;font-size:11.5px;line-height:1.5}
@@ -251,6 +256,11 @@ button.trchip:hover{color:var(--ink);border-color:var(--ink)}
 .itnm{font-weight:700}
 .itsock .plrow{margin-top:4px}
 .itsock .chips{margin:2px 0}
+/* Patron (M11c, 117 only): one deity per island — a picker row and what full
+   devotion pays, in the item-block frame but without sockets or chips. */
+.patronblk .ithd{align-items:center}
+.patronblk select{font-size:12px;padding:2px 4px}
+.patronfx{margin-top:3px;font-size:11.5px;line-height:1.5}
 .cuisle:last-child{margin-bottom:0}
 .cuislehd{margin:0 0 4px;padding:4px 0;border-bottom:1px solid var(--line);font-size:14px}
 .culink{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;width:100%;background:0 0;border:0;border-top:1px dashed var(--line);cursor:pointer;text-align:left;font:inherit;color:var(--ink)}

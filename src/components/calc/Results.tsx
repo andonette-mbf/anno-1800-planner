@@ -129,7 +129,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 104 · rome pack 3</span>
+      <span style={{ opacity: 0.55 }}>build 105 · rome items + patrons</span>
     </div>
   );
 }

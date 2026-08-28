@@ -141,10 +141,18 @@ const RARITY = new Set(P.rarity);
       path.join(ROOT, "src/lib/items-1800.json"),
       path.join(build, "items-1800.json")
     );
+    fs.copyFileSync(
+      path.join(ROOT, "src/lib/items-117.json"),
+      path.join(build, "items-117.json")
+    );
     const I = require("./build/items.js");
 
-    // 117's specialists are real but unlisted — the panels must never render.
-    if (I.itemsFor("anno117") !== null) fail("itemsFor('anno117') should be null");
+    // Both games carry a pack since M11c; 117's sockets share one item list.
+    const s117 = I.itemsFor("anno117");
+    if (!s117 || s117.map((s) => s.id).join() !== "villa,gh")
+      fail(`itemsFor('anno117') is ${s117 && s117.map((s) => s.id).join()}, expected villa,gh`);
+    else if (s117[0].items !== s117[1].items || !s117[0].items.length)
+      fail("117's Villa and Guesthouse should share the one item list");
     if ((I.itemsFor("anno1800") || []).length !== 5) fail("itemsFor('anno1800') lost a socket");
 
     // Islands get the four building sockets; the fleet gets Ships.
@@ -166,8 +174,17 @@ const RARITY = new Set(P.rarity);
     );
     if (on.map((s) => s.id).join() !== "tu,th")
       fail(`socketsOn returned ${on.map((s) => s.id).join()}, expected tu,th`);
+    // 117 gates on ITS buildings — a Trade Union means nothing there.
     if (I.socketsOn([{ t: "Trade Union", done: true }], "anno117").length)
-      fail("socketsOn returned sockets for 117");
+      fail("socketsOn matched 1800's Trade Union on 117");
+    const on117 = I.socketsOn([{ t: "villa", done: true }], "anno117");
+    if (on117.map((s) => s.id).join() !== "villa")
+      fail(`socketsOn('anno117') with a Villa returned ${on117.map((s) => s.id).join()}`);
+
+    // Patrons: 117's deities, absent from 1800.
+    if (I.patronsFor("anno1800") !== null) fail("patronsFor('anno1800') should be null");
+    const pat = I.patronsFor("anno117") || [];
+    if (pat.length !== 8) fail(`patronsFor('anno117') has ${pat.length} deities, expected 8`);
 
     // Lookup is case-insensitive and unknown names come back null (free text).
     const tu = I.ITEM_SOCKETS.find((s) => s.id === "tu");

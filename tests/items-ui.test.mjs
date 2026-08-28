@@ -58,6 +58,8 @@ const S = await import(path.join(out, "lib/store.js"));
 const I = await import(path.join(out, "lib/items.js"));
 const IB = await import(path.join(out, "components/ItemsBlock.js"));
 const ItemsBlock = IB.default?.default ?? IB.default;
+const PB = await import(path.join(out, "components/PatronBlock.js"));
+const PatronBlock = PB.default?.default ?? PB.default;
 
 const ITEMS = [
   { t: "Trade Union", done: true },
@@ -71,14 +73,18 @@ function Probe() {
 }
 
 let game = "anno1800";
+let items = ITEMS;
 function App() {
   return React.createElement(
     S.AppProviders,
     null,
     React.createElement(Probe),
+    // The patron row rides above the sockets on the island card (M11c); for
+    // 1800 patronsFor is null and it must render nothing.
+    React.createElement(PatronBlock, { island: "Ditchwater", game }),
     React.createElement(ItemsBlock, {
       island: "Ditchwater",
-      items: ITEMS,
+      items,
       game,
       domId: "isle-ditchwater",
     })
@@ -217,16 +223,76 @@ check(
   check("emptying the slots drops the field", !("items" in api.data.ships[0]));
 }
 
-// --- 117 has no item list --------------------------------------------------
+// --- no patron row in 1800 -------------------------------------------------
+check("1800 renders no patron block", $(".patronblk").length === 0);
+
+// --- 117 gates on ITS buildings (M11c) -------------------------------------
+// A ticked Trade Union means nothing there; a ticked Villa opens the shared
+// specialist list. The store swaps to the 117 save too, so placements land in
+// the game's own keys the way they would through the real app.
 await act(async () => api.setIslandItem("Ditchwater", "tu", "Burner", true));
 game = "anno117";
+await act(async () => api.setGame("anno117"));
 await act(async () => {
   r.render(React.createElement(App));
 });
-check("117 renders nothing at all", $(".itwrap").length === 0, text().slice(0, 80));
+check("a Trade Union opens no 117 socket", $(".itsock").length === 0, text().slice(0, 80));
+check("the patron row renders on 117", $(".patronblk").length === 1);
+
+items = [{ t: "Villa", done: true }];
+await act(async () => {
+  r.render(React.createElement(App));
+});
+check("a ticked Villa opens its panel", text().includes("Villa") && $(".itsock").length === 1);
+{
+  const opts = $("#isle-ditchwater-it-villa option");
+  check("the datalist offers the 117 pack", opts.length >= 170, String(opts.length));
+}
+{
+  const input = $(".itsock input")[0];
+  await type(input, "Elephant Handler");
+  await enter(input);
+  check(
+    "socketing a 117 specialist reaches the 117 save's key",
+    (localStorage.getItem("anno117_island_items") || "").includes("Elephant Handler"),
+    String(localStorage.getItem("anno117_island_items"))
+  );
+}
+
+// --- picking a patron ------------------------------------------------------
+{
+  const sel = $(".patronblk select")[0];
+  const selSetter = Object.getOwnPropertyDescriptor(
+    dom.window.HTMLSelectElement.prototype,
+    "value"
+  ).set;
+  await act(async () => {
+    selSetter.call(sel, "Mars");
+    sel.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+  });
+  check(
+    "the pick lands under the patron pseudo-socket",
+    (api.data.islandItems?.Ditchwater?.patron || []).join() === "Mars",
+    JSON.stringify(api.data.islandItems)
+  );
+  check("the devotion ceiling shows", text().includes("+150% productivity"), text().slice(0, 200));
+  // Re-picking replaces — one deity per island, never a list.
+  await act(async () => {
+    selSetter.call(sel, "Ceres");
+    sel.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+  });
+  check(
+    "re-picking replaces rather than appends",
+    (api.data.islandItems?.Ditchwater?.patron || []).join() === "Ceres",
+    JSON.stringify(api.data.islandItems?.Ditchwater)
+  );
+  check("the wonder line shows", text().includes("Vervactor's Plough"), text().slice(0, 300));
+}
 
 // --- and 1800's placements survived the trip -------------------------------
 game = "anno1800";
+items = ITEMS;
+await act(async () => api.setGame("anno1800"));
 await act(async () => {
   r.render(React.createElement(App));
 });
@@ -236,9 +302,9 @@ check(
   JSON.stringify(api.data.islandItems)
 );
 check(
-  "117 wrote no items key of its own",
-  !localStorage.getItem("anno117_island_items"),
-  String(localStorage.getItem("anno117_island_items"))
+  "the 117 placements stayed in the 117 keys",
+  !(localStorage.getItem("anno_island_items") || "").includes("Elephant Handler"),
+  String(localStorage.getItem("anno_island_items"))
 );
 
 let bad = 0;

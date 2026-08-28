@@ -135,6 +135,10 @@ const ANNO117: GameContent = {
   // the pack's `services` lists. Not production, so they're chips not chains.
   suggestions: [
     { t: "Market" },
+    // The item buildings (M11c) — their labels are what socketsOn matches, so
+    // ticking one makes its specialist panel appear on the island card.
+    { t: "Villa", regions: ["la"] },
+    { t: "Guesthouse", regions: ["al"] },
     { t: "Tavern", regions: ["la"] },
     { t: "Sanctuary", regions: ["la"] },
     { t: "Forum", regions: ["la"] },

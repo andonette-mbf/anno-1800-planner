@@ -141,7 +141,7 @@ export default function ItemsBlock({
   return (
     <div
       className="iledger itwrap"
-      title="Who is socketed in this island's item buildings. Tick a Trade Union, Town Hall, Harbourmaster's Office or Arctic Lodge in the inventory above and its slots appear here; ship items live on the ship, in the 🚢 tab."
+      title="Who is socketed in this island's item buildings. Tick a Trade Union, Town Hall, Harbourmaster's Office or Arctic Lodge (1800) — or a Villa or Guesthouse (117) — in the inventory above and its slots appear here; ship items live on the ship, in the 🚢 tab."
     >
       {built.map((s) => (
         <SocketPanel key={s.id} island={island} s={s} dl={`${domId}-it-${s.id}`} />

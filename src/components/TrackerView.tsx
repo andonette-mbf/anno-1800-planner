@@ -23,6 +23,7 @@ import {
 import { planCheck, planSeed } from "@/lib/plancheck";
 import CultureBlock from "./CultureBlock";
 import ItemsBlock from "./ItemsBlock";
+import PatronBlock from "./PatronBlock";
 import { itemIn, itemTitle, shipSocket } from "@/lib/items";
 import { GoodIcon } from "./GoodIcon";
 import { Dropdown } from "./ui/Dropdown";
@@ -2082,9 +2083,13 @@ export function TrackerView({
                       <span className="muted">→ 🏛 Culture</span>
                     </button>
                   )}
+                  {/* Which deity the island is devoted to (M11c) — 117 only,
+                      patronsFor returns null for 1800 and the block hides. */}
+                  <PatronBlock island={name} game={game} />
                   {/* Who's socketed in the island's item buildings (M11b) —
                       appears once a Trade Union / Town Hall / Harbourmaster's
-                      Office / Arctic Lodge is ticked above. */}
+                      Office / Arctic Lodge (1800) or Villa / Guesthouse (117,
+                      M11c) is ticked above. */}
                   <ItemsBlock
                     island={name}
                     items={items}

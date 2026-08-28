@@ -485,53 +485,37 @@ is in CLAUDE.md.
   raw factories, 5 of them two-region merges). 1800 untouched: golden tests
   and `test:games` pass as-is.
 
+- **M11c — items + patrons for Rome** (build 105, `/rome-collections`; scope
+  "items + patrons" confirmed with the user in-session). 117 has no
+  set-collection mechanic, so nothing culture-shaped was faked — the 🏛 tab
+  stays hidden for Rome. What landed instead: **items-117.json**
+  (`scripts/extract-items-117.mjs`, pack 1, pinned to the SAME Release 3.0
+  commit `28969c3` as data-117.json and cross-checked by test) with the 172
+  specialists — buff guids joined to `buildingBuffs` and compacted to one
+  `fx` line, target guids to building names, DLC tags kept — plus the 8
+  patron deities with their devotion effects quoted at the full-devotion
+  ceiling ("up to +150% productivity · Pig Farm, …"). The data has no
+  per-item socket (every item is Radius scope; upstream's gameplay doc says
+  items are placed in **villas or guesthouses**), so the pack ships two
+  socket shells — Villa (Latium) and Guesthouse (Albion) — sharing ONE item
+  list, attached at load in `items.ts`; both joined `games.ts`' 117 chips so
+  `socketsOn` can match, and the whole M11b panel works unchanged.
+  `itemsFor("anno117")` is live; `shipSocket` stays null (no 117 ship items
+  exist in the data). Patrons are deliberately NOT a collection: a new
+  `PatronBlock` on the island card (117 only, via `patronsFor`) — one
+  ⚜️ picker per island whose pick rides the `islandItems` store under the
+  pseudo-socket id `"patron"`, so sync/save-switching/rename-cleanup came for
+  free with zero store changes. Mercury-Lugus has no production effects in
+  the data (trade deity) and says so rather than showing an empty box.
+  Rarity ladder gained Mythic (double rule) and Unique (dashed) tints. `npm
+  run test:items117` (pack coherence + hand-read upstream spot checks +
+  same-commit provenance pin) and the extended `test:items` /
+  `test:items-ui` (Villa panel + patron picking in jsdom) guard it.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)
 
-- **M11c — collections for Rome** (next; asked Aug 2026, right after builds
-  101–102: "I would like all this implementing for rome as much as is
-  available"). **Session prompt: `/rome-collections` — the research phase
-  already ran (28 Aug 2026) and its findings are folded into the prompt.**
-  Short form: the 117 wiki stayed a dead end (40 pages, no item data), but
-  upstream anno-mods/anno-117-calculator is now at **Release 3.0**
-  (`28969c3`, 2026-08-20) and carries `items` (172 specialists with rarity/
-  targets/buffs) and `patrons` (the 8 deities — 117's Religion system, its
-  closest thing to "collections"; Epona is a deity, not a specialist). So 117
-  has no set-collection mechanic to mirror; the buildable things are M11b's
-  item sockets via `itemsFor`, and optionally a per-island patron pick —
-  scope choice sits with the user. **`/rome-pack3`** (re-base data-117.json
-  onto Release 3.0 — 146 products, fuel flags, a third region slot) should
-  run first if both are wanted, so both packs pin the same commit. "All
-  this" = the 🏛 Culture tab experience — per-island collection tracking with
-  flat panels, three-weight done/started/untouched contrast, ⚑ one-piece-away,
-  the works — for Anno 117, to whatever extent 117 actually has collections.
-  **What we knew when M11a shipped (Aug 2026, game was new):** 117 has no
-  zoo/museum/garden-style building and its wiki carried no item data — that is
-  why `cultureFor` returns null for it. So the FIRST session on this is
-  research, not code:
-  1. **What does 117 actually collect?** Inventory the real mechanics —
-     deities/temples, wonders, specialists (M11b notes the wiki names some but
-     publishes no list), any museum-like set-completion system Ubisoft has
-     patched in since. Check the upstream data pack
-     (anno-mods/anno-117-calculator, pinned commit in the M10 notes) for
-     item/collection assets the wiki doesn't render, and RE-CHECK the wiki —
-     it was thin because the game was young, and it will have grown.
-  2. **Only promise what has a source** — same rule as M12: machine-readable
-     and clearly licensed before a feature is announced. If 117 turns out to
-     have no set-collection mechanic at all, say so on the tab rather than
-     faking one, and consider whether M11b's items-in-use is the thing the
-     user actually wants for Rome.
-  **The code is already shaped for it.** `cultureFor(game)` is the single
-  gate: hand it a 117 `CultureBuilding[]` pack (versioned like
-  `culture-1800.json`, own extractor, own `test:culture`-style test) and the
-  panel, the roll-up, the island links and the tab all light up. Two
-  deliberate 117-blocks must be flipped when a pack lands: AppShell hides the
-  🏛 tab for `rome` (VIEWS filter, build 101) and remaps a stored `culture`
-  view to `islands` — both were written for "117 has nothing", not forever.
-  `cultureOn` matches building labels against island checklist items, so the
-  117 buildings need entries in `games.ts`' inventory chips too. Tentative —
-  confirm scope with the user once the research says what exists.
 - **M8 — residents per island** (session prompt: `/m8-residents`): per-tier
   population counts on each island block; the ledger adds resident
   consumption from `POP` need rates (gated by unlock thresholds like
@@ -583,7 +567,8 @@ is in CLAUDE.md.
      supply its own text.
   6. AppShell hides the 🏛 Culture tab for 117 (build 101). The general rule
      is "a game whose `cultureFor` is null has no tab" — per-game capability,
-     not a 117 check. M11c wants this flipped for 117 anyway.
+     not a 117 check. (M11c looked at flipping it and decided against: 117
+     has no set-collection mechanic, so its tab stays hidden honestly.)
 
   **Then, for each game added:** the data pack and the script that extracts it,
   a test for that pack (only 1800 has the legacy app to check against, so every
