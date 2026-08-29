@@ -984,7 +984,7 @@ interface CompanionCtx {
   addIsland: (name: string, seed?: string[], region?: string) => void;
   setIslandRegion: (island: string, region: string | null) => void;
   removeIsland: (name: string) => void;
-  addIslandCheck: (island: string, t: string) => void;
+  addIslandCheck: (island: string, t: string, n?: number) => void;
   toggleIslandCheck: (island: string, i: number, v: boolean) => void;
   removeIslandCheck: (island: string, i: number) => void;
   bumpIslandCheck: (island: string, i: number, delta: 1 | -1) => void;
@@ -1555,8 +1555,10 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             ),
           };
         }),
-      addIslandCheck: (island, t) => {
+      addIslandCheck: (island, t, n = 1) => {
         const item = t.trim();
+        // The quick-add's ×N lands here; a plain add stays a bump of one.
+        const by = Math.max(1, Math.floor(n) || 1);
         if (!item) return;
         update((d) => {
           const cur = (d.islandChecks || {})[island] || [];
@@ -1565,9 +1567,9 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           const next =
             at >= 0
               ? cur.map((c, j) =>
-                  j === at ? { ...c, done: true, n: (c.n || 1) + 1 } : c
+                  j === at ? { ...c, done: true, n: (c.n || 1) + by } : c
                 )
-              : [...cur, { t: item, done: true }];
+              : [...cur, { t: item, done: true, ...(by > 1 ? { n: by } : {}) }];
           return {
             ...d,
             islandChecks: { ...(d.islandChecks || {}), [island]: next },

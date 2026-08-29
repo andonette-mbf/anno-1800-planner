@@ -201,7 +201,7 @@ const STORYLINES: [string, StoryEntry[]][] = [
 // tier's need-unlock thresholds are the real "you can grow when…" milestones
 // ("Bread unlocks at 150 Workers"). fh = residents per fully-upgraded house,
 // so a target converts to a residence count.
-interface GrowthTier {
+export interface GrowthTier {
   tid: string;
   lbl: string;
   region: number;
@@ -304,7 +304,9 @@ function growthVerb(s: PopSource117): string {
 // Partial, deliberately: growth is a per-game model (thresholds vs banded
 // house capacity), so a game without one — a Tracker-only game especially —
 // simply shows no growth dropdown rather than borrowing another game's.
-const GROWTH_TIERS_BY_GAME: Partial<Record<Game, GrowthTier[]>> = {
+// Exported for the QuickAdd widget's 👥 kind, which offers the same
+// region-scoped tier list the per-island editor does.
+export const GROWTH_TIERS_BY_GAME: Partial<Record<Game, GrowthTier[]>> = {
   anno1800: GROWTH_TIERS_1800,
   anno117: GROWTH_TIERS_117,
 };

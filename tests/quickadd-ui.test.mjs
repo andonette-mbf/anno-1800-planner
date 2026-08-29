@@ -156,6 +156,63 @@ check(
   JSON.stringify(checks())
 );
 
+// --- ×N adds N in one tap -------------------------------------------------
+await setValue(nameBox(), "Fire Station");
+await setValue(document.querySelector(".qacount"), "3");
+await fire(addBtn());
+check(
+  "×3 lands as a count of three",
+  checks()["Manola"]?.find((c) => c.t === "Fire Station")?.n === 3,
+  JSON.stringify(checks()["Manola"])
+);
+check("the count box clears with the name", document.querySelector(".qacount").value === "");
+
+// --- residents: island, number and what -----------------------------------
+await fire(kindChip("Residents"));
+check("the name box goes away for residents", !document.querySelector(".qaname"));
+check("nothing to set until a tier is picked", addBtn().disabled);
+const pickTier = async (label) => {
+  await fire(document.querySelector(".qatier"));
+  const opt = $(".ddpop .ddopt").find((el) => el.textContent.trim() === label);
+  if (!opt)
+    throw new Error(
+      `no tier "${label}" in: ${$(".ddpop .ddopt").map((e) => e.textContent.trim()).join(" | ")}`
+    );
+  await fire(opt);
+};
+// Manola is New World, so the tiers on offer are its own, not Farmers.
+await fire(document.querySelector(".qatier"));
+const nwTiers = $(".ddpop .ddopt").map((e) => e.textContent.trim());
+check(
+  "a New World island offers New World tiers",
+  nwTiers.includes("Jornaleros") && !nwTiers.includes("Farmers"),
+  nwTiers.join(" | ")
+);
+await fire($(".ddpop .ddopt").find((el) => el.textContent.trim() === "Jornaleros"));
+// Switching island to another region strands the pick — it must reset, not
+// quietly file Jornaleros onto an Old World island.
+await pickIsland("Ditchwater");
+check("a region switch clears the stranded tier", addBtn().disabled);
+await pickTier("Farmers");
+await setValue(document.querySelector(".qanum"), "500");
+await fire(addBtn());
+const pops = () => JSON.parse(localStorage.getItem("anno_island_pop") || "{}");
+check(
+  "the headcount lands on the island's tier",
+  pops()["Ditchwater"]?.farmers === 500,
+  JSON.stringify(pops())
+);
+check("and it says so", said().includes("Ditchwater") && said().includes("500"), said());
+// Setting again REPLACES — it's a transcription, not an addition.
+await setValue(document.querySelector(".qanum"), "650");
+await fire(addBtn());
+check("setting again replaces the count", pops()["Ditchwater"]?.farmers === 650, JSON.stringify(pops()));
+check(
+  "the current count shows as the placeholder",
+  document.querySelector(".qanum").placeholder === "650",
+  document.querySelector(".qanum").placeholder
+);
+
 // --- a ship joins the fleet ----------------------------------------------
 await fire(kindChip("Ship"));
 check("the island picker goes away", !document.querySelector(".qaisle"));

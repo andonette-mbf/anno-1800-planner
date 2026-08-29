@@ -198,13 +198,12 @@ export function AppShell() {
               ships, not a calculator setting. */}
           {view !== "calc" && <SaveMenu />}
         </nav>
-        {/* Above the calculator, not inside its grid: you decide what to build
-            while looking at the numbers, and the tab that owns the list is two
-            clicks away (build 86). Hidden rather than unmounted, like the tracker
-            below, so a half-typed name survives a tab change. */}
-        <div style={{ display: view === "calc" ? undefined : "none" }}>
-          <QuickAdd go={go} />
-        </div>
+        {/* Above every view, not just the calculator (build 86 had it calc-only):
+            "I've built X on Y" strikes wherever you happen to be looking, and
+            hunting through the island cards for the right add box was the
+            tedious part. One instance, always mounted, so a half-typed name
+            survives a tab change. */}
+        <QuickAdd go={go} />
         <div
           className="grid"
           id="view-calc"
