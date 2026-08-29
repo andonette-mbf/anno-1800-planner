@@ -138,6 +138,14 @@ export function AppShell() {
   // game check: 117 has no set-collection mechanic, so its tab stays hidden
   // honestly, and any future game earns the tab by shipping a pack.
   const hasCulture = cultureFor(game) !== null;
+  // Same rule for the calculator (M12): a Tracker-only game — registered with
+  // no data pack yet — has no 🧮 tab, exactly how 117 ran before its pack.
+  const hasCalc = datasetFor(st).hasCalc;
+  // What actually renders: the stored tab may be one this game hides (you
+  // switched games while on it) — calc falls to Tasks, culture to Islands,
+  // where that tab's things live.
+  const shown: View =
+    !hasCalc && view === "calc" ? "tasks" : !hasCulture && view === "culture" ? "islands" : view;
   return (
     <>
       {/* Build 89: one black bar across the top, and the game switch lives in
@@ -181,8 +189,11 @@ export function AppShell() {
         </div>
         <nav className="appnav" id="appnav">
           {/* No culture pack (cultureFor null) means the tab would be
-              permanently empty — hide it for that game. */}
-          {(hasCulture ? VIEWS : VIEWS.filter(([v]) => v !== "culture")).map(([v, label]) => (
+              permanently empty — hide it for that game. Same for the
+              calculator of a game with no data pack (hasCalc false). */}
+          {VIEWS.filter(
+            ([v]) => (v !== "culture" || hasCulture) && (v !== "calc" || hasCalc)
+          ).map(([v, label]) => (
             <button
               key={v}
               className={`chip ${view === v ? "on" : ""}`}
@@ -207,19 +218,17 @@ export function AppShell() {
         <div
           className="grid"
           id="view-calc"
-          style={{ display: view === "calc" ? undefined : "none" }}
+          style={{ display: shown === "calc" ? undefined : "none" }}
         >
           <LeftPanel st={st} patch={patch} gen={gen} bumpGen={bumpGen} loadState={loadState} />
           <Results st={st} patch={patch} />
         </div>
         {/* Kept mounted rather than swapped, so the boxes you were half way
             through typing in survive a tab change. */}
-        <div style={{ display: view === "calc" ? "none" : "block" }}>
-          {/* Switching to a cultureless game while on the Culture tab lands
-              on Islands, where those buildings live. */}
+        <div style={{ display: shown === "calc" ? "none" : "block" }}>
           <TrackerView
             calcState={st}
-            section={!hasCulture && view === "culture" ? "islands" : (view as TrackerSection)}
+            section={shown === "calc" ? "tasks" : shown}
             go={go}
           />
         </div>

@@ -133,6 +133,10 @@ export interface Dataset {
   regions: Record<number, string>;
   presets: { name: string; sel: Record<string, [string, number]> }[];
 
+  /** Does this game have a calculator at all (M12)? False for a Tracker-only
+   *  game — one registered with no data pack yet — which hides the 🧮 tab.
+   *  Swapping its `trackerOnly` shell for a real dataset earns the tab back. */
+  hasCalc: boolean;
   /** True when the region chips pick the CHAIN, not just filter the picker —
    *  117 has no "All", because Leather's chain depends on where you build it. */
   regionIsPlanning: boolean;
@@ -221,6 +225,7 @@ const ANNO1800: Dataset = {
   regions: REGIONS,
   presets: PRESETS,
 
+  hasCalc: true,
   regionIsPlanning: false,
   startRegion: 0,
   needsModel: "thresholds",
@@ -353,6 +358,7 @@ const ANNO117: Dataset = {
   regions: REGIONS_117,
   presets: PRESETS_117,
 
+  hasCalc: true,
   regionIsPlanning: true,
   // The campaign (and every scenario start) opens in Latium.
   startRegion: 1,
@@ -427,6 +433,58 @@ const ANNO117: Dataset = {
   regionTint: (region) => (region === 2 ? "#6f6f6f" : "#111111"),
   itemRegion: planRegion117,
 };
+
+// ------------------------------------------------ Tracker-only games (M12)
+
+/** The dataset of a game with no data pack yet: quests, islands, typed
+ *  inventory and fleet all work — that is exactly how 117 started (build 56) —
+ *  while everything numeric degrades to nothing rather than crashing. No goods
+ *  means the ledger indexes no producers (inventory entries stay free text),
+ *  the residents editor lists no tiers, and `hasCalc: false` hides the 🧮 tab.
+ *  Replacing this shell with a real dataset is the whole upgrade path. */
+export function trackerOnly(game: Game): Dataset {
+  return {
+    game,
+    version: "tracker only",
+    goods: {},
+    pop: {},
+    tierOrder: {},
+    tierLabels: {},
+    goodCat: {},
+    catLabels: {},
+    regions: {},
+    presets: [],
+
+    hasCalc: false,
+    regionIsPlanning: false,
+    startRegion: 0,
+    needsModel: "thresholds",
+    hasCoalChoice: false,
+    hasElectricity: false,
+    siloFeedRate: 0,
+    fuelGood: null,
+    fuelPerMin: 0,
+
+    // With no goods these are never asked, but stay total so a stray id
+    // degrades to an unbuildable row rather than a crash.
+    recipe: (_st, id) => ({
+      building: id,
+      rate: 0,
+      inputs: [],
+      siloFeed: null,
+      fuel: false,
+      gathered: true,
+    }),
+    recipes: () => [],
+    electrifiable: () => false,
+    needActive: () => false,
+    regionRank: () => 0,
+    regionLabel: () => "",
+    regionColor: () => "#111111",
+    regionTint: () => "#111111",
+    itemRegion: () => 0,
+  };
+}
 
 export const DATASETS: Record<Game, Dataset> = { anno1800: ANNO1800, anno117: ANNO117 };
 
