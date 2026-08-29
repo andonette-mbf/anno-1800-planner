@@ -1127,7 +1127,10 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setAll(loadAllGames());
     const g = ls.get(GAME_KEY);
-    if (isGame(g)) setGameState(g);
+    // A stored game that has since been hidden (build 116) has no switcher
+    // chip to leave by, so it restores to the default instead. Its data stays
+    // put and comes back with the chip if the game is ever unhidden.
+    if (isGame(g) && !GAMES.find((x) => x.id === g)?.hidden) setGameState(g);
     (async () => {
       try {
         const r = await fetch("/api/auth");

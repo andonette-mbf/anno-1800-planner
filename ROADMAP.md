@@ -628,9 +628,10 @@ is in CLAUDE.md.
   switcher as Tracker-only games: full quests/islands/typed-inventory/fleet,
   each under its own storage prefix, with `trackerOnly()` in dataset.ts as
   the dataset shell and a new `Dataset.hasCalc` flag hiding the 🧮 tab (same
-  rule as culture's null pack; the stored view falls to Tasks). The switcher
-  shows all six — hiding a game is deleting its GAMES row, so trim freely if
-  the header crowds. 1701 has NO Fandom wiki (checked Aug 2026 — only a
+  rule as culture's null pack; the stored view falls to Tasks). **Build 116:
+  the four are `hidden: true` in GAMES** — the user plays 1800 and 117 only,
+  so the spare chips went; everything else stays live and unhiding one is
+  deleting its flag. 1701 has NO Fandom wiki (checked Aug 2026 — only a
   20-article DS-port stub), so its 🔗 lookup is a plain web search.
   **Still open, per game:** the pack + extractor + pack test + icons — the
   survey below says where each would come from.

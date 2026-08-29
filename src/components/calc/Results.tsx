@@ -115,7 +115,7 @@ function Footer({ st }: { st: CalcState }) {
       {/* Each game names its own sources (M12) — see GameContent.credits. */}
       {GAME_CONTENT[datasetFor(st).game].credits}
       <br />
-      <span style={{ opacity: 0.55 }}>build 115 · notes to self</span>
+      <span style={{ opacity: 0.55 }}>build 116 · two chips again</span>
     </div>
   );
 }

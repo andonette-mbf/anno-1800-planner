@@ -9,18 +9,20 @@ export type Game = "anno1800" | "anno117" | "anno1701" | "anno1404" | "anno2070"
 // Adding a game (M12): extend the union above, give it a row here — id, switcher
 // labels, and its own storage prefix — then fill in GAME_CONTENT below and the
 // calculator's DATASETS. Everything else keys off these lists.
-export const GAMES: { id: Game; label: string; short: string; prefix: string }[] = [
+export const GAMES: { id: Game; label: string; short: string; prefix: string; hidden?: boolean }[] = [
   // 1800 keeps the bare legacy prefix FOREVER — /legacy.html and the original
   // single-file app read the unprefixed `anno_*` keys. Never reuse "anno_".
   { id: "anno1800", label: "Anno 1800", short: "⚓ 1800", prefix: "anno_" },
   { id: "anno117", label: "Anno 117", short: "🏛 117", prefix: "anno117_" },
-  // The other 3D Annos (M12) — Tracker-only until each gets a data pack
-  // (`trackerOnly` in dataset.ts hides their 🧮 tab). The two established
-  // games stay first; these four follow in setting order.
-  { id: "anno1701", label: "Anno 1701", short: "⛵ 1701", prefix: "anno1701_" },
-  { id: "anno1404", label: "Anno 1404", short: "🕌 1404", prefix: "anno1404_" },
-  { id: "anno2070", label: "Anno 2070", short: "🌊 2070", prefix: "anno2070_" },
-  { id: "anno2205", label: "Anno 2205", short: "🌕 2205", prefix: "anno2205_" },
+  // The other 3D Annos (M12) — fully registered Tracker-only games, but
+  // `hidden` keeps them out of the switcher: the user plays 1800 and 117
+  // only (decided build 116), and four spare chips were pure clutter.
+  // Everything else (storage slots, sync, teach-the-ledger) stays live, so
+  // bringing one back is deleting its `hidden` flag.
+  { id: "anno1701", label: "Anno 1701", short: "⛵ 1701", prefix: "anno1701_", hidden: true },
+  { id: "anno1404", label: "Anno 1404", short: "🕌 1404", prefix: "anno1404_", hidden: true },
+  { id: "anno2070", label: "Anno 2070", short: "🌊 2070", prefix: "anno2070_", hidden: true },
+  { id: "anno2205", label: "Anno 2205", short: "🌕 2205", prefix: "anno2205_", hidden: true },
 ];
 
 export function isGame(v: unknown): v is Game {

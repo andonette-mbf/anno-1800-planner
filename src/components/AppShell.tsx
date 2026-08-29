@@ -157,9 +157,10 @@ export function AppShell() {
           <h1>
             {label} <span>Production Planner</span>
           </h1>
-          {/* Each game keeps its own quests, islands and inventory. */}
+          {/* Each game keeps its own quests, islands and inventory. Hidden
+              games (registered, unplayed) get no chip — see games.ts. */}
           <nav className="gameswitch" id="gamenav" aria-label="Game">
-            {GAMES.map((g) => (
+            {GAMES.filter((g) => !g.hidden).map((g) => (
               <button
                 key={g.id}
                 className={game === g.id ? "on" : ""}
