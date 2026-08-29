@@ -115,7 +115,7 @@ function Footer({ st }: { st: CalcState }) {
       {/* Each game names its own sources (M12) — see GameContent.credits. */}
       {GAME_CONTENT[datasetFor(st).game].credits}
       <br />
-      <span style={{ opacity: 0.55 }}>build 109 · any Anno groundwork</span>
+      <span style={{ opacity: 0.55 }}>build 110 · Enbesa rates corrected</span>
     </div>
   );
 }
