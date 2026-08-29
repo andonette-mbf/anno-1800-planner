@@ -145,6 +145,12 @@ export interface Dataset {
 
   /** The producer to use for a good under this state. */
   recipe(st: DatasetState, id: string): Recipe;
+  /** EVERY producer of the good buildable under this state, the calculator's
+   *  pick first — 117's Coal Mine stands beside the Charcoal Burner, and the
+   *  ledger indexes both so either inventory entry parses. Empty when the
+   *  good is gathered (or simply not available in the state's region);
+   *  `recipe` stays the single choice everything else plans with. */
+  recipes(st: DatasetState, id: string): Recipe[];
   /** Can this good's building take electricity (×2)? 117: never. */
   electrifiable(id: string): boolean;
   /** Is this need consumed at the current settings? */
@@ -212,6 +218,24 @@ const ANNO1800: Dataset = {
       fuel: false,
       gathered: false,
     };
+  },
+  // The ledger's 1800 index is bespoke (legacy "(silo)" names, haciendas), so
+  // this exists for the interface's sake: the current pick plus data.ts's alt
+  // producers, deduped by name — coal's other source is already an alt.
+  recipes(st, id) {
+    const main = ANNO1800.recipe(st, id);
+    const alts = (GOODS[id].alts ?? []).filter((a) => a.building !== main.building);
+    return [
+      main,
+      ...alts.map((a) => ({
+        building: a.building,
+        rate: a.rate,
+        inputs: GOODS[id].inputs,
+        siloFeed: SILO[id] ?? null,
+        fuel: false,
+        gathered: false,
+      })),
+    ];
   },
   electrifiable: (id) => GOODS[id].region === 1,
   needActive(st, d) {
@@ -335,6 +359,22 @@ const ANNO117: Dataset = {
       fuel: !!p.fuel,
       gathered: false,
     };
+  },
+  // Pack order, which leads with the pick `recipe` (producerIn117) makes —
+  // so "the calculator's choice first" holds without a re-sort. Obsidian has
+  // no producers and yields [], which is how the ledger knows not to count it.
+  recipes(st, id) {
+    const region = planRegion117(st);
+    return (GOODS_117[id].producers ?? [])
+      .filter((p) => p.region & region)
+      .map((p) => ({
+        building: p.building,
+        rate: perMin(p.time),
+        inputs: p.inputs ? p.inputs.split("|").map((good) => ({ good, qty: 1 })) : [],
+        siloFeed: p.silo ? SILO_117.feedGood ?? null : null,
+        fuel: !!p.fuel,
+        gathered: false,
+      }));
   },
   electrifiable: () => false,
   // No unlock thresholds in the pack — the four supplyWeight bands are the only

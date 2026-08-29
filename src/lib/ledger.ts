@@ -12,10 +12,12 @@
 // Where the rate differs (Cattle Farm: Old World 0.5, New World 1.0) the
 // non-Old-World building gets its own region-suffixed entry.
 //
-// M10: one index per game. 1800's is built exactly as before; 117's comes from
-// data-117.json, where a producer carries its OWN inputs — Leather, Amphorae
-// and Tiles take different ingredients in Latium and Albion, so inputs cannot
-// be read off the good the way 1800 allows.
+// M10: one index per game. 1800's is built exactly as before; every other
+// game's is derived from its `Dataset` (M12) — the same seam the calculator
+// reads — where `recipe()` already resolves a producer per region with its
+// OWN inputs (Leather, Amphorae and Tiles take different ingredients in
+// Latium and Albion, so inputs cannot be read off the good the way 1800
+// allows).
 //
 // 117's modifiers land on the variant, not the good. Its Silo is the same deal
 // as 1800's (×2 output, feed per silo per minute) but only three buildings take
@@ -23,9 +25,9 @@
 // counterpart: a fuel-burning building eats Coal per minute of RUN time whatever
 // it makes, so it is a consumption edge of its own rather than a rate modifier.
 import { GOODS, SILO, SILO_FEED } from "./data";
-import { FUEL_117, GOODS_117, REGIONS_117, SILO_117 } from "./data117";
+import { DATASETS, type Dataset, type DatasetState } from "./dataset";
 import { DEFAULT_STATE, popTargets, type CalcState } from "./engine";
-import type { Game } from "./games";
+import { GAMES, type Game } from "./games";
 import type { CheckItem } from "./store";
 
 interface Variant {
@@ -71,20 +73,12 @@ interface Index {
   fuelGood: string | null;
   /** t/min of fuel one burning building eats while it runs. */
   fuelPerMin: number;
-  /** Region whose buildings can be electrified, or null (117 has no power). */
-  elecRegion: number | null;
   options: string[];
 }
 
 type IndexCore = Omit<
   Index,
-  | "goodName"
-  | "finalGood"
-  | "siloFeedRate"
-  | "fuelGood"
-  | "fuelPerMin"
-  | "elecRegion"
-  | "options"
+  "goodName" | "finalGood" | "siloFeedRate" | "fuelGood" | "fuelPerMin" | "options"
 >;
 
 function emptyIndex(): IndexCore {
@@ -212,19 +206,24 @@ function build1800(): Index {
     siloFeedRate: SILO_FEED,
     fuelGood: null,
     fuelPerMin: 0,
-    elecRegion: 1,
     options: [...ix.names].sort(),
   };
 }
 
-function build117(): Index {
+/** Any game with a data pack gets its index from the game's `Dataset` — no
+ *  code here to add for a new game. `recipe()` resolves a producer exactly the
+ *  way the calculator planning in that region would, so the ledger and the
+ *  calculator can never disagree; silo, fuel and the feed/fuel rates all ride
+ *  the same object. Assumes the pack's region ids are single bits of the
+ *  goods' `region` bitmask (117: 1 Latium / 2 Albion) — the M12 contract for
+ *  new packs, since a producer has to be resolvable per region. */
+function buildFromDataset(D: Dataset): Index {
   const ix = emptyIndex();
-  const noteRegion = (name: string, mask: number) => {
+  const noteRegion = (name: string, region: number) => {
     const k = name.toLowerCase();
     let s = ix.nameRegions.get(k);
     if (!s) ix.nameRegions.set(k, (s = new Set()));
-    // The pack stores a bitmask; the datalist filters on single region ids.
-    for (const r of [1, 2]) if (mask & r) s.add(r);
+    s.add(region);
   };
   const register = (name: string, v: Variant): boolean => {
     const k = name.toLowerCase();
@@ -233,63 +232,72 @@ function build117(): Index {
     ix.names.push(name);
     return true;
   };
+  // A state pinned to one region, which is all recipe() reads beyond the id.
+  const stateIn = (region: number): DatasetState => ({
+    game: D.game,
+    regionFilter: region,
+    coalTime: DEFAULT_STATE.coalTime,
+    lifestyle: false,
+    pop: {},
+  });
 
-  // Latium first so it owns contested plain names, mirroring 1800's Old World
-  // preference. A good's producers each become their own entry; where two share
-  // a name but differ in rate or chain, the later one is region-suffixed.
-  for (const g of Object.values(GOODS_117).sort(
-    (a, b) => a.region - b.region || a.name.localeCompare(b.name)
-  )) {
-    for (const p of g.producers) {
-      const rate = p.time ? Math.round((60 / p.time) * 1e6) / 1e6 : 0;
-      const inputs = p.inputs
-        ? p.inputs.split("|").map((good) => ({ good, qty: 1 }))
-        : [];
-      const clash = ix.variants.get(p.building.toLowerCase());
-      const sameChain =
-        clash &&
-        clash.rate === rate &&
-        clash.inputs.map((i) => i.good).join("|") === p.inputs;
-      const region = REGIONS_117[p.region & 1 ? 1 : 2];
-      const name = clash && !sameChain ? `${p.building} (${region})` : p.building;
-      // Both modifiers are per-building here: only the three farms flagged
-      // `silo` in the pack take one, and only the 23 flagged `fuel` burn Coal.
-      const siloFeed = p.silo ? SILO_117.feedGood || undefined : undefined;
-      const v: Variant = { good: g.id, rate, inputs, siloFeed, fuel: p.fuel };
-      if (register(name, v) && !ix.primaryName[g.id]) ix.primaryName[g.id] = name;
-      // Remember the entry per region, so a plan built in Albion seeds the
-      // Albion entry rather than the primary (Latium) one.
-      for (const r of [1, 2]) if (p.region & r) ix.regionName.set(`${g.id}|${r}`, name);
-      noteRegion(name, p.region);
-      if (!ix.producer[g.name]) ix.producer[g.name] = { building: name, rate };
-      for (const r of [1, 2]) {
+  // Ascending region order, so the first region owns contested plain names —
+  // Latium before Albion, mirroring 1800's Old World preference. Where two
+  // regions' producers share a name but differ in rate or chain, the later
+  // one is region-suffixed; where they agree entirely, the entries merge.
+  for (const r of Object.keys(D.regions)
+    .map(Number)
+    .sort((a, b) => a - b)) {
+    const st = stateIn(r);
+    for (const g of Object.values(D.goods)
+      .filter((gd) => gd.region & r)
+      .sort((a, b) => a.name.localeCompare(b.name))) {
+      // Every producer buildable here, the calculator's pick first — a good
+      // gathered from a deposit (117's Obsidian) has none and registers
+      // nothing: there is no building to count.
+      for (const rec of D.recipes(st, g.id)) {
+        const clash = ix.variants.get(rec.building.toLowerCase());
+        const sameChain =
+          clash &&
+          clash.rate === rec.rate &&
+          clash.inputs.map((i) => i.good).join("|") === rec.inputs.map((i) => i.good).join("|");
+        const name = clash && !sameChain ? `${rec.building} (${D.regions[r]})` : rec.building;
+        const v: Variant = {
+          good: g.id,
+          rate: rec.rate,
+          inputs: rec.inputs,
+          siloFeed: rec.siloFeed ?? undefined,
+          fuel: rec.fuel || undefined,
+        };
+        if (register(name, v) && !ix.primaryName[g.id]) ix.primaryName[g.id] = name;
+        // Remember the entry per region, so a plan built in Albion seeds the
+        // Albion entry rather than the primary (Latium) one.
+        ix.regionName.set(`${g.id}|${r}`, name);
+        noteRegion(name, r);
+        if (!ix.producer[g.name]) ix.producer[g.name] = { building: name, rate: rec.rate };
         const k = `${g.name}|${r}`;
-        if (p.region & r && !ix.producerAt.has(k)) ix.producerAt.set(k, { building: name, rate });
+        if (!ix.producerAt.has(k)) ix.producerAt.set(k, { building: name, rate: rec.rate });
       }
     }
   }
 
   return {
     ...ix,
-    goodName: (id) => GOODS_117[id]?.name ?? id,
-    finalGood: (id) => !!GOODS_117[id]?.isFinal,
-    // The Silo's +100% productivity is the same ×2 the 1800 silo gives, so the
-    // output formula below is shared; only the feed rate differs (0.2 t/min of
-    // Wheat). tests/pack117 pins the +100% so a re-extraction that changes it
-    // fails rather than quietly halving every silo'd farm.
-    siloFeedRate: SILO_117.feedPerMin ?? 0,
-    // One Coal per FUEL_117.time seconds of run time, per burning building.
-    fuelGood: FUEL_117.good,
-    fuelPerMin: FUEL_117.time ? 60 / FUEL_117.time : 0,
-    elecRegion: null,
+    goodName: (id) => D.goods[id]?.name ?? id,
+    finalGood: (id) => !!D.goods[id]?.isFinal,
+    siloFeedRate: D.siloFeedRate,
+    fuelGood: D.fuelGood,
+    fuelPerMin: D.fuelPerMin,
     options: [...ix.names].sort(),
   };
 }
 
-const INDEX: Record<Game, Index> = {
-  anno1800: build1800(),
-  anno117: build117(),
-};
+// One index per game. 1800's build stays bespoke for good — its legacy
+// "(silo)" entry names, hacienda modules and ALSO_IN regions predate the
+// dataset and exist in no pack; everything since reads its Dataset.
+const INDEX = Object.fromEntries(
+  GAMES.map((g) => [g.id, g.id === "anno1800" ? build1800() : buildFromDataset(DATASETS[g.id])])
+) as Record<Game, Index>;
 
 const ix = (game: Game = "anno1800") => INDEX[game];
 
@@ -313,16 +321,12 @@ export function siloCapable(itemName: string, game: Game = "anno1800"): boolean 
   return !!v && !v.silo && !!v.siloFeed;
 }
 
-/** Can this inventory item be electrified? Same rule as the calculator
- *  (`electrifiable`): Old World production buildings, ×2 when powered.
- *  117 has no electricity, so this is always false there. */
+/** Can this inventory item be electrified? The calculator's own rule,
+ *  verbatim: the dataset's `electrifiable` — Old World production buildings
+ *  in 1800, nothing in a game without power. */
 export function elecCapable(itemName: string, game: Game = "anno1800"): boolean {
-  const I = ix(game);
-  if (I.elecRegion == null) return false;
-  const v = I.variants.get(itemName.trim().toLowerCase());
-  if (!v) return false;
-  const good = game === "anno117" ? GOODS_117[v.good] : GOODS[v.good];
-  return !!good && good.region === I.elecRegion;
+  const v = ix(game).variants.get(itemName.trim().toLowerCase());
+  return !!v && DATASETS[game].electrifiable(v.good);
 }
 
 /** The inventory item name for a produced good — the ledger's own entry, so a
