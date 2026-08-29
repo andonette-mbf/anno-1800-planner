@@ -605,9 +605,60 @@ is in CLAUDE.md.
   picks the lifestyle toggle vs band chips), `hasCoalChoice`,
   `hasElectricity`; feature packs (`cultureFor`/`itemsFor`/`patronsFor`,
   growth tiers) are per-game records where null/absent simply hides the
-  feature. **Still open, per game:** the data-source survey below (nobody
-  has run it yet), then packs/icons/tests — and the "packless Tracker-only
-  game" question at the bottom is now purely a decision, not code.
+  feature.
+
+  **ALL SIX GAMES IN (build 113)** — 1701, 1404, 2070 and 2205 are in the
+  switcher as Tracker-only games: full quests/islands/typed-inventory/fleet,
+  each under its own storage prefix, with `trackerOnly()` in dataset.ts as
+  the dataset shell and a new `Dataset.hasCalc` flag hiding the 🧮 tab (same
+  rule as culture's null pack; the stored view falls to Tasks). The switcher
+  shows all six — hiding a game is deleting its GAMES row, so trim freely if
+  the header crowds. 1701 has NO Fandom wiki (checked Aug 2026 — only a
+  20-article DS-port stub), so its 🔗 lookup is a plain web search.
+  **Still open, per game:** the pack + extractor + pack test + icons — the
+  survey below says where each would come from.
+
+  **DATA-SOURCE SURVEY (run Aug 2026)** — verdict per game, best source
+  first; the 117 rule (machine-readable + clearly licensed + pinned
+  provenance) applied throughout:
+  - **1404 — VIABLE, easiest.** NiHoel/Anno1404Calculator `params.js` (MIT,
+    the same author as the canonical 1800 calculator; one ~400 KB
+    `params=`+JSON file at a pinnable commit): 63 producers with t/min +
+    input/output recipes, 63 goods, all 7 tiers (Occident, Orient, Beggars)
+    with per-resident needs in t/min — spot-checked against the known
+    200-peasants-per-fisherman figure. Gaps: no Occident/Orient tag on
+    factories (small hand map) and no icons — both served by
+    anno1404.fandom.com's open `api.php` (real-UA rule; its ToolOne-sourced
+    "Production and consumption rates" page doubles as the cross-check).
+  - **2070 — VIABLE.** spike-rabbit/Anno2070CalculatorNg (MIT) checks the
+    raw game XML into `data/`: `base.xml` + `addon.xml` (Deep Ocean) for
+    producers (`ProductionTime` in ms, 20000 default; inputs as
+    `RawMaterialN`), `human.xml` + addon overrides for `DemandAmount` needs
+    across all eleven faction-tiers incl. Geniuses — unit is kg per 100
+    residents per minute. Localised names join via bundled GUID files.
+    Watch-outs: need-activation thresholds live elsewhere in the XML
+    (second pass; maps onto `needsModel: "thresholds"`), ecobalance is best
+    treated as the existing productivity slider, and island vs underwater
+    is a two-region axis. Cross-checks: odegroot.nl's tables (base game),
+    open anno2070.fandom.com `api.php`.
+  - **2205 — VIABLE with caveats.** Taludas/Anno2205-NewFrontiers exposes
+    the game's full asset XML (buildings, module upgrade factors, DLC
+    Tundra/Orbit/Frontiers, and `balancing_population.xml`'s per-resident
+    `ConsumptionNeeds` — which exist in NO wiki or calculator repo). Unit:
+    `Amount/4096` = kg/s, verified against wiki t/min figures. Caveats: the
+    repo is an unlicensed MOD, so vanilla-ness must be validated against
+    the small Beesbeesbeesbees/anno2205assistant extract + wiki infoboxes
+    (or extract from an owned copy via MIT AnnoRDA tooling); confirm the
+    Amount-vs-SatisfactionValue semantics in-game before a population mode.
+  - **1701 — HARDEST, no clean source.** No wiki exists at all; the one
+    real pack (SomeGameplay's Warenrechner `d4.min.js` — tiers, house
+    sizes, per-100-resident t/min, chain rates) is CC BY-NC-ND/unlicensed.
+    The path is authoring OUR OWN small pack (9 consumable goods, 5 tiers,
+    ~15 chains — an afternoon of transcription) from experience.life.at's
+    HTML tables, cross-checked against that pack and AnnoZone's measured
+    rates; community data is chain-level, so per-building recipes would
+    need RDA extraction from an owned copy. No golden reference — tests
+    would be hand-derived like 117's.
 
   **Already done, and proved by 117 — don't redo it.** The calculator reads no
   game's tables directly; each game's numbers are one entry in `DATASETS`, and
@@ -651,10 +702,9 @@ is in CLAUDE.md.
 
   **What actually holds this up is the data, not the code.** 1800's numbers
   came from the old single-file app; 117's from anno-mods/anno-117-calculator.
-  Nobody has checked whether anything similar exists for the other four — find
-  a source that is machine-readable and clearly licensed BEFORE promising a
-  game, which is the rule Anno 117 followed. Two things will need
-  thinking about when a third game arrives. **Regions:** 1800 numbers them,
+  The survey above (Aug 2026) found each game's best source — 1404 first if
+  picking by effort. Two things will need
+  thinking about when a third calculator arrives. **Regions:** 1800 numbers them,
   117 uses a bitmask because a good can exist in both, and 2070's factions or
   2205's sectors work differently again — so treat a region as each game's own
   thing and never do sums with the numbers. **Needs:** the current code handles
@@ -662,11 +712,10 @@ is in CLAUDE.md.
   117 (four bands of how well-supplied you want people). A game that works a
   third way needs another case there.
 
-  **The cheap first step, worth doing on its own:** a game with no data pack at
-  all can still have the Tracker — quests, islands, typed-in inventory, fleet.
-  That is exactly how 117 started. So any Anno can join the switcher whenever
-  you want it, and get a calculator later. Worth deciding at the time: should
-  the switcher hide games that have no numbers yet?
+  **The cheap first step — DONE (build 113):** all four are in the switcher
+  Tracker-only, exactly how 117 started. Each gets its calculator by swapping
+  its `trackerOnly()` shell for a real dataset — pack + extractor + pack test
+  + icons per the survey above, one session per game.
 - **M10 — Anno 117 support** (noodled Aug 2026; timing DECIDED — after M7,
   before M8/M9, so residents/trade-routes are built per-game once instead of
   being generalised later). One app, game switcher at the top, per-game
