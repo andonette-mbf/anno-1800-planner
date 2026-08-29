@@ -167,6 +167,11 @@ button.trchip:hover{color:var(--ink);border-color:var(--ink)}
 .gicon{width:18px;height:18px;object-fit:contain;vertical-align:-4px;margin-right:3px;display:inline-block}
 .linkbtn:disabled{opacity:.4;cursor:default}
 .schip{font-size:10px;padding:2px 8px;flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+/* Teach-the-ledger form (M13): a chip that unfolds into tiny inline inputs.
+   Inverted chips (.on) hold light-on-dark text, so the inputs inherit. */
+.teachform{flex-wrap:wrap;white-space:normal;max-width:100%}
+.teachform input{font:inherit;font-size:10px;padding:0 2px;border:1px solid currentColor;background:0 0;color:inherit;min-width:0}
+.teachform input::placeholder{color:inherit;opacity:.55}
 .schip button{border:0;background:none;color:inherit;cursor:pointer;font-size:12px;line-height:1;padding:0 2px;width:auto}
 .schip button:disabled{opacity:.3;cursor:default}
 .islehd .schip{max-width:180px;overflow:hidden;text-overflow:ellipsis}

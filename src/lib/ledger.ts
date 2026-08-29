@@ -27,7 +27,7 @@
 import { GOODS, SILO, SILO_FEED } from "./data";
 import { DATASETS, type Dataset, type DatasetState } from "./dataset";
 import { DEFAULT_STATE, popTargets, type CalcState } from "./engine";
-import { GAMES, type Game } from "./games";
+import { GAMES, GAME_CONTENT, type Game } from "./games";
 import type { CheckItem } from "./store";
 
 interface Variant {
@@ -300,6 +300,91 @@ const INDEX = Object.fromEntries(
 ) as Record<Game, Index>;
 
 const ix = (game: Game = "anno1800") => INDEX[game];
+
+// ------------------------------------------------- taught recipes (M13)
+
+/** A production fact typed in as the player learns it from the game — for
+ *  games that ship NO data pack (the four Tracker-only Annos). There are no
+ *  pack ids to key on, so the good's display name IS its id (`goodName` in
+ *  the taught index is identity), and inputs follow the packs' one-ton-per-
+ *  ton convention. `building` matches the inventory entry by name, exactly
+ *  like a pack building. */
+export interface UserRecipe {
+  building: string;
+  /** Display name of the good it makes. */
+  good: string;
+  /** Seconds one production cycle takes — what the game shows on the tile. */
+  time: number;
+  /** Tons per cycle (default 1). */
+  amount?: number;
+  /** Display names of the goods it eats, one ton each per ton made. */
+  inputs?: string[];
+}
+
+/** t/min a taught recipe works out to, rounded the way the packs round. */
+export function userRate(r: UserRecipe): number {
+  return r.time > 0 ? Math.round((((r.amount ?? 1) * 60) / r.time) * 1e6) / 1e6 : 0;
+}
+
+/** An index built purely from taught rows. Every entry is registered in ALL
+ *  of the game's regions — the player is the region rule here, and hiding a
+ *  taught building from a tagged island's datalist would just look broken. */
+function buildTaught(game: Game, rows: UserRecipe[]): Index {
+  const ixc = emptyIndex();
+  const regions = Object.values(GAME_CONTENT[game].regionNum);
+  for (const r of rows) {
+    const name = r.building.trim();
+    const good = r.good.trim();
+    const rate = userRate(r);
+    const k = name.toLowerCase();
+    if (!name || !good || rate <= 0 || ixc.variants.has(k)) continue;
+    ixc.variants.set(k, {
+      good,
+      rate,
+      inputs: (r.inputs ?? [])
+        .map((g) => g.trim())
+        .filter(Boolean)
+        .map((g) => ({ good: g, qty: 1 })),
+    });
+    ixc.names.push(name);
+    if (!ixc.primaryName[good]) ixc.primaryName[good] = name;
+    if (!ixc.producer[good]) ixc.producer[good] = { building: name, rate };
+    for (const rn of regions) {
+      let s = ixc.nameRegions.get(k);
+      if (!s) ixc.nameRegions.set(k, (s = new Set()));
+      s.add(rn);
+      if (!ixc.producerAt.has(`${good}|${rn}`))
+        ixc.producerAt.set(`${good}|${rn}`, { building: name, rate });
+    }
+  }
+  return {
+    ...ixc,
+    goodName: (id) => id,
+    finalGood: () => false,
+    siloFeedRate: 0,
+    fuelGood: null,
+    fuelPerMin: 0,
+    options: [...ixc.names].sort(),
+  };
+}
+
+// Rebuilds are keyed on the rows' JSON so render-time calls are effectively
+// free; per game, so switching games never sheds another game's teaching.
+const taughtSig: Partial<Record<Game, string>> = {};
+
+/** Point a PACKLESS game's ledger index at the save's taught recipes (M13).
+ *  Called by the store provider on every render, so everything downstream —
+ *  datalists, `itemGood`, `islandLedger`, trade — sees the taught buildings
+ *  with no further wiring. A game WITH a pack ignores this entirely: its
+ *  numbers are canonical, and teaching is for filling the void, not
+ *  overriding the packs. */
+export function teachRecipes(game: Game, rows: UserRecipe[]): void {
+  if (DATASETS[game].hasCalc) return;
+  const sig = JSON.stringify(rows);
+  if (taughtSig[game] === sig) return;
+  taughtSig[game] = sig;
+  INDEX[game] = buildTaught(game, rows);
+}
 
 /** Every building name the inventory understands, for the datalist. */
 export function buildingOptions(game: Game = "anno1800"): string[] {

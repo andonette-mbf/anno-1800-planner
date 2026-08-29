@@ -20,6 +20,8 @@ import {
   itemGood,
   siloCapable,
   suggestTrades,
+  userRate,
+  type UserRecipe,
 } from "@/lib/ledger";
 import { planCheck, planSeed } from "@/lib/plancheck";
 import CultureBlock from "./CultureBlock";
@@ -422,6 +424,125 @@ function ModChip({
   );
 }
 
+// Teach the ledger a building's numbers (M13) — packless games only. The
+// four Annos with no data pack know no buildings, so every inventory line is
+// free text the ledger skips; this chip lets the player type in what the
+// game's tile shows ("makes 1t of Bread every 30s, eats Flour") and the line
+// starts producing. Taught rows live in the save (anno_user_recipes) and are
+// the whole index for that game (`teachRecipes`). The chip reads ⏱ when the
+// building is unknown and shows the taught t/min once it isn't.
+function TeachChip({
+  itemName,
+  recipe,
+  onSave,
+  onRemove,
+}: {
+  itemName: string;
+  recipe: UserRecipe | null;
+  onSave: (r: UserRecipe) => void;
+  onRemove: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [good, setGood] = useState("");
+  const [time, setTime] = useState("");
+  const [amount, setAmount] = useState("");
+  const [inputs, setInputs] = useState("");
+  const openForm = () => {
+    setGood(recipe?.good ?? "");
+    setTime(recipe ? String(recipe.time) : "");
+    setAmount(recipe?.amount ? String(recipe.amount) : "");
+    setInputs(recipe?.inputs?.join(", ") ?? "");
+    setOpen(true);
+  };
+  const ok = good.trim() && Number(time) > 0;
+  const save = () => {
+    if (!ok) return;
+    const r: UserRecipe = { building: itemName, good: good.trim(), time: Number(time) };
+    const a = Number(amount);
+    if (Number.isFinite(a) && a > 0 && a !== 1) r.amount = a;
+    const inp = inputs
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (inp.length) r.inputs = inp;
+    onSave(r);
+    setOpen(false);
+  };
+  if (!open)
+    return (
+      <button
+        className={"chip schip" + (recipe ? " on" : "")}
+        title={
+          recipe
+            ? `Taught: makes ${recipe.amount ?? 1}t of ${recipe.good} every ${recipe.time}s` +
+              (recipe.inputs?.length ? `, eats ${recipe.inputs.join(", ")}` : "") +
+              ". Tap to correct or forget."
+            : `The app has no numbers for this game — read them off ${itemName}'s tile and teach the ledger what it makes.`
+        }
+        onClick={openForm}
+      >
+        {recipe ? `⏱ ${userRate(recipe)} t/min` : "⏱ teach"}
+      </button>
+    );
+  return (
+    <span className="chip schip on teachform" title={`What the game shows on ${itemName}'s tile`}>
+      makes
+      <input
+        placeholder="good… e.g. Bread"
+        value={good}
+        autoFocus
+        onChange={(e) => setGood(e.target.value)}
+        style={{ width: "8em" }}
+      />
+      <input
+        placeholder="t"
+        title="Tons per cycle (blank = 1)"
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+        inputMode="decimal"
+        style={{ width: "2.5em" }}
+      />
+      t every
+      <input
+        placeholder="s"
+        title="Seconds one production cycle takes"
+        value={time}
+        onChange={(e) => setTime(e.target.value)}
+        inputMode="decimal"
+        style={{ width: "3em" }}
+      />
+      s, eats
+      <input
+        placeholder="nothing — or Flour, Water…"
+        title="Goods eaten, comma-separated — one ton each per ton made"
+        value={inputs}
+        onChange={(e) => setInputs(e.target.value)}
+        style={{ width: "11em" }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") save();
+        }}
+      />
+      <button disabled={!ok} title="Save these numbers" onClick={save}>
+        ✓
+      </button>
+      {recipe && (
+        <button
+          title="Forget this building's numbers"
+          onClick={() => {
+            onRemove();
+            setOpen(false);
+          }}
+        >
+          🗑
+        </button>
+      )}
+      <button title="Never mind" onClick={() => setOpen(false)}>
+        ✕
+      </button>
+    </span>
+  );
+}
+
 // Who lives on this island (M8): a one-line 👥 summary that stays visible —
 // it feeds the ledger right below it — and unfolds into per-tier headcount
 // inputs. Only the island's own region's tiers are offered (the way growth
@@ -592,6 +713,8 @@ export function TrackerView({
     addIslandLink,
     removeIslandLink,
     setIslandLinkCap,
+    saveUserRecipe,
+    removeUserRecipe,
   } = useCompanion();
   const { status } = useAuth();
   // Per-game content: region tags, starter kits, inventory chips, wiki base.
@@ -1990,6 +2113,21 @@ export function TrackerView({
                             />
                           );
                         })()}
+                      {/* Teach the ledger this building's numbers (M13) —
+                          only in a game with no data pack, where every item
+                          would otherwise stay free text forever. */}
+                      {!DATASETS[game].hasCalc && (
+                        <TeachChip
+                          itemName={c.t}
+                          recipe={
+                            (data.userRecipes || []).find(
+                              (r) => r.building.toLowerCase() === c.t.trim().toLowerCase()
+                            ) ?? null
+                          }
+                          onSave={saveUserRecipe}
+                          onRemove={() => removeUserRecipe(c.t)}
+                        />
+                      )}
                       <button
                         className="plx qmove"
                         title="One fewer"

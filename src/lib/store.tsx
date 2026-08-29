@@ -18,7 +18,9 @@ import React, {
 import { DEFAULT_BAND } from "./dataset";
 import type { CalcState } from "./engine";
 import { GAMES, gameKey, isGame, type Game } from "./games";
-import type { PopSettings } from "./ledger";
+// Runtime import is safe: ledger.ts takes only TYPES from this file, so there
+// is no import cycle once TypeScript erases them.
+import { teachRecipes, type PopSettings, type UserRecipe } from "./ledger";
 
 export { GAMES, isGame, type Game } from "./games";
 
@@ -215,6 +217,34 @@ function parseCargo(raw: unknown): string[] {
   return out;
 }
 
+/** Taught recipes (M13) out of untrusted data. A row must have a building, a
+ *  good and a positive cycle time; junk amounts fall back to the 1-ton
+ *  default, junk inputs are dropped. Deduped by building name — the entry the
+ *  inventory matches on — first row wins, like the ledger's `register`. */
+function parseRecipes(raw: unknown): UserRecipe[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const out: UserRecipe[] = [];
+  for (const x of raw) {
+    const o = x as { building?: unknown; good?: unknown; time?: unknown; amount?: unknown; inputs?: unknown };
+    const building = String(o?.building ?? "").trim();
+    const good = String(o?.good ?? "").trim();
+    const time = Number(o?.time);
+    const k = building.toLowerCase();
+    if (!building || !good || !Number.isFinite(time) || time <= 0 || seen.has(k)) continue;
+    seen.add(k);
+    const rec: UserRecipe = { building, good, time };
+    const amount = Number(o?.amount);
+    if (Number.isFinite(amount) && amount > 0 && amount !== 1) rec.amount = amount;
+    if (Array.isArray(o?.inputs)) {
+      const inputs = (o.inputs as unknown[]).map((i) => String(i).trim()).filter(Boolean);
+      if (inputs.length) rec.inputs = inputs;
+    }
+    out.push(rec);
+  }
+  return out;
+}
+
 function parseShips(raw: unknown): ShipItem[] {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -303,6 +333,13 @@ export interface CompanionData {
   // rows. Complements the ships' routes, which imply the same thing when
   // from/to/cargo are filled in.
   islandLinks: TradeLink[];
+  // Production facts typed in as the player learns them from the game (M13) —
+  // only read by the four packless games, where they ARE the ledger's index
+  // (`teachRecipes`). Per save like everything else here: a purist would call
+  // rates a game fact, but riding CompanionData bought storage, sync, backup
+  // and import for free, and one playthrough per game is the actual shape of
+  // play. Games with a pack never read these.
+  userRecipes: UserRecipe[];
 }
 
 // findIndex, but "no match" means "the end" — the insertion point that keeps
@@ -637,6 +674,10 @@ function loadLocal(game: Game = "anno1800", id = ""): CompanionData {
   try {
     islandLinks = parseLinks(JSON.parse(ls.get(k("anno_island_links")) || "[]"));
   } catch {}
+  let userRecipes: UserRecipe[] = [];
+  try {
+    userRecipes = parseRecipes(JSON.parse(ls.get(k("anno_user_recipes")) || "[]"));
+  } catch {}
   try {
     quests = parseQuests(JSON.parse(ls.get(k("anno_quests")) || "[]"), sessions);
   } catch {}
@@ -657,6 +698,7 @@ function loadLocal(game: Game = "anno1800", id = ""): CompanionData {
     popCfg,
     ships,
     islandLinks,
+    userRecipes,
   };
 }
 
@@ -678,6 +720,7 @@ function saveLocal(d: CompanionData, game: Game = "anno1800", id = "") {
   ls.set(k("anno_pop_cfg"), JSON.stringify(d.popCfg || DEFAULT_POP_CFG));
   ls.set(k("anno_ships"), JSON.stringify(d.ships || []));
   ls.set(k("anno_island_links"), JSON.stringify(d.islandLinks || []));
+  ls.set(k("anno_user_recipes"), JSON.stringify(d.userRecipes || []));
 }
 
 const EMPTY_DATA: CompanionData = {
@@ -697,6 +740,7 @@ const EMPTY_DATA: CompanionData = {
   popCfg: DEFAULT_POP_CFG,
   ships: [],
   islandLinks: [],
+  userRecipes: [],
 };
 
 /** One game's saves: the list (never empty), which one is showing, and the
@@ -796,6 +840,7 @@ function fromBlob(blob: SyncBlob, local: Record<Game, GameSaves>): Record<Game, 
     popCfg: parsePopCfg(d.popCfg),
     ships: parseShips(d.ships),
     islandLinks: parseLinks(d.islandLinks),
+    userRecipes: parseRecipes(d.userRecipes),
     quests: ringTimers(healBlockers(d.quests || [])),
   });
   const forGame = (game: Game, legacy: CompanionData | undefined): GameSaves => {
@@ -906,6 +951,7 @@ function parseSaveData(raw: unknown): CompanionData {
     popCfg: parsePopCfg(o.popCfg),
     ships: parseShips(o.ships),
     islandLinks: parseLinks(o.islandLinks),
+    userRecipes: parseRecipes(o.userRecipes),
   };
 }
 
@@ -1036,6 +1082,11 @@ interface CompanionCtx {
   removeIslandLink: (good: string, from: string, to: string) => void;
   /** Set or clear (null) a link's t/min cap — see TradeLink.tpm. */
   setIslandLinkCap: (good: string, from: string, to: string, tpm: number | null) => void;
+  /** Teach (or correct) one building's production numbers (M13) — packless
+   *  games only. Upserts by building name, the key the inventory matches. */
+  saveUserRecipe: (r: UserRecipe) => void;
+  /** Forget a taught building's numbers. */
+  removeUserRecipe: (building: string) => void;
 }
 
 const CompanionContext = createContext<CompanionCtx | null>(null);
@@ -1058,6 +1109,12 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   const [game, setGameState] = useState<Game>("anno1800");
   const gs = all[game];
   const data = gs.data[gs.cur] ?? EMPTY_DATA;
+  // Point a packless game's ledger index at this save's taught recipes (M13)
+  // BEFORE any child renders — everything downstream (datalists, itemGood,
+  // islandLedger) then sees them with no wiring of its own. Signature-cached
+  // in ledger.ts, so on most renders this is a string compare; pack games
+  // return immediately.
+  teachRecipes(game, data.userRecipes || []);
   const [sync, setSync] = useState<CompanionCtx["sync"]>("local");
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const canSync = useRef(false);
@@ -1816,6 +1873,21 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             islandLinks: (d.islandLinks || []).filter(
               (l) => `${l.good}|${l.from}|${l.to}`.toLowerCase() !== key
             ),
+          };
+        }),
+      saveUserRecipe: (r) =>
+        update((d) => ({
+          ...d,
+          // parseRecipes validates and dedupes by building name; putting the
+          // new row first makes the upsert (its namesake loses the dedupe).
+          userRecipes: parseRecipes([r, ...(d.userRecipes || [])]),
+        })),
+      removeUserRecipe: (building) =>
+        update((d) => {
+          const k = building.trim().toLowerCase();
+          return {
+            ...d,
+            userRecipes: (d.userRecipes || []).filter((r) => r.building.toLowerCase() !== k),
           };
         }),
       setIslandLinkCap: (good, from, to, tpm) =>

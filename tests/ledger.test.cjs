@@ -525,6 +525,69 @@ const near = (a, b) => Math.abs(a - b) < 1e-9;
   ok("suggestions offer only what residents leave over");
 }
 
+// --- taught recipes (M13) -------------------------------------------------
+// A packless game's index is whatever the player has taught it. Numbers here
+// are Anno 1404's real ones (Bakery: 1t Bread / 30s from Flour; Mill: 1t
+// Flour / 15s from Wheat; Wheat Farm: 1t / 30s) — not because the app ships
+// them, but because a hand-check against known figures beats invented ones.
+{
+  // Before teaching: 1404 knows nothing, and every line is free text.
+  if (L.buildingOptions("anno1404").length) fail("untaught 1404 should know no buildings");
+  if (L.itemGood("Bakery", "anno1404") !== null) fail("untaught Bakery must not parse");
+
+  L.teachRecipes("anno1404", [
+    { building: "Bakery", good: "Bread", time: 30, inputs: ["Flour"] },
+    { building: "Mill", good: "Flour", time: 15, inputs: ["Wheat"] },
+    { building: "Wheat Farm", good: "Wheat", time: 30 },
+  ]);
+
+  if (L.buildingOptions("anno1404").join(",") !== "Bakery,Mill,Wheat Farm")
+    fail(`taught options wrong: ${L.buildingOptions("anno1404")}`);
+  // Occident is region 1 in games.ts — taught buildings exist in EVERY region.
+  if (!L.buildingOptionsFor(1, "anno1404").includes("Bakery"))
+    fail("taught Bakery missing from an Occident-tagged island's datalist");
+  if (L.itemGood("Bakery", "anno1404") !== "Bread") fail("taught Bakery should make Bread");
+
+  const led = L.islandLedger(
+    [
+      { t: "Bakery", n: 2, done: true },
+      { t: "Mill", done: true },
+      { t: "wheat farm", n: 3, done: true }, // case-insensitive, like packs
+      { t: "Marketplace", done: true }, // untaught free text still skipped
+    ],
+    "anno1404",
+    1
+  );
+  const at = (n) => led.find((r) => r.name === n);
+  // 2 Bakeries: 2 × 60/30 = 4 t/min Bread, eating 4 t/min Flour.
+  if (!at("Bread") || !near(at("Bread").net, 4)) fail(`Bread net should be 4, got ${at("Bread")?.net}`);
+  // 1 Mill makes 60/15 = 4 t/min Flour — exactly what the bakeries eat.
+  if (!near(at("Flour").produced, 4) || !near(at("Flour").net, 0))
+    fail(`Flour should balance at 4 made / 4 used, got ${JSON.stringify(at("Flour"))}`);
+  // 3 farms make 6 t/min Wheat, the mill eats 4 — surplus 2.
+  if (!near(at("Wheat").net, 2)) fail(`Wheat net should be 2, got ${at("Wheat")?.net}`);
+  ok("taught recipes: 2 Bakeries + Mill + 3 Wheat Farms balance like 1404");
+
+  // A shortfall prices its fix in taught buildings: bakeries alone are short
+  // 4 t/min of Flour, which is one 4 t/min Mill.
+  const short = L.islandLedger([{ t: "Bakery", n: 2, done: true }], "anno1404", 1);
+  const flour = short.find((r) => r.name === "Flour");
+  if (!flour?.fix || flour.fix.building !== "Mill" || flour.fix.count !== 1)
+    fail(`Flour fix should be 1× Mill, got ${JSON.stringify(flour?.fix)}`);
+  ok("taught recipes: a shortfall names the taught producer");
+
+  // Corrections take: re-teaching the Bakery at half speed halves the rate.
+  L.teachRecipes("anno1404", [{ building: "Bakery", good: "Bread", time: 60 }]);
+  const slow = L.islandLedger([{ t: "Bakery", done: true }], "anno1404", 0);
+  if (!near(slow.find((r) => r.name === "Bread").produced, 1))
+    fail("re-taught Bakery should make 1 t/min");
+  // ...and a game WITH a pack ignores teaching entirely.
+  L.teachRecipes("anno1800", [{ building: "Bogus Hut", good: "Bogus", time: 1 }]);
+  if (L.itemGood("Bogus Hut", "anno1800") !== null)
+    fail("teaching must never touch a game that has a pack");
+  ok("taught recipes: corrections apply, pack games are untouchable");
+}
+
 if (failures) {
   console.error(`\n${failures} failure(s)`);
   process.exit(1);
