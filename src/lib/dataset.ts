@@ -136,6 +136,9 @@ export interface Dataset {
   /** True when the region chips pick the CHAIN, not just filter the picker —
    *  117 has no "All", because Leather's chain depends on where you build it. */
   regionIsPlanning: boolean;
+  /** `regionFilter` a blank plan opens with (M12): 0 = "All" for a game whose
+   *  regions only filter; a planning game names its starting region instead. */
+  startRegion: number;
   /** t/min of feed one silo'd building eats. */
   siloFeedRate: number;
   /** Good every fuel-burning building consumes, or null (1800 has none). */
@@ -201,6 +204,7 @@ const ANNO1800: Dataset = {
   presets: PRESETS,
 
   regionIsPlanning: false,
+  startRegion: 0,
   siloFeedRate: SILO_FEED,
   fuelGood: null,
   fuelPerMin: 0,
@@ -329,6 +333,8 @@ const ANNO117: Dataset = {
   presets: PRESETS_117,
 
   regionIsPlanning: true,
+  // The campaign (and every scenario start) opens in Latium.
+  startRegion: 1,
   // The Silo's +100% productivity is the same ×2 as 1800's, so only the feed
   // rate differs (0.2 t/min of Wheat). tests/pack117 pins the +100%.
   siloFeedRate: SILO_117.feedPerMin ?? 0,

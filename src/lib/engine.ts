@@ -7,7 +7,7 @@
 // dataset.ts for what actually differs. A state with no `game` is 1800, so the
 // golden tests and every pre-M10 share link exercise exactly the old code path.
 // tests/engine117.test.cjs covers the 117 side against hand-checked chains.
-import { DEFAULT_BAND, datasetFor, type NeedDef } from "./dataset";
+import { DATASETS, DEFAULT_BAND, datasetFor, type NeedDef } from "./dataset";
 import type { Game } from "./games";
 
 export type { NeedDef } from "./dataset";
@@ -57,11 +57,10 @@ export const DEFAULT_STATE: CalcState = {
   cons: 100,
 };
 
-/** A blank plan for a game — 117 starts in Latium, since it has no "All". */
+/** A blank plan for a game — where it opens is the dataset's `startRegion`
+ *  (117: Latium, since it has no "All"). */
 export function defaultStateFor(game: Game): CalcState {
-  return game === "anno117"
-    ? { ...DEFAULT_STATE, game, regionFilter: 1, sel: {}, pop: {} }
-    : { ...DEFAULT_STATE, game, sel: {}, pop: {} };
+  return { ...DEFAULT_STATE, game, regionFilter: DATASETS[game].startRegion, sel: {}, pop: {} };
 }
 
 export function electrifiable(st: CalcState, id: string): boolean {
