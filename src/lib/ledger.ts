@@ -24,6 +24,7 @@
 // it makes, so it is a consumption edge of its own rather than a rate modifier.
 import { GOODS, SILO, SILO_FEED } from "./data";
 import { FUEL_117, GOODS_117, REGIONS_117, SILO_117 } from "./data117";
+import { DEFAULT_STATE, popTargets, type CalcState } from "./engine";
 import type { Game } from "./games";
 import type { CheckItem } from "./store";
 
@@ -353,6 +354,9 @@ export interface LedgerRow {
   produced: number; // t/min made by ticked buildings
   used: number; // t/min consumed by ticked buildings (inputs + silo feed)
   net: number;
+  // How much of `used` is residents eating (M8) — the 👥 counts × per-resident
+  // need rates. Absent when no residents consume this good here.
+  res?: number;
   // End product (pop need/want or construction material) rather than a chain
   // intermediate — the UI dims these so the rows that should balance to 0
   // stand out. A final can still be consumed locally (Soap → shampoo).
@@ -495,14 +499,63 @@ export function applyTrade(
   }
 }
 
+/** The consumption knobs resident demand is scaled by (M8) — the calculator's
+ *  own settings: 1800's lifestyle toggle + consumption slider, 117's needs
+ *  band. Global per save, matching the calculator's single setting. */
+export interface PopSettings {
+  /** Consumption rate %, default 100 (item buffs lower it). */
+  cons?: number;
+  /** 1800: count lifestyle needs too. */
+  lifestyle?: boolean;
+  /** 117: supply needs up to this band (0 basic … 3 luxury). */
+  band?: number;
+}
+
+/** What one island's residents eat, in t/min keyed by good DISPLAY name (the
+ *  ledger's row identity). Deliberately NOT re-derived here: a synthetic
+ *  pop-mode state goes through the engine's own `popTargets`, so the rates and
+ *  every gate — 1800's unlock thresholds and lifestyle toggle, 117's supply
+ *  bands — live in the dataset seam only. Thresholds gate on the island's OWN
+ *  tier counts: 40 Farmers drink no schnapps, wherever the empire stands. */
+export function residentUse(
+  pop: Record<string, number>,
+  game: Game = "anno1800",
+  cfg: PopSettings = {}
+): Record<string, number> {
+  const I = ix(game);
+  const st: CalcState = {
+    ...DEFAULT_STATE,
+    game,
+    mode: "pop",
+    sel: {},
+    pop,
+    cons: cfg.cons ?? 100,
+    lifestyle: !!cfg.lifestyle,
+    ...(cfg.band != null ? { band: cfg.band } : {}),
+  };
+  const out: Record<string, number> = {};
+  const t = popTargets(st);
+  for (const gid in t) {
+    const nm = I.goodName(gid);
+    out[nm] = (out[nm] || 0) + t[gid];
+  }
+  return out;
+}
+
 /** Sum one island's checklist into per-good makes/uses/net rows.
  *  Unticked (broken) buildings and non-building items are skipped.
  *  `region` is the island's 🌍 tag as a region number (0 = untagged); it only
- *  affects which building a shortfall suggests. */
+ *  affects which building a shortfall suggests.
+ *  `pop` (M8) adds what the island's residents eat — tier id → headcount,
+ *  scaled by `cfg` — into `used`, so a Bakery island whose Workers out-eat the
+ *  ovens goes short honestly. Runs BEFORE applyTrade, so links serve real
+ *  shortfalls. */
 export function islandLedger(
   items: CheckItem[],
   game: Game = "anno1800",
-  region = 0
+  region = 0,
+  pop?: Record<string, number>,
+  cfg?: PopSettings
 ): LedgerRow[] {
   const I = ix(game);
   const produced: Record<string, number> = {};
@@ -551,12 +604,21 @@ export function islandLedger(
       note(I.fuelGood, nm);
     }
   }
+  // Resident demand (M8) lands in `used` like any other consumption edge.
+  // Everything popTargets emits is a pop good — final by definition — so the
+  // rows dim like other end products, and a shortfall prices a fix as usual.
+  const resUse = pop && Object.keys(pop).length ? residentUse(pop, game, cfg) : {};
+  for (const nm in resUse) {
+    used[nm] = (used[nm] || 0) + resUse[nm];
+    finals.add(nm);
+  }
   return [...new Set([...Object.keys(produced), ...Object.keys(used)])]
     .sort()
     .map((name) => {
       const p = produced[name] || 0;
       const u = used[name] || 0;
       const row: LedgerRow = { name, produced: p, used: u, net: p - u };
+      if (resUse[name]) row.res = resUse[name];
       if (finals.has(name)) row.final = true;
       if (row.net < -1e-9) row.fix = priceFix(I, name, region, u - p);
       return row;

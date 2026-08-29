@@ -105,6 +105,17 @@ a.plx:hover{color:var(--accent)}
    counter chip (a span). The emphasis used to be red; in black and white the
    row's thick black edge does the shouting and the label just goes bold. */
 .questrow.gap .qmain>span{color:var(--ink);font-weight:700}
+/* 👥 residents (M8): the one-line summary above the ledger it feeds, and its
+   unfolded per-tier editor. Same quiet text-toggle as the checklist tuck. */
+.ipop{margin-top:9px;font-size:12px}
+.ipoptgl{background:0 0;border:0;padding:0;font:inherit;font-size:12px;color:var(--muted);cursor:pointer;text-align:left}
+.ipoptgl:hover{color:var(--ink)}
+.ipopedit{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:6px}
+.ipoptier{display:inline-flex;align-items:center;gap:5px;color:var(--muted);font-size:11px;white-space:nowrap}
+.ipoptier input{width:64px;padding:3px 5px;font:inherit}
+.ipopcfg{display:inline-flex;align-items:center;gap:6px;margin-left:auto}
+.ipopcons{display:inline-flex;align-items:center;gap:2px;color:var(--muted);font-size:11px}
+.ipopcons input{width:52px;padding:3px 5px;font:inherit}
 .iledger{margin-top:9px;border-top:1px dashed var(--line);padding-top:7px;font-size:12px}
 .iledgrow{display:grid;grid-template-columns:1fr 62px 62px 70px;gap:6px;padding:2px 0;align-items:baseline}
 .iledgrow .num{text-align:right}

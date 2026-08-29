@@ -225,6 +225,77 @@ check(
   blockFor("Ditchwater").className
 );
 
+// --- residents on the block (M8) -------------------------------------------
+// The 👥 row unfolds into per-tier inputs; a count typed there lands in
+// localStorage, feeds the ledger (Crown Falls' bakeries now have eaters), and
+// survives folding the island and a reload.
+const nativeValue = Object.getOwnPropertyDescriptor(
+  dom.window.HTMLInputElement.prototype,
+  "value"
+).set;
+const setValue = async (el, v) => {
+  nativeValue.call(el, v);
+  await act(async () => {
+    el.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+  });
+};
+const popRow = (n) => blockFor(n).querySelector(".ipop");
+const popToggle = (n) => popRow(n).querySelector(".ipoptgl");
+check("every island grew a 👥 row", !!popRow("Crown Falls") && !!popRow("Ditchwater"));
+check(
+  "with nobody home it just offers itself",
+  popToggle("Crown Falls").textContent.includes("Residents…"),
+  popToggle("Crown Falls").textContent
+);
+await fire(popToggle("Crown Falls"));
+const tierInput = (lbl) =>
+  [...popRow("Crown Falls").querySelectorAll(".ipoptier")]
+    .find((l) => l.textContent.trim().startsWith(lbl))
+    ?.querySelector("input");
+check(
+  "open, it offers tier inputs (untagged island: all of them)",
+  !!tierInput("Farmers") && !!tierInput("Workers") && !!tierInput("Jornaleros")
+);
+await setValue(tierInput("Workers"), "1000");
+check(
+  "the count is stored",
+  JSON.parse(localStorage.getItem("anno_island_pop") || "{}")["Crown Falls"]?.workers === 1000,
+  localStorage.getItem("anno_island_pop")
+);
+check(
+  "and read back on the summary line",
+  popToggle("Crown Falls").textContent.includes("1000") &&
+    popToggle("Crown Falls").textContent.includes("Workers"),
+  popToggle("Crown Falls").textContent
+);
+const breadRow = () =>
+  [...blockFor("Crown Falls").querySelectorAll(".iledgrow")].find((r) =>
+    r.textContent.includes("Bread")
+  );
+check(
+  "the ledger's Bread row now carries a 👥 chip",
+  breadRow()?.querySelector(".trchip")?.textContent.includes("👥"),
+  breadRow()?.textContent
+);
+// 2 Bakeries make 2 t/min; 1000 workers eat 0.9091 — still a surplus, and the
+// workers are also short of fish nothing here catches.
+check(
+  "…and the residents' other needs turned up as shortfalls",
+  blockFor("Crown Falls").querySelector(".iledgfix")?.textContent.includes("Fishery"),
+  blockFor("Crown Falls").querySelector(".iledgfix")?.textContent
+);
+await fire(blockFor("Crown Falls").querySelector(".isletog"));
+check("the 👥 row survives the fold, like the ledger", !!popRow("Crown Falls"));
+await fire(blockFor("Crown Falls").querySelector(".isletog"));
+await act(async () => app.unmount());
+document.getElementById("root").innerHTML = "";
+app = await mount();
+check(
+  "…and a reload",
+  popToggle("Crown Falls").textContent.includes("1000"),
+  popToggle("Crown Falls").textContent
+);
+
 let bad = 0;
 for (const x of results) {
   console.log(`${x.ok ? "ok  " : "FAIL"} - ${x.name}${x.ok || !x.detail ? "" : "  << " + x.detail}`);

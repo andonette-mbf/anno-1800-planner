@@ -512,19 +512,35 @@ is in CLAUDE.md.
   same-commit provenance pin) and the extended `test:items` /
   `test:items-ui` (Villa panel + patron picking in jsdom) guard it.
 
+- **M8 — residents per island** (build 106, `/m8-residents`; decisions
+  confirmed with the user in-session: knobs global per game, tiers scoped to
+  the island's region, input as a foldable 👥 row). The ledger now counts what
+  residents eat: `islandLedger` takes an optional `pop` (tier id → headcount)
+  + `PopSettings`, and `residentUse` in ledger.ts routes them through the
+  engine's own `popTargets` via a synthetic pop-mode state — rates, 1800's
+  unlock thresholds + lifestyle toggle and 117's supply bands all stay in the
+  dataset seam, zero re-derivation and zero new game branches. Demand lands in
+  `used` BEFORE `applyTrade`, so links serve real shortfalls; rows carry
+  `res` (rendered as a 👥 chip) and dim as finals. Storage followed the M11b
+  template: `islandPop` (island → tier → headcount) and `popCfg` (cons 50–150,
+  lifestyle, band — ONE setting per save, like the calculator's) through
+  parse/load/save/EMPTY_DATA/norm/removeIsland, keys `anno_island_pop` /
+  `anno_pop_cfg` via the per-game scheme. The 👥 row sits above the ledger it
+  feeds and stays outside the island fold like the ledger does (build 99's
+  rule); it unfolds into per-tier inputs (the island's 🌍 region's tiers only,
+  the way growth goals scoped themselves in build 52) plus the global knobs.
+  `test:ledger` grew hand-derived sections (thresholds incl. the ==100 edge,
+  lifestyle, cons scaling, 117 bands, res-through-trade) and `test:islands`
+  drives the row in jsdom (type → stored → chip on the Bread row → survives
+  fold + reload). M9's precondition is met.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)
 
-- **M8 — residents per island** (session prompt: `/m8-residents`): per-tier
-  population counts on each island block; the ledger adds resident
-  consumption from `POP` need rates (gated by unlock thresholds like
-  `popTargets`) so net = production − chains − residents. This makes deficits
-  real for final goods. Decide in-session: lifestyle toggle and consumption
-  slider per island, or global.
-- **M9 — trade routes** (session prompt: `/m9-trade-routes`; needs M8 first):
-  cross-island suggestions matching surpluses to deficits ("ship 2 t/min Rum:
-  New World → Crown Falls") once M8 makes final-goods demand honest. Manual
+- **M9 — trade routes** (session prompt: `/m9-trade-routes`; M8 done, build
+  106): cross-island suggestions matching surpluses to deficits ("ship 2 t/min
+  Rum: New World → Crown Falls") now that M8 makes final-goods demand honest. Manual
   route records already exist (builds 96–100 trade links + ship routes), so
   this is purely the read-only suggestion layer with one-tap accept.
 - **M6** — backup & restore (session prompt: `/m6-backup`): one-button JSON

@@ -267,6 +267,100 @@ const near = (a, b) => Math.abs(a - b) < 1e-9;
   ok("trade moves the numbers, splits surpluses, re-prices the remainder");
 }
 
+// --- residents eat from the ledger (M8) ------------------------------------
+// islandLedger's pop argument goes through the engine's own popTargets, so
+// rates, unlock thresholds, the lifestyle toggle and 117's bands are the
+// calculator's — each expectation below is residents × the rate in data.json.
+{
+  // 100 Farmers, default knobs. Fish [0.0025, threshold 50] and Work Clothes
+  // [0.0030769, threshold 100] are active; Schnapps' threshold is exactly 100
+  // (>= passes); the lifestyle rows (Flour, Jam…) are off by default.
+  const led = L.islandLedger([], "anno1800", OW, { farmers: 100 });
+  const at = (n) => led.find((r) => r.name === n);
+  if (!near(at("Fish")?.used, 100 * 0.0025))
+    fail(`100 farmers should eat 0.25 t/min Fish, got ${JSON.stringify(at("Fish"))}`);
+  if (!near(at("Schnapps")?.used, 100 * 0.0033333))
+    fail("Schnapps' threshold of exactly 100 farmers should count as met");
+  if (!near(at("Work Clothes")?.used, 100 * 0.0030769))
+    fail("100 farmers should wear 0.30769 t/min of Work Clothes");
+  if (at("Flour")) fail("lifestyle needs must stay off by default");
+  // Resident rows are end products by definition, carry `res`, and price a fix
+  // like any other shortfall: 0.25 t/min of Fish is one Fishery (2 t/min).
+  const fish = at("Fish");
+  if (!fish?.final || !near(fish?.res, 0.25) || !near(fish?.net, -0.25))
+    fail(`the Fish row should be final with res 0.25, got ${JSON.stringify(fish)}`);
+  if (fish?.fix?.building !== "Fishery" || fish?.fix?.count !== 1)
+    fail(`0.25 t/min of Fish short should ask for 1x Fishery, got ${JSON.stringify(fish?.fix)}`);
+
+  // Below every threshold nothing is eaten: 40 farmers demand nothing at all.
+  if (L.islandLedger([], "anno1800", OW, { farmers: 40 }).length)
+    fail("40 farmers are under every unlock threshold and should eat nothing");
+  // 100 workers drink no Beer (threshold 500) and eat no Bread (150), but do
+  // eat Fish — workers' Fish carries no threshold.
+  const w = L.islandLedger([], "anno1800", OW, { workers: 100 });
+  if (w.find((r) => r.name === "Bread") || w.find((r) => r.name === "Beer"))
+    fail("100 workers are under the Bread and Beer thresholds");
+  if (!near(w.find((r) => r.name === "Fish")?.used, 100 * 0.0025))
+    fail("100 workers should still eat Fish (no threshold on it)");
+
+  // The knobs: lifestyle adds the band-2 rows, the slider scales everything.
+  const life = L.islandLedger([], "anno1800", OW, { farmers: 100 }, { lifestyle: true });
+  if (!near(life.find((r) => r.name === "Flour")?.used, 100 * 0.0024))
+    fail("lifestyle on should add 0.24 t/min of Flour for 100 farmers");
+  const half = L.islandLedger([], "anno1800", OW, { farmers: 100 }, { cons: 50 });
+  if (!near(half.find((r) => r.name === "Fish")?.used, 100 * 0.0025 * 0.5))
+    fail("consumption 50% should halve what residents eat");
+
+  // An empty pop record changes nothing.
+  const plain = L.islandLedger([{ t: "Bakery", done: true }], "anno1800", OW, {});
+  if (plain.length !== L.islandLedger([{ t: "Bakery", done: true }], "anno1800", OW).length)
+    fail("an empty pop record must not change the ledger");
+  ok("1800 residents eat at popTargets' rates, gated by thresholds and knobs");
+}
+
+// --- 117: the band is the gate, residentUse merges by display name ---------
+{
+  // 100 Liberti at band 0: only what a fresh residence demands — Sardines,
+  // Porridge, Tunics, Pileus. Bread and Beer sit in band 1.
+  const r0 = L.residentUse({ liberti: 100 }, "anno117", { band: 0 });
+  if (!near(r0.Sardines, 100 * 0.01785) || !near(r0.Porridge, 100 * 0.01388))
+    fail(`band 0 should serve Sardines/Porridge, got ${JSON.stringify(r0)}`);
+  if (!near(r0.Tunics, 100 * 0.01785) || !near(r0.Pileus, 100 * 0.01666))
+    fail("band 0 should clothe Liberti in Tunics and Pileus");
+  if (r0.Bread || r0.Beer) fail("band 0 must not serve band-1 needs");
+  // The default band (2, like the calculator's) adds them.
+  const r2 = L.residentUse({ liberti: 100 }, "anno117");
+  if (!near(r2.Bread, 100 * 0.016185) || !near(r2.Beer, 100 * 0.01428))
+    fail(`the default band should add Bread and Beer, got ${JSON.stringify(r2)}`);
+  ok("117 residents are gated by the supply band");
+}
+
+// --- residents land BEFORE trade, so links serve real shortfalls -----------
+{
+  // Ovenia bakes 2 t/min of Bread; Homestead's 1000 workers eat 0.9091 of it
+  // and bake none. The link serves the tracked shortfall first, then the rest
+  // of the surplus rides the same (first) link — exported means gone.
+  const eat = 1000 * 0.0009091;
+  const led = {
+    Ovenia: L.islandLedger([{ t: "Bakery", n: 2, done: true }], "anno1800", OW),
+    Homestead: L.islandLedger([], "anno1800", OW, { workers: 1000 }),
+  };
+  const bread = (isle) => led[isle].find((r) => r.name === "Bread");
+  if (!near(bread("Homestead").used, eat) || !near(bread("Homestead").res, eat))
+    fail(`1000 workers should eat ${eat} t/min of Bread before trade`);
+  if (!bread("Homestead").fix) fail("an unserved resident shortfall should price a fix");
+  L.applyTrade(led, { Ovenia: OW, Homestead: OW }, [
+    { good: "Bread", from: "Ovenia", to: "Homestead" },
+  ]);
+  const home = bread("Homestead");
+  if (!near(home.net, 2 - eat) || home.fix)
+    fail(`imports should cover the residents and bank the rest, got ${JSON.stringify(home)}`);
+  if (!near(home.res ?? 0, eat)) fail("the res chip should survive applyTrade");
+  if (!near(bread("Ovenia").net, 0))
+    fail("the source's whole Bread surplus should be spoken for");
+  ok("resident demand is in the rows applyTrade serves");
+}
+
 if (failures) {
   console.error(`\n${failures} failure(s)`);
   process.exit(1);

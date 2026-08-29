@@ -10,6 +10,7 @@ import {
   type PopSource117,
 } from "@/lib/data117";
 import { cultureAt, CULTURE_EMOJI, type CultureAt } from "@/lib/culture";
+import { BAND_LABELS } from "@/lib/dataset";
 import { CalcState, DEFAULT_STATE } from "@/lib/engine";
 import { GAME_CONTENT, type Game } from "@/lib/games";
 import {
@@ -29,8 +30,10 @@ import { GoodIcon } from "./GoodIcon";
 import { Dropdown } from "./ui/Dropdown";
 import {
   blockersOf,
+  DEFAULT_POP_CFG,
   useAuth,
   useCompanion,
+  type PopCfg,
   type QuestItem,
   type ShipItem,
 } from "@/lib/store";
@@ -412,6 +415,124 @@ function ModChip({
   );
 }
 
+// Who lives on this island (M8): a one-line 👥 summary that stays visible —
+// it feeds the ledger right below it — and unfolds into per-tier headcount
+// inputs. Only the island's own region's tiers are offered (the way growth
+// goals scoped themselves in build 52); an untagged island gets them all.
+// The consumption knobs (1800's lifestyle + %, 117's band) are edited here
+// too but are ONE setting per save, like the calculator's.
+function ResidentsBlock({
+  island,
+  tiers,
+  pop,
+  cfg,
+  game,
+  open,
+  onToggle,
+  setIslandPop,
+  setPopCfg,
+}: {
+  island: string;
+  tiers: GrowthTier[];
+  pop: Record<string, number>;
+  cfg: PopCfg;
+  game: Game;
+  open: boolean;
+  onToggle: () => void;
+  setIslandPop: (island: string, tid: string, count: number) => void;
+  setPopCfg: (patch: Partial<PopCfg>) => void;
+}) {
+  const listed = tiers.filter((t) => pop[t.tid] > 0);
+  const total = listed.reduce((n, t) => n + pop[t.tid], 0);
+  return (
+    <div className="ipop">
+      <button
+        className="ipoptgl"
+        aria-expanded={open}
+        title={
+          open
+            ? "Fold the resident counts away"
+            : "Who lives here — their needs are counted in the ledger below"
+        }
+        onClick={onToggle}
+      >
+        {open ? "▾" : "▸"} 👥{" "}
+        {total > 0
+          ? `${fmt(total, 0)} — ${listed
+              .map((t) => `${t.lbl} ${fmt(pop[t.tid], 0)}`)
+              .join(" · ")}`
+          : "Residents…"}
+      </button>
+      {open && (
+        <div className="ipopedit">
+          {tiers.map((t) => (
+            <label className="ipoptier" key={t.tid}>
+              {t.lbl}
+              <input
+                type="number"
+                min={0}
+                step={10}
+                placeholder="0"
+                value={pop[t.tid] || ""}
+                onChange={(e) =>
+                  setIslandPop(
+                    island,
+                    t.tid,
+                    Math.max(0, Math.floor(Number(e.target.value)) || 0)
+                  )
+                }
+              />
+            </label>
+          ))}
+          <span className="ipopcfg">
+            {game === "anno117" ? (
+              BAND_LABELS.map((label, i) => (
+                <button
+                  key={label}
+                  className={"chip schip" + (cfg.band === i ? " on" : "")}
+                  title={
+                    (i === 0
+                      ? "Count only the goods a fresh residence demands"
+                      : `Count everything up to and including ${label}`) +
+                    " — one setting for every island, like the calculator's"
+                  }
+                  onClick={() => setPopCfg({ band: i })}
+                >
+                  {i === 0 ? label : `+ ${label}`}
+                </button>
+              ))
+            ) : (
+              <button
+                className={"chip schip" + (cfg.lifestyle ? " on" : "")}
+                title="Count lifestyle needs too (optional bonus goods) — one setting for every island, like the calculator's"
+                onClick={() => setPopCfg({ lifestyle: !cfg.lifestyle })}
+              >
+                lifestyle
+              </button>
+            )}
+            <label
+              className="ipopcons"
+              title="Consumption rate — item buffs lower it. One setting for every island, like the calculator's."
+            >
+              <input
+                type="number"
+                min={50}
+                max={150}
+                step={5}
+                value={cfg.cons}
+                onChange={(e) =>
+                  setPopCfg({ cons: Math.floor(Number(e.target.value)) || 100 })
+                }
+              />
+              %
+            </label>
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface SavedPlanRow {
   id: string;
   name: string;
@@ -457,6 +578,8 @@ export function TrackerView({
     seedIslandChecks,
     setIslandPlan,
     setIslandRegion,
+    setIslandPop,
+    setPopCfg,
     addIslandLink,
     removeIslandLink,
   } = useCompanion();
@@ -748,7 +871,11 @@ export function TrackerView({
       ledgers[n] = islandLedger(
         (data.islandChecks || {})[n] || [],
         game,
-        REGION_NUM[(data.islandRegions || {})[n] || ""] || 0
+        REGION_NUM[(data.islandRegions || {})[n] || ""] || 0,
+        // Resident consumption (M8) lands here, BEFORE applyTrade below, so
+        // links serve what the population really leaves uncovered.
+        (data.islandPop || {})[n],
+        data.popCfg
       );
       regions[n] = REGION_NUM[(data.islandRegions || {})[n] || ""] || 0;
     }
@@ -761,6 +888,9 @@ export function TrackerView({
   const islesShort = islands.filter((n) => (allLedgers[n] || []).some((r) => r.fix)).length;
   // Landmark quick-add chips, collapsed per island until asked for.
   const [chipsOpen, setChipsOpen] = useState<Record<string, boolean>>({});
+  // Which islands' 👥 resident editors are unfolded. Session-local, like the
+  // chips row — the counts themselves live in CompanionData and sync.
+  const [popOpen, setPopOpen] = useState<Record<string, boolean>>({});
   // Folded-up islands (build 72). A settled island's block runs to a screenful
   // once it has an inventory, a ledger and a plan check, and you are usually
   // only looking at one of them. Which are folded is remembered per game, and
@@ -1587,6 +1717,12 @@ export function TrackerView({
               const shut = !!isleShut[name];
               const tuck = !!isleTuck[name];
               const cul = cultureByIsle.get(name) || [];
+              // 👥 residents (M8): this island's headcounts, and the tiers its
+              // 🌍 region can even house — untagged islands get the full list.
+              const pops = (data.islandPop || {})[name] || {};
+              const popTiers = REGION_NUM[region]
+                ? GROWTH_TIERS.filter((t) => t.region === REGION_NUM[region])
+                : GROWTH_TIERS;
               return (
                 <div
                   className={"isleblk" + (shut ? " shut" : "")}
@@ -1849,12 +1985,25 @@ export function TrackerView({
                   ))}
                     </>
                   )}
+                  {/* 👥 residents stay OUTSIDE the fold like the ledger they
+                      feed (M8) — a folded island still says who lives there. */}
+                  <ResidentsBlock
+                    island={name}
+                    tiers={popTiers}
+                    pop={pops}
+                    cfg={data.popCfg || DEFAULT_POP_CFG}
+                    game={game}
+                    open={!!popOpen[name]}
+                    onToggle={() => setPopOpen((s) => ({ ...s, [name]: !s[name] }))}
+                    setIslandPop={setIslandPop}
+                    setPopCfg={setPopCfg}
+                  />
                   {/* The ledger stays OUTSIDE the fold — a collapsed island is
                       exactly its header plus this production list (build 99). */}
                   {ledger.length > 0 && (
                     <div
                       className="iledger"
-                      title="Ticked buildings only, at 100% productivity. Silo'd farms make double and use feed; ⚡ powered buildings make double. What residents eat isn't counted; use the calculator for that. Greyed rows are end products (pop goods, construction materials) — the chain balance lives in the dark rows, which should net near 0."
+                      title="Ticked buildings only, at 100% productivity. Silo'd farms make double and use feed; ⚡ powered buildings make double. The 👥 resident counts eat at their need rates (rows they touch carry a 👥 chip). Greyed rows are end products (pop goods, construction materials) — the chain balance lives in the dark rows, which should net near 0."
                     >
                       <div className="iledgrow iledghead">
                         <span>
@@ -1949,6 +2098,14 @@ export function TrackerView({
                                   🚢→ {e.to} {fmt(e.tpm)}
                                 </span>
                               )
+                            )}
+                            {r.res != null && (
+                              <span
+                                className="trchip"
+                                title={`Residents here eat ${fmt(r.res)} t/min of this — the 👥 counts × per-resident need rates`}
+                              >
+                                👥 {fmt(r.res)}
+                              </span>
                             )}
                             {r.net > 1e-9 && exportable.length > 0 && (
                               <Dropdown

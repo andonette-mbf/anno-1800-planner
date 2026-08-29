@@ -15,8 +15,10 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { DEFAULT_BAND } from "./dataset";
 import type { CalcState } from "./engine";
 import { isGame, type Game } from "./games";
+import type { PopSettings } from "./ledger";
 
 export { GAMES, isGame, type Game } from "./games";
 
@@ -242,6 +244,12 @@ function parseShips(raw: unknown): ShipItem[] {
     .filter((s) => s.name);
 }
 
+/** ledger.ts's PopSettings with every knob concrete, so the UI always has a
+ *  definite value to show. */
+export type PopCfg = Required<PopSettings>;
+
+export const DEFAULT_POP_CFG: PopCfg = { cons: 100, lifestyle: false, band: DEFAULT_BAND };
+
 export interface CompanionData {
   openq: Record<string, string>;
   focus: Record<string, string>;
@@ -271,6 +279,13 @@ export interface CompanionData {
   // Union #3" is ceremony the recall question doesn't need. Ship items live on
   // the ship (ShipItem.items), because ships move.
   islandItems: Record<string, Record<string, string[]>>;
+  // Who lives on each island (M8), keyed island → tier id → headcount. Feeds
+  // resident consumption into the island ledger: net = makes − chain − eaten.
+  islandPop: Record<string, Record<string, number>>;
+  // The consumption knobs residents are fed at (M8) — ONE setting per save,
+  // like the calculator's: 1800's lifestyle toggle + consumption %, 117's
+  // needs band. Fields the game doesn't use just sit unread.
+  popCfg: PopCfg;
   // The fleet (build 75). Ships move between islands, so they're a list of
   // their own rather than island inventory: what it's called, what it is, and
   // what it's doing right now.
@@ -459,6 +474,41 @@ function parseCulture(raw: unknown): Record<string, Record<string, string[]>> {
   return out;
 }
 
+// island → tier id → headcount (M8). Zero and junk counts are dropped, so an
+// island nobody lives on leaves no key behind; unknown tier ids are kept, the
+// same forward-compatibility call as parseCulture's unknown buildings.
+function parseIslandPop(raw: unknown): Record<string, Record<string, number>> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  const out: Record<string, Record<string, number>> = {};
+  for (const [island, byT] of Object.entries(raw as Record<string, unknown>)) {
+    if (!byT || typeof byT !== "object" || Array.isArray(byT)) continue;
+    const tiers: Record<string, number> = {};
+    for (const [tid, v] of Object.entries(byT as Record<string, unknown>)) {
+      const n = Math.floor(Number(v));
+      if (Number.isFinite(n) && n > 0) tiers[tid] = n;
+    }
+    if (Object.keys(tiers).length) out[island] = tiers;
+  }
+  return out;
+}
+
+// The M8 consumption knobs, clamped to what the calculator's own controls
+// offer (cons slider 50–150, four 117 bands).
+function parsePopCfg(raw: unknown): PopCfg {
+  const o = (raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {}) as {
+    cons?: unknown;
+    lifestyle?: unknown;
+    band?: unknown;
+  };
+  const cons = Math.floor(Number(o.cons));
+  const band = Math.floor(Number(o.band));
+  return {
+    cons: Number.isFinite(cons) ? Math.min(150, Math.max(50, cons)) : DEFAULT_POP_CFG.cons,
+    lifestyle: !!o.lifestyle,
+    band: band >= 0 && band <= 3 ? band : DEFAULT_POP_CFG.band,
+  };
+}
+
 function loadLocal(game: Game = "anno1800", id = ""): CompanionData {
   const k = (base: string) => skey(game, base, id);
   const openq: Record<string, string> = {};
@@ -517,6 +567,14 @@ function loadLocal(game: Game = "anno1800", id = ""): CompanionData {
   try {
     islandItems = parseCulture(JSON.parse(ls.get(k("anno_island_items")) || "{}"));
   } catch {}
+  let islandPop: Record<string, Record<string, number>> = {};
+  try {
+    islandPop = parseIslandPop(JSON.parse(ls.get(k("anno_island_pop")) || "{}"));
+  } catch {}
+  let popCfg: PopCfg = { ...DEFAULT_POP_CFG };
+  try {
+    popCfg = parsePopCfg(JSON.parse(ls.get(k("anno_pop_cfg")) || "{}"));
+  } catch {}
   let ships: ShipItem[] = [];
   try {
     ships = parseShips(JSON.parse(ls.get(k("anno_ships")) || "[]"));
@@ -566,6 +624,8 @@ function loadLocal(game: Game = "anno1800", id = ""): CompanionData {
     islandRegions,
     islandCulture,
     islandItems,
+    islandPop,
+    popCfg,
     ships,
     islandLinks,
   };
@@ -585,6 +645,8 @@ function saveLocal(d: CompanionData, game: Game = "anno1800", id = "") {
   ls.set(k("anno_island_regions"), JSON.stringify(d.islandRegions || {}));
   ls.set(k("anno_island_culture"), JSON.stringify(d.islandCulture || {}));
   ls.set(k("anno_island_items"), JSON.stringify(d.islandItems || {}));
+  ls.set(k("anno_island_pop"), JSON.stringify(d.islandPop || {}));
+  ls.set(k("anno_pop_cfg"), JSON.stringify(d.popCfg || DEFAULT_POP_CFG));
   ls.set(k("anno_ships"), JSON.stringify(d.ships || []));
   ls.set(k("anno_island_links"), JSON.stringify(d.islandLinks || []));
 }
@@ -602,6 +664,8 @@ const EMPTY_DATA: CompanionData = {
   islandRegions: {},
   islandCulture: {},
   islandItems: {},
+  islandPop: {},
+  popCfg: DEFAULT_POP_CFG,
   ships: [],
   islandLinks: [],
 };
@@ -691,6 +755,8 @@ function fromBlob(blob: SyncBlob, local: Record<Game, GameSaves>): Record<Game, 
     ),
     islandCulture: parseCulture(d.islandCulture),
     islandItems: parseCulture(d.islandItems),
+    islandPop: parseIslandPop(d.islandPop),
+    popCfg: parsePopCfg(d.popCfg),
     ships: parseShips(d.ships),
     islandLinks: parseLinks(d.islandLinks),
     quests: ringTimers(healBlockers(d.quests || [])),
@@ -815,6 +881,10 @@ interface CompanionCtx {
   setIslandItem: (island: string, socket: string, item: string, on: boolean) => void;
   /** Empty one socket building on one island. */
   clearIslandItems: (island: string, socket: string) => void;
+  /** Set one tier's headcount on one island (M8). 0 clears the entry. */
+  setIslandPop: (island: string, tid: string, count: number) => void;
+  /** Adjust the save-wide consumption knobs residents are fed at (M8). */
+  setPopCfg: (patch: Partial<PopCfg>) => void;
   /** Fleet list (build 75). Ships are named, so `name` is the row's identity;
    *  re-adding a name you already have is refused rather than silently
    *  duplicating it. */
@@ -1318,6 +1388,9 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           const islandItems = { ...(d.islandItems || {}) };
           for (const k of Object.keys(islandItems))
             if (k.toLowerCase() === n) delete islandItems[k];
+          const islandPop = { ...(d.islandPop || {}) };
+          for (const k of Object.keys(islandPop))
+            if (k.toLowerCase() === n) delete islandPop[k];
           return {
             ...d,
             islands: (d.islands || []).filter((x) => x.toLowerCase() !== n),
@@ -1326,6 +1399,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             islandRegions,
             islandCulture,
             islandItems,
+            islandPop,
             // Links to or from a removed island go with it.
             islandLinks: (d.islandLinks || []).filter(
               (l) => l.from.toLowerCase() !== n && l.to.toLowerCase() !== n
@@ -1503,6 +1577,24 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           else delete all[island];
           return { ...d, islandItems: all };
         }),
+      // Same empties-leave-no-key rules as the culture/items pairs above.
+      setIslandPop: (island, tid, count) =>
+        update((d) => {
+          const all = { ...(d.islandPop || {}) };
+          const n = Math.max(0, Math.floor(count) || 0);
+          const byT = { ...(all[island] || {}) };
+          if ((byT[tid] || 0) === n) return d;
+          if (n > 0) byT[tid] = n;
+          else delete byT[tid];
+          if (Object.keys(byT).length) all[island] = byT;
+          else delete all[island];
+          return { ...d, islandPop: all };
+        }),
+      setPopCfg: (patch) =>
+        update((d) => ({
+          ...d,
+          popCfg: parsePopCfg({ ...(d.popCfg || DEFAULT_POP_CFG), ...patch }),
+        })),
       addShip: (name, type) => {
         const n = name.trim();
         if (!n) return;
