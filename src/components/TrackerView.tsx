@@ -12,7 +12,7 @@ import {
 import { cultureAt, CULTURE_EMOJI, type CultureAt } from "@/lib/culture";
 import { BAND_LABELS } from "@/lib/dataset";
 import { CalcState, DEFAULT_STATE } from "@/lib/engine";
-import { GAME_CONTENT, type Game } from "@/lib/games";
+import { GAME_CONTENT, gameKey, type Game } from "@/lib/games";
 import {
   applyTrade,
   buildingOptionsFor,
@@ -311,10 +311,10 @@ const GROWTH_TIERS_BY_GAME: Record<Game, GrowthTier[]> = {
 // goods, not buildings. Regions merged: Rum is Rum.
 // Which island blocks are folded up, per game. Presentation only — never
 // synced, and an absent key means every island is open, as it always was.
-const ISLE_SHUT_KEY = (g: Game) => (g === "anno117" ? "anno117_isle_shut" : "anno_isle_shut");
+const ISLE_SHUT_KEY = (g: Game) => gameKey(g, "anno_isle_shut");
 // Islands whose CHECKLIST is tucked away (build 98) — the block stays open
 // with its ledger and summaries, only the item rows fold.
-const ISLE_TUCK_KEY = (g: Game) => (g === "anno117" ? "anno117_isle_tuck" : "anno_isle_tuck");
+const ISLE_TUCK_KEY = (g: Game) => gameKey(g, "anno_isle_tuck");
 /** A handle on an island block, so the collections roll-up can scroll to one.
  *  Islands are identified by name everywhere else too, so this follows a rename
  *  for free. */

@@ -6,13 +6,27 @@
 
 export type Game = "anno1800" | "anno117";
 
-export const GAMES: { id: Game; label: string; short: string }[] = [
-  { id: "anno1800", label: "Anno 1800", short: "⚓ 1800" },
-  { id: "anno117", label: "Anno 117", short: "🏛 117" },
+// Adding a game (M12): extend the union above, give it a row here — id, switcher
+// labels, and its own storage prefix — then fill in GAME_CONTENT below and the
+// calculator's DATASETS. Everything else keys off these lists.
+export const GAMES: { id: Game; label: string; short: string; prefix: string }[] = [
+  // 1800 keeps the bare legacy prefix FOREVER — /legacy.html and the original
+  // single-file app read the unprefixed `anno_*` keys. Never reuse "anno_".
+  { id: "anno1800", label: "Anno 1800", short: "⚓ 1800", prefix: "anno_" },
+  { id: "anno117", label: "Anno 117", short: "🏛 117", prefix: "anno117_" },
 ];
 
 export function isGame(v: unknown): v is Game {
-  return v === "anno1800" || v === "anno117";
+  return GAMES.some((g) => g.id === v);
+}
+
+const PREFIX = Object.fromEntries(GAMES.map((g) => [g.id, g.prefix])) as Record<Game, string>;
+
+/** A game's localStorage key for one of the legacy `anno_*` base names — the
+ *  base IS the 1800 key, so 1800 values stay exactly where the legacy app
+ *  looks for them, and every other game gets its prefix from GAMES. */
+export function gameKey(game: Game, base: string): string {
+  return base.replace(/^anno_/, PREFIX[game]);
 }
 
 export interface GameContent {

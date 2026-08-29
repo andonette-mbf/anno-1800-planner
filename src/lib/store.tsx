@@ -17,7 +17,7 @@ import React, {
 } from "react";
 import { DEFAULT_BAND } from "./dataset";
 import type { CalcState } from "./engine";
-import { isGame, type Game } from "./games";
+import { GAMES, gameKey, isGame, type Game } from "./games";
 import type { PopSettings } from "./ledger";
 
 export { GAMES, isGame, type Game } from "./games";
@@ -54,11 +54,9 @@ const ls = {
 export const GAME_KEY = "anno_game";
 
 // 1800 keeps the bare legacy key names so values saved by the old single-file
-// app (and /legacy.html, which still reads them) carry over untouched; 117 gets
-// its own namespace. Never change the 1800 side of this.
-function gkey(game: Game, base: string): string {
-  return game === "anno117" ? base.replace(/^anno_/, "anno117_") : base;
-}
+// app (and /legacy.html, which still reads them) carry over untouched; every
+// other game gets the prefix its GAMES row declares (M12).
+const gkey = gameKey;
 
 // Saves (build 67): one Anno save game = one set of quests/islands/inventory.
 // Each game keeps its own list of them. The FIRST save has the id "" and lives
@@ -732,6 +730,10 @@ function loadGame(game: Game): GameSaves {
   return { list, cur: list.some((s) => s.id === want) ? want : list[0].id, data };
 }
 
+function loadAllGames(): Record<Game, GameSaves> {
+  return Object.fromEntries(GAMES.map((g) => [g.id, loadGame(g.id)])) as Record<Game, GameSaves>;
+}
+
 function saveGameList(game: Game, g: GameSaves) {
   ls.set(savesKey(game), JSON.stringify(g.list));
   ls.set(curSaveKey(game), g.cur);
@@ -752,6 +754,10 @@ const EMPTY_GAME: GameSaves = {
 // older blob) round-trips unchanged — with 117 hanging off `g117`. Build 67
 // adds every save under `saves`; the top-level fields stay a mirror of the
 // first save, so a client that predates saves still finds the main playthrough.
+// M12: `saves` is the per-game slot — it is keyed by game id, so a new game
+// rides it with no blob change. The top level and `g117` are the two legacy
+// mirrors from before `saves` existed; only 1800 and 117 have (or will ever
+// need) one, since no older client knows any other game.
 interface SyncBlob extends CompanionData {
   g117?: CompanionData;
   saves?: Partial<Record<Game, GameSaves>>;
@@ -761,7 +767,7 @@ function toBlob(all: Record<Game, GameSaves>): SyncBlob {
   return {
     ...first(all.anno1800),
     g117: first(all.anno117),
-    saves: { anno1800: all.anno1800, anno117: all.anno117 },
+    saves: Object.fromEntries(GAMES.map((g) => [g.id, all[g.id]])),
   };
 }
 function fromBlob(blob: SyncBlob, local: Record<Game, GameSaves>): Record<Game, GameSaves> {
@@ -803,10 +809,16 @@ function fromBlob(blob: SyncBlob, local: Record<Game, GameSaves>): Record<Game, 
       data: { ...lo.data, "": norm({ ...(lo.data[""] || EMPTY_DATA), ...legacy }) },
     };
   };
-  return {
-    anno1800: forGame("anno1800", rest as CompanionData),
-    anno117: forGame("anno117", g117),
+  // Which legacy mirror (if any) each game reads when the blob predates
+  // `saves` — the top level is 1800's, `g117` 117's. A newer game has none:
+  // its saves exist only under `saves`.
+  const legacySlot: Partial<Record<Game, CompanionData | undefined>> = {
+    anno1800: rest as CompanionData,
+    anno117: g117,
   };
+  return Object.fromEntries(
+    GAMES.map((g) => [g.id, forGame(g.id, legacySlot[g.id])])
+  ) as Record<Game, GameSaves>;
 }
 
 // ---------- backup (M6) ----------
@@ -1027,10 +1039,9 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   // Both games are held at once, with all their saves: the Tracker shows one,
   // but a sync push has to carry everything or switching games (or saves) would
   // clobber the other's server copy.
-  const [all, setAll] = useState<Record<Game, GameSaves>>({
-    anno1800: EMPTY_GAME,
-    anno117: EMPTY_GAME,
-  });
+  const [all, setAll] = useState<Record<Game, GameSaves>>(
+    () => Object.fromEntries(GAMES.map((g) => [g.id, EMPTY_GAME])) as Record<Game, GameSaves>
+  );
   const [game, setGameState] = useState<Game>("anno1800");
   const gs = all[game];
   const data = gs.data[gs.cur] ?? EMPTY_DATA;
@@ -1040,7 +1051,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 
   // Initial local load + auth probe.
   useEffect(() => {
-    setAll({ anno1800: loadGame("anno1800"), anno117: loadGame("anno117") });
+    setAll(loadAllGames());
     const g = ls.get(GAME_KEY);
     if (isGame(g)) setGameState(g);
     (async () => {
@@ -1094,15 +1105,11 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         const localTs = Number(ls.get("anno_sync_ts") || 0);
         const dirty = ls.get("anno_dirty") === "1";
         canSync.current = true;
-        const local = {
-          anno1800: loadGame("anno1800"),
-          anno117: loadGame("anno117"),
-        };
+        const local = loadAllGames();
         if (j.data && !dirty && j.updatedAt > localTs) {
           const merged = fromBlob(j.data as SyncBlob, local);
           setAll(merged);
-          saveGame("anno1800", merged.anno1800);
-          saveGame("anno117", merged.anno117);
+          for (const g of GAMES) saveGame(g.id, merged[g.id]);
           ls.set("anno_sync_ts", String(j.updatedAt));
           setSync("synced");
         } else {
