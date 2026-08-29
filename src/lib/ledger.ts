@@ -382,6 +382,10 @@ export interface TradeFlow {
   good: string;
   from: string;
   to: string;
+  /** Cap: at most this many t/min ride the link (both passes together).
+   *  Absent means uncapped — the link takes whatever is spare. 0 is a real
+   *  cap: the link stands but ships nothing, keeping the surplus home. */
+  tpm?: number;
 }
 
 /** "Build N× X" for a deficit, priced in the island's own region. */
@@ -401,14 +405,17 @@ function priceFix(
  *  Exported means GONE. Two passes:
  *
  *  1. Tracked shortfalls first, in flow order — each link ships
- *     min(remaining surplus, what its destination is short of), so several
- *     importers split one surplus first-come.
+ *     min(remaining surplus, what its destination is short of, its cap's
+ *     remaining room), so several importers split one surplus first-come.
  *  2. Whatever the source still has spare ships anyway, along the good's
- *     FIRST link — a route carries the whole surplus whether or not the
- *     other end's consumers are tracked (cotton sent to Cape Trelawney for
- *     furs is spoken for even though no tracked building eats it). It lands
- *     as stock on the destination, whose row is created if it has no local
- *     maker or user of the good.
+ *     links in flow order: a capped link takes up to its remaining room, the
+ *     first uncapped link takes everything left — a route carries the spare
+ *     whether or not the other end's consumers are tracked (cotton sent to
+ *     Cape Trelawney for furs is spoken for even though no tracked building
+ *     eats it). It lands as stock on the destination, whose row is created
+ *     if it has no local maker or user of the good. When EVERY link is
+ *     capped, what the caps don't take stays home — that is how an island
+ *     retains a buffer of its own surplus.
  *
  *  Moved t/min lands in the destination's `produced` and the source's `used`
  *  (net stays makes − uses); both rows grow a chip (`imp`/`exp`) naming the
@@ -459,6 +466,15 @@ export function applyTrade(
     dst.net += amt;
   };
   const valid = flows.filter((f) => f.good && f.from && f.to);
+  // How much each link has carried so far, so a cap spans both passes.
+  const shipped = new Map<string, number>();
+  const linkKey = (f: TradeFlow) => `${f.good}|${f.from}|${f.to}`.toLowerCase();
+  const room = (f: TradeFlow) =>
+    f.tpm != null ? Math.max(0, f.tpm - (shipped.get(linkKey(f)) || 0)) : Infinity;
+  const ship = (f: TradeFlow, amt: number) => {
+    shipped.set(linkKey(f), (shipped.get(linkKey(f)) || 0) + amt);
+    note(f, amt);
+  };
   // Pass 1 — tracked shortfalls, in flow order.
   for (const f of valid) {
     const src = rowOf(f.from, f.good);
@@ -466,24 +482,23 @@ export function applyTrade(
     if (!src && !dst) continue;
     const amt = Math.min(
       src ? Math.max(0, src.net) : 0,
-      dst ? Math.max(0, -dst.net) : 0
+      dst ? Math.max(0, -dst.net) : 0,
+      room(f)
     );
     if (amt > 0) move(src!, dst!, amt);
-    note(f, amt);
+    ship(f, amt);
   }
-  // Pass 2 — the leftovers ride the good's first link.
-  const firstDone = new Set<string>();
+  // Pass 2 — the leftovers ride the good's links in order, each capped link
+  // up to its room, an uncapped one taking all that remains.
   for (const f of valid) {
-    const sk = `${f.good}|${f.from}`.toLowerCase();
-    if (firstDone.has(sk)) continue;
-    firstDone.add(sk);
     const src = rowOf(f.from, f.good);
     if (!src || src.net <= 1e-9) continue;
+    const amt = Math.min(src.net, room(f));
+    if (amt <= 1e-9) continue;
     const dst = ensureRow(f.to, src.name);
     if (!dst) continue;
-    const rest = src.net;
-    move(src, dst, rest);
-    note(f, rest);
+    move(src, dst, amt);
+    ship(f, amt);
   }
   for (const { f, amt } of carried.values()) {
     const src = rowOf(f.from, f.good);

@@ -267,6 +267,62 @@ const near = (a, b) => Math.abs(a - b) < 1e-9;
   ok("trade moves the numbers, splits surpluses, re-prices the remainder");
 }
 
+// --- trade caps: a link ships at most its tpm ------------------------------
+// A cap bounds BOTH passes together; leftovers spread across links in flow
+// order (each capped link up to its room, an uncapped one taking the rest),
+// and what no link may take stays home — that is how an island retains a
+// buffer of its own surplus.
+{
+  // 8 OW Cattle Farms make 4 t/min of Beef; the takers track no consumers, so
+  // everything here rides pass 2 unless a kitchen says otherwise.
+  const farms = [{ t: "Cattle Farm", n: 8, done: true }];
+  const beef = (ledgers, isle) => ledgers[isle].find((r) => r.name === "Beef");
+  const REG = { Pasture: OW, Kitchenia: OW, Snackville: OW };
+
+  // Leftovers split across links: capped first link takes 1.5, the uncapped
+  // second takes the remaining 2.5 — previously the first link took all 4.
+  const split = { Pasture: rows(farms, OW), Kitchenia: rows([], OW), Snackville: rows([], OW) };
+  L.applyTrade(split, REG, [
+    { good: "Beef", from: "Pasture", to: "Kitchenia", tpm: 1.5 },
+    { good: "Beef", from: "Pasture", to: "Snackville" },
+  ]);
+  if (!near(beef(split, "Kitchenia")?.net ?? -1, 1.5))
+    fail(`a capped link ships its cap, got ${JSON.stringify(beef(split, "Kitchenia"))}`);
+  if (!near(beef(split, "Snackville")?.net ?? -1, 2.5))
+    fail(`the uncapped link takes the rest, got ${JSON.stringify(beef(split, "Snackville"))}`);
+  if (!near(beef(split, "Pasture").net, 0)) fail("an uncapped link still empties the source");
+
+  // Every link capped → the rest stays home. Cap 0 is a real cap: the link
+  // stands (its chip shows 0) but nothing moves.
+  const keep = { Pasture: rows(farms, OW), Kitchenia: rows([], OW), Snackville: rows([], OW) };
+  L.applyTrade(keep, REG, [
+    { good: "Beef", from: "Pasture", to: "Kitchenia", tpm: 1 },
+    { good: "Beef", from: "Pasture", to: "Snackville", tpm: 0 },
+  ]);
+  const home = beef(keep, "Pasture");
+  if (!near(home.net, 3)) fail(`capped links must leave the rest home, got net ${home.net}`);
+  if (!near(home.exp?.find((e) => e.to === "Kitchenia")?.tpm ?? -1, 1))
+    fail(`the capped chip carries what moved, got ${JSON.stringify(home.exp)}`);
+  if (!near(home.exp?.find((e) => e.to === "Snackville")?.tpm ?? -1, 0))
+    fail(`a 0-capped link keeps its (0) chip, got ${JSON.stringify(home.exp)}`);
+  if (beef(keep, "Snackville")) fail("a 0-capped link must not create a destination row");
+
+  // Pass 1 respects the cap too: 6 kitchens eat 3, but only 2 may ride — the
+  // destination's fix re-prices on the uncovered 1 t/min (OW Cattle Farm is
+  // 0.5 t/min → 2 farms), and the source keeps what the cap refused.
+  const kitchen = [{ t: "Artisanal Kitchen", n: 6, done: true }];
+  const p1 = { Pasture: rows(farms, OW), Kitchenia: rows(kitchen, OW) };
+  L.applyTrade(p1, { Pasture: OW, Kitchenia: OW }, [
+    { good: "Beef", from: "Pasture", to: "Kitchenia", tpm: 2 },
+  ]);
+  const dst = beef(p1, "Kitchenia");
+  if (!near(dst.net, -1) || dst.fix?.count !== 2)
+    fail(`a capped pass-1 ships 2 of the 3 needed, got ${JSON.stringify(dst)}`);
+  if (!near(beef(p1, "Pasture").net, 2))
+    fail(`the cap spans both passes — nothing extra rides later, got ${beef(p1, "Pasture").net}`);
+  ok("caps bound both passes, split leftovers, and keep the rest home");
+}
+
 // --- residents eat from the ledger (M8) ------------------------------------
 // islandLedger's pop argument goes through the engine's own popTargets, so
 // rates, unlock thresholds, the lifestyle toggle and 117's bands are the

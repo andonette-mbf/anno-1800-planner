@@ -165,6 +165,10 @@ export interface TradeLink {
   good: string;
   from: string;
   to: string;
+  /** Cap: at most this many t/min ride the link. Absent = uncapped (the link
+   *  takes whatever is spare — every pre-cap link behaves as it always did);
+   *  0 is a real cap, the way an island keeps its whole surplus home. */
+  tpm?: number;
 }
 
 function parseLinks(raw: unknown): TradeLink[] {
@@ -172,7 +176,7 @@ function parseLinks(raw: unknown): TradeLink[] {
   const seen = new Set<string>();
   const out: TradeLink[] = [];
   for (const x of raw) {
-    const o = x as { good?: unknown; from?: unknown; to?: unknown };
+    const o = x as { good?: unknown; from?: unknown; to?: unknown; tpm?: unknown };
     const good = String(o?.good ?? "").trim();
     const from = String(o?.from ?? "").trim();
     const to = String(o?.to ?? "").trim();
@@ -180,7 +184,14 @@ function parseLinks(raw: unknown): TradeLink[] {
     const key = `${good}|${from}|${to}`.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
-    out.push({ good, from, to });
+    const cap = Number(o?.tpm);
+    out.push({
+      good,
+      from,
+      to,
+      // A junk cap (negative, NaN, from an old blob) parses as uncapped.
+      ...(o?.tpm != null && Number.isFinite(cap) && cap >= 0 ? { tpm: cap } : {}),
+    });
   }
   return out;
 }
@@ -1023,6 +1034,8 @@ interface CompanionCtx {
    *  shows it exported, the destination's deficit stops alarming. */
   addIslandLink: (good: string, from: string, to: string) => void;
   removeIslandLink: (good: string, from: string, to: string) => void;
+  /** Set or clear (null) a link's t/min cap — see TradeLink.tpm. */
+  setIslandLinkCap: (good: string, from: string, to: string, tpm: number | null) => void;
 }
 
 const CompanionContext = createContext<CompanionCtx | null>(null);
@@ -1802,6 +1815,20 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             ...d,
             islandLinks: (d.islandLinks || []).filter(
               (l) => `${l.good}|${l.from}|${l.to}`.toLowerCase() !== key
+            ),
+          };
+        }),
+      setIslandLinkCap: (good, from, to, tpm) =>
+        update((d) => {
+          const key = `${good}|${from}|${to}`.toLowerCase();
+          return {
+            ...d,
+            islandLinks: (d.islandLinks || []).map((l) =>
+              `${l.good}|${l.from}|${l.to}`.toLowerCase() !== key
+                ? l
+                : tpm != null && Number.isFinite(tpm) && tpm >= 0
+                  ? { ...l, tpm }
+                  : { good: l.good, from: l.from, to: l.to }
             ),
           };
         }),

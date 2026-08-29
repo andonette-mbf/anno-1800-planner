@@ -115,7 +115,7 @@ function Footer({ st }: { st: CalcState }) {
       {/* Each game names its own sources (M12) — see GameContent.credits. */}
       {GAME_CONTENT[datasetFor(st).game].credits}
       <br />
-      <span style={{ opacity: 0.55 }}>build 111 · quick add everywhere</span>
+      <span style={{ opacity: 0.55 }}>build 112 · trade link caps</span>
     </div>
   );
 }

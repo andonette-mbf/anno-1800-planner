@@ -591,6 +591,7 @@ export function TrackerView({
     setPopCfg,
     addIslandLink,
     removeIslandLink,
+    setIslandLinkCap,
   } = useCompanion();
   const { status } = useAuth();
   // Per-game content: region tags, starter kits, inventory chips, wiki base.
@@ -2070,10 +2071,12 @@ export function TrackerView({
                         .filter((r) => !hideFin || !r.final || r.net < -1e-9)
                         .filter((r) => !hideZero || Math.abs(r.net) > 1e-9)
                         .map((r) => {
-                        // Is this flow a ticked link (removable here) rather
-                        // than a ship route (edited in the Ships tab)?
+                        // Is this flow a ticked link (removable and cappable
+                        // here) rather than a ship route (edited in the Ships
+                        // tab)? Returns the link itself so the chip can read
+                        // its cap.
                         const manual = (from: string, to: string) =>
-                          (data.islandLinks || []).some(
+                          (data.islandLinks || []).find(
                             (l) =>
                               l.good.toLowerCase() === r.name.toLowerCase() &&
                               l.from.toLowerCase() === from.toLowerCase() &&
@@ -2109,16 +2112,46 @@ export function TrackerView({
                                 </span>
                               )
                             )}
-                            {r.exp?.map((e) =>
-                              manual(name, e.to) ? (
-                                <button
+                            {r.exp?.map((e) => {
+                              const link = manual(name, e.to);
+                              return link ? (
+                                // Cappable: the number box holds the link's
+                                // cap; grey (the placeholder, what actually
+                                // moved) means "everything spare", a typed
+                                // number is a ceiling, and what the caps
+                                // don't take stays home.
+                                <span
                                   key={e.to}
-                                  className="trchip"
-                                  title={`${fmt(e.tpm)} t/min exported to ${e.to}${e.tpm <= 0 ? " — no surplus to send right now" : ""} — tap to unlink`}
-                                  onClick={() => removeIslandLink(r.name, name, e.to)}
+                                  className="trchip trcapchip"
+                                  title={`${fmt(e.tpm)} t/min exported to ${e.to}${e.tpm <= 0 ? " — no surplus to send right now" : ""}`}
                                 >
-                                  🚢→ {e.to} {fmt(e.tpm)} ✕
-                                </button>
+                                  🚢→ {e.to}{" "}
+                                  <input
+                                    className="trcapin"
+                                    type="number"
+                                    min={0}
+                                    step={0.5}
+                                    value={link.tpm ?? ""}
+                                    placeholder={fmt(e.tpm)}
+                                    aria-label={`Cap on ${r.name} to ${e.to}`}
+                                    title={`At most this many t/min ride to ${e.to} — empty means everything spare, 0 keeps it all here`}
+                                    onChange={(ev) =>
+                                      setIslandLinkCap(
+                                        r.name,
+                                        name,
+                                        e.to,
+                                        ev.target.value === "" ? null : Math.max(0, Number(ev.target.value))
+                                      )
+                                    }
+                                  />
+                                  <button
+                                    className="trcapx"
+                                    title={`Unlink ${r.name} to ${e.to}`}
+                                    onClick={() => removeIslandLink(r.name, name, e.to)}
+                                  >
+                                    ✕
+                                  </button>
+                                </span>
                               ) : (
                                 <span
                                   key={e.to}
@@ -2127,8 +2160,8 @@ export function TrackerView({
                                 >
                                   🚢→ {e.to} {fmt(e.tpm)}
                                 </span>
-                              )
-                            )}
+                              );
+                            })}
                             {r.res != null && (
                               <span
                                 className="trchip"

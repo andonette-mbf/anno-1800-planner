@@ -145,6 +145,14 @@ a.plx:hover{color:var(--accent)}
 button.trchip{cursor:pointer}
 button.trchip:hover{color:var(--ink);border-color:var(--ink)}
 .ddbtn.trlink{width:auto;display:inline-flex;padding:1px 7px;margin-left:6px;font-size:10px;color:var(--muted);background:0 0;border-color:var(--line)}
+/* The cap box inside an export chip: grey placeholder = what actually moved
+   ("everything spare"), a typed number = the ceiling. */
+.trcapchip{display:inline-flex;align-items:center;gap:3px}
+.trcapin{font:inherit;font-size:10px;width:38px;padding:0 2px;border:1px solid var(--line);background:0 0;color:var(--ink);text-align:right}
+.trcapin::-webkit-outer-spin-button,.trcapin::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.trcapin[type=number]{-moz-appearance:textfield;appearance:textfield}
+.trcapx{font:inherit;font-size:10px;border:0;background:0 0;color:var(--muted);padding:0 1px;cursor:pointer}
+.trcapx:hover{color:var(--ink)}
 /* Suggested trade flows (M9): the read-only strip at the top of the Islands
    card — each chip a one-tap addIslandLink. */
 .trsuggest{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;margin:0 0 10px;font-size:12px}
