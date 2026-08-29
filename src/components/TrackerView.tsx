@@ -301,7 +301,10 @@ function growthVerb(s: PopSource117): string {
   return /^[aeiou]/i.test(s.lbl) ? "Build an" : "Build a"; // an Alder Council
 }
 
-const GROWTH_TIERS_BY_GAME: Record<Game, GrowthTier[]> = {
+// Partial, deliberately: growth is a per-game model (thresholds vs banded
+// house capacity), so a game without one — a Tracker-only game especially —
+// simply shows no growth dropdown rather than borrowing another game's.
+const GROWTH_TIERS_BY_GAME: Partial<Record<Game, GrowthTier[]>> = {
   anno1800: GROWTH_TIERS_1800,
   anno117: GROWTH_TIERS_117,
 };
@@ -613,7 +616,7 @@ export function TrackerView({
       ]),
     ].sort();
   };
-  const GROWTH_TIERS = GROWTH_TIERS_BY_GAME[game];
+  const GROWTH_TIERS = GROWTH_TIERS_BY_GAME[game] ?? [];
   const GOOD_NAMES = GOOD_NAMES_BY_GAME[game];
   const islands = data.islands || [];
   const [isleDraft, setIsleDraft] = useState("");

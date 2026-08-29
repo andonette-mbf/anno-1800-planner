@@ -51,10 +51,15 @@ const LEGACY_DEFAULT: Partial<CalcState> = {
 // holds 117 good ids, which mean nothing in 1800 — switching games has to swap
 // the whole plan, not carry selections across.
 function initialStates(): Record<Game, CalcState> {
-  return {
-    anno1800: { ...defaultStateFor("anno1800"), ...LEGACY_DEFAULT },
-    anno117: defaultStateFor("anno117"),
-  };
+  return Object.fromEntries(
+    GAMES.map((g) => [
+      g.id,
+      // 1800 keeps the demo plan a fresh visit has always shown.
+      g.id === "anno1800"
+        ? { ...defaultStateFor(g.id), ...LEGACY_DEFAULT }
+        : defaultStateFor(g.id),
+    ])
+  ) as Record<Game, CalcState>;
 }
 
 export function AppShell() {
