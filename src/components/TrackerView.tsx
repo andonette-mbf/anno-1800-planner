@@ -1,8 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { GOODS, POP, REGIONS, TIER_ORDER, fmt } from "@/lib/data";
+import { GOODS, POP, TIER_ORDER, fmt } from "@/lib/data";
 import {
-  GOODS_117,
   POP_117,
   TIER_ORDER_117,
   houseCapacity117,
@@ -10,9 +9,9 @@ import {
   type PopSource117,
 } from "@/lib/data117";
 import { cultureAt, CULTURE_EMOJI, type CultureAt } from "@/lib/culture";
-import { BAND_LABELS } from "@/lib/dataset";
+import { DATASETS, bandLabels } from "@/lib/dataset";
 import { CalcState, DEFAULT_STATE } from "@/lib/engine";
-import { GAME_CONTENT, gameKey, type Game } from "@/lib/games";
+import { GAMES, GAME_CONTENT, gameKey, type Game } from "@/lib/games";
 import {
   applyTrade,
   buildingOptionsFor,
@@ -252,7 +251,7 @@ function houses(residents: number, fh: number) {
 function iconGoodName(itemName: string, game: Game): string | null {
   const gid = itemGood(itemName, game);
   if (!gid) return null;
-  return (game === "anno117" ? GOODS_117[gid] : GOODS[gid])?.name ?? null;
+  return DATASETS[game].goods[gid]?.name ?? null;
 }
 
 // 117's goals are a different shape, because 117 grows differently. There are
@@ -320,10 +319,12 @@ const ISLE_TUCK_KEY = (g: Game) => gameKey(g, "anno_isle_tuck");
  *  for free. */
 const isleDomId = (name: string) => "isle-" + name.replace(/\W+/g, "-").toLowerCase();
 
-const GOOD_NAMES_BY_GAME: Record<Game, string[]> = {
-  anno1800: [...new Set(Object.values(GOODS).map((g) => g.name))].sort(),
-  anno117: [...new Set(Object.values(GOODS_117).map((g) => g.name))].sort(),
-};
+const GOOD_NAMES_BY_GAME = Object.fromEntries(
+  GAMES.map((g) => [
+    g.id,
+    [...new Set(Object.values(DATASETS[g.id].goods).map((x) => x.name))].sort(),
+  ])
+) as Record<Game, string[]>;
 
 function wikiUrl(t: string, game: Game) {
   const q =
@@ -486,8 +487,10 @@ function ResidentsBlock({
             </label>
           ))}
           <span className="ipopcfg">
-            {game === "anno117" ? (
-              BAND_LABELS.map((label, i) => (
+            {/* The dataset's needs model picks the control (M12): bands get
+                the band chips, thresholds the lifestyle toggle. */}
+            {DATASETS[game].needsModel === "bands" ? (
+              bandLabels(DATASETS[game]).map((label, i) => (
                 <button
                   key={label}
                   className={"chip schip" + (cfg.band === i ? " on" : "")}
@@ -787,14 +790,10 @@ export function TrackerView({
     return regs.size ? GROWTH_TIERS.filter((t) => regs.has(t.region)) : GROWTH_TIERS;
   })();
   const growthRegions = new Set(growthTiers.map((t) => t.region));
-  // Both games number their regions from 1, so a region number alone is
-  // ambiguous — 1 is the Old World in 1800 and Latium in 117. 1800 keeps
-  // data.ts's own wording ("The Arctic"); 117 reads the game content.
-  const REGION_LABEL = (n: number) => {
-    if (game === "anno1800") return REGIONS[n];
-    const key = Object.keys(REGION_NUM).find((k) => REGION_NUM[k] === n);
-    return (key && REGION_LABELS[key]) || String(n);
-  };
+  // Every game numbers its regions from 1, so a region number alone is
+  // ambiguous — 1 is the Old World in 1800 and Latium in 117. Each dataset
+  // carries its own region names (1800 keeps data.ts's wording, "The Arctic").
+  const REGION_LABEL = (n: number) => DATASETS[game].regions[n] ?? String(n);
   // Custom growth goal: an inline row (number + island), no window.prompt.
   // Opens when "Add a custom number of X…" is picked; island defaults to the
   // filtered island (or your only island).
@@ -1023,11 +1022,7 @@ export function TrackerView({
             <Dropdown
               ariaLabel="Add a population growth goal"
               placeholder="📈 Add a population growth goal…"
-              title={
-                game === "anno117"
-                  ? "A 117 residence has no fixed size — it holds the sum of what its supplied needs are worth, so each goal is a need and the residents it adds to every house of that tier. Needs worth nothing are named, not offered. 'Custom…' asks for any number. Scoped to your islands' 🌍 regions (or the filtered island's)."
-                  : "Growth milestones from the game's own need tables — each is the point a new need unlocks. 'Custom…' asks for any number. Scoped to your islands' 🌍 regions (or the filtered island's)."
-              }
+              title={GAME_CONTENT[game].growthHint}
               value=""
               onChange={(v) => {
                 const [tid, mark, srcId] = v.split(":");

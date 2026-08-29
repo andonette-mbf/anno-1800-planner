@@ -13,7 +13,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { GAME_CONTENT } from "@/lib/games";
+import { GAME_CONTENT, type Game } from "@/lib/games";
 import { buildingOptionsFor } from "@/lib/ledger";
 import { useCompanion } from "@/lib/store";
 import { Dropdown } from "./ui/Dropdown";
@@ -23,7 +23,7 @@ export type QuickTab = "islands" | "ships";
 
 /** Everything an island of this region might hold: the ledger's production
  *  buildings plus the public ones, which make nothing and so aren't in it. */
-function buildingsFor(game: "anno1800" | "anno117", region: string): string[] {
+function buildingsFor(game: Game, region: string): string[] {
   const C = GAME_CONTENT[game];
   const inRegion = (s: { regions?: string[] }) =>
     !s.regions || !region || s.regions.includes(region);

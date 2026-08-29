@@ -30,6 +30,23 @@ export function gameKey(game: Game, base: string): string {
 }
 
 export interface GameContent {
+  /** Topbar logo glyph, next to the game's GAMES label. */
+  logo: string;
+  /** Extra sentence on the calculator's lead line — "" when the standard one
+   *  says it all (M12: each game supplies its own wording). */
+  lead: string;
+  /** The game's bit of a save-export filename: `anno-<fileSlug>-<name>.json`. */
+  fileSlug: string;
+  /** Footer data credits — where this game's numbers and pictures come from. */
+  credits: string;
+  /** What the silo toggle covers in this game, shown muted beside it. */
+  siloHint: string;
+  /** Empty-state example for the shared-resources pane: two lines with a
+   *  common input, phrased in this game's goods. */
+  sharedExample: string;
+  /** Tooltip on the 📈 add-a-growth-goal dropdown — each game grows its own
+   *  way, and the control should say so in that game's terms. */
+  growthHint: string;
   /** Island 🌍 tags: key -> label, in menu order. */
   regionLabels: Record<string, string>;
   /** Island region key -> the dataset's region number/bitmask, for filtering. */
@@ -60,6 +77,21 @@ export interface GameContent {
 }
 
 const ANNO1800: GameContent = {
+  logo: "A",
+  lead: "",
+  fileSlug: "1800",
+  credits:
+    "Base data: production times & chains from the open-source Anno 1800 calculator " +
+    "community data, cross-checked against the Anno 1800 Wiki. Goods pictures, culture " +
+    "collections and specialist items from the Anno 1800 Wiki (CC-BY-SA; game art & " +
+    "values © Ubisoft). Late-game / DLC recipes may vary by patch — every rate is editable " +
+    "in the model. Not affiliated with Ubisoft.",
+  siloHint: "(animal farms ×2, eat feed)",
+  sharedExample:
+    "Add two lines that use a common input — e.g. Steel Beams + Weapons (both need Steel & Iron), or a preset.",
+  growthHint:
+    "Growth milestones from the game's own need tables — each is the point a new need unlocks. " +
+    "'Custom…' asks for any number. Scoped to your islands' 🌍 regions (or the filtered island's).",
   regionLabels: {
     ow: "Old World",
     ct: "Cape Trelawney",
@@ -143,6 +175,22 @@ const ANNO1800: GameContent = {
 // 117's regions are the two sessions, and the dataset stores them as a bitmask
 // (1 Latium, 2 Albion) because 29 goods exist in both.
 const ANNO117: GameContent = {
+  logo: "🏛",
+  lead: "Pick the region you're building in: Rome's recipes differ by province.",
+  fileSlug: "117",
+  credits:
+    "Base data: Anno 117 production times & chains extracted from the open-source " +
+    "anno-mods/anno-117-calculator pack (MIT tooling; game values © Ubisoft). Goods pictures " +
+    "from the Anno 117 Wiki (game art © Ubisoft). Rome is still patching — every rate is " +
+    "editable in the model. Not affiliated with Ubisoft.",
+  siloHint: "(Sheep/Pig/Horse ×2, eat Wheat)",
+  sharedExample:
+    "Add two lines that use a common input — e.g. Tiles + Amphorae (both need clay and a coal fire), or a preset.",
+  growthHint:
+    "A 117 residence has no fixed size — it holds the sum of what its supplied needs are worth, " +
+    "so each goal is a need and the residents it adds to every house of that tier. Needs worth " +
+    "nothing are named, not offered. 'Custom…' asks for any number. Scoped to your islands' 🌍 " +
+    "regions (or the filtered island's).",
   regionLabels: { la: "Latium", al: "Albion" },
   regionNum: { la: 1, al: 2 },
   // Public-service buildings each region's residences actually ask for, from

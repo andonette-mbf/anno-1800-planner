@@ -15,6 +15,7 @@ import {
   targets,
   wholeTotalStat,
 } from "@/lib/engine";
+import { GAME_CONTENT } from "@/lib/games";
 import { GoodIcon } from "../GoodIcon";
 import { CatPill, FinalPill } from "./CatPill";
 
@@ -106,30 +107,15 @@ export function Results({ st, patch }: Props) {
 }
 
 function Footer({ st }: { st: CalcState }) {
-  const rome = datasetFor(st).game === "anno117";
   return (
     <div className="footer">
       Rates are tons/min at the chosen productivity. 1 factory consumes 1 t of each input per 1 t of
       output; building ratios come from each building&apos;s production time.
       <br />
-      {rome ? (
-        <>
-          Base data: Anno 117 production times &amp; chains extracted from the open-source
-          anno-mods/anno-117-calculator pack (MIT tooling; game values © Ubisoft). Goods pictures
-          from the Anno&nbsp;117 Wiki (game art © Ubisoft). Rome is still patching — every rate is
-          editable in the model. Not affiliated with Ubisoft.
-        </>
-      ) : (
-        <>
-          Base data: production times &amp; chains from the open-source Anno 1800 calculator
-          community data, cross-checked against the Anno&nbsp;1800 Wiki. Goods pictures, culture
-          collections and specialist items from the Anno&nbsp;1800 Wiki (CC-BY-SA; game art &amp;
-          values © Ubisoft). Late-game / DLC recipes may vary by patch — every rate is editable
-          in the model. Not affiliated with Ubisoft.
-        </>
-      )}
+      {/* Each game names its own sources (M12) — see GameContent.credits. */}
+      {GAME_CONTENT[datasetFor(st).game].credits}
       <br />
-      <span style={{ opacity: 0.55 }}>build 108 · backup &amp; restore</span>
+      <span style={{ opacity: 0.55 }}>build 109 · any Anno groundwork</span>
     </div>
   );
 }
@@ -296,11 +282,7 @@ function SharedPane({ st, R }: { st: CalcState; R: ReturnType<typeof buildingRow
       <div className="empty" style={{ padding: 26 }}>
         No shared resources yet.
         <br />
-        <span className="muted">
-          {D.game === "anno117"
-            ? "Add two lines that use a common input — e.g. Tiles + Amphorae (both need clay and a coal fire), or a preset."
-            : "Add two lines that use a common input — e.g. Steel Beams + Weapons (both need Steel & Iron), or a preset."}
-        </span>
+        <span className="muted">{GAME_CONTENT[D.game].sharedExample}</span>
       </div>
     );
   return (

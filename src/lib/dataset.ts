@@ -139,6 +139,18 @@ export interface Dataset {
   /** `regionFilter` a blank plan opens with (M12): 0 = "All" for a game whose
    *  regions only filter; a planning game names its starting region instead. */
   startRegion: number;
+  /** How this game gates needs (M12): "thresholds" — needs unlock at
+   *  population counts, with a lifestyle toggle on top (1800); "bands" — every
+   *  need carries a supply band and `st.band` says how far up the player buys
+   *  (117). A game that works a third way adds a case here AND in the two
+   *  pickers that render it (LeftPanel + the island residents row). */
+  needsModel: "thresholds" | "bands";
+  /** Does the settings panel offer the coal-source switch (`st.coalTime`)?
+   *  1800's Charcoal Kiln / Coal Mine choice; no other game has one. */
+  hasCoalChoice: boolean;
+  /** Does this game have electricity at all (the ⚡ toggle + per-item bolts)?
+   *  Which goods it applies to stays `electrifiable`. */
+  hasElectricity: boolean;
   /** t/min of feed one silo'd building eats. */
   siloFeedRate: number;
   /** Good every fuel-burning building consumes, or null (1800 has none). */
@@ -178,8 +190,14 @@ const perMin = (time: number): number => (time ? Math.round((60 / time) * 1e6) /
 /** Default need band for 117: everything except the top-tier luxuries. */
 export const DEFAULT_BAND = 2;
 
-/** Band labels for the 117 needs control, in order. */
-export const BAND_LABELS = CAT_LABELS_117;
+/** Band labels for a "bands"-model game's needs control, in band order —
+ *  they are the dataset's own catLabels, so any such game brings its own. */
+export function bandLabels(D: Dataset): string[] {
+  return Object.keys(D.catLabels)
+    .map(Number)
+    .sort((a, b) => a - b)
+    .map((i) => D.catLabels[i][0]);
+}
 
 // ---------------------------------------------------------------- Anno 1800
 
@@ -205,6 +223,9 @@ const ANNO1800: Dataset = {
 
   regionIsPlanning: false,
   startRegion: 0,
+  needsModel: "thresholds",
+  hasCoalChoice: true,
+  hasElectricity: true,
   siloFeedRate: SILO_FEED,
   fuelGood: null,
   fuelPerMin: 0,
@@ -335,6 +356,9 @@ const ANNO117: Dataset = {
   regionIsPlanning: true,
   // The campaign (and every scenario start) opens in Latium.
   startRegion: 1,
+  needsModel: "bands",
+  hasCoalChoice: false,
+  hasElectricity: false,
   // The Silo's +100% productivity is the same ×2 as 1800's, so only the feed
   // rate differs (0.2 t/min of Wheat). tests/pack117 pins the +100%.
   siloFeedRate: SILO_117.feedPerMin ?? 0,

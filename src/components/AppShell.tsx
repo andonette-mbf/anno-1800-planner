@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { datasetFor } from "@/lib/dataset";
 import { CalcState, defaultStateFor } from "@/lib/engine";
-import { GAMES, type Game } from "@/lib/games";
+import { GAMES, GAME_CONTENT, type Game } from "@/lib/games";
 import { decodeHash, encodeHash } from "@/lib/hash";
 import {
   DEFAULT_SAVE_NAME,
@@ -125,6 +125,9 @@ export function AppShell() {
     [go, game, setGame]
   );
 
+  // Title, logo and lead wording are the game's own (M12).
+  const C = GAME_CONTENT[game];
+  const label = GAMES.find((g) => g.id === game)?.label ?? game;
   const rome = game === "anno117";
   return (
     <>
@@ -133,9 +136,9 @@ export function AppShell() {
           belongs beside the title rather than in a row of chips below it. */}
       <header className="topbar">
         <div className="topbarin">
-          <div className="logo">{rome ? "🏛" : "A"}</div>
+          <div className="logo">{C.logo}</div>
           <h1>
-            {rome ? "Anno 117" : "Anno 1800"} <span>Production Planner</span>
+            {label} <span>Production Planner</span>
           </h1>
           {/* Each game keeps its own quests, islands and inventory. */}
           <nav className="gameswitch" id="gamenav" aria-label="Game">
@@ -165,7 +168,7 @@ export function AppShell() {
         <div className="sub lead">
           Set your target output — get exact building counts, shared-resource savings &
           whole-building layouts.
-          {rome && " Pick the region you're building in: Rome's recipes differ by province."}
+          {C.lead && ` ${C.lead}`}
         </div>
         <nav className="appnav" id="appnav">
           {/* 117 has no zoo/museum/garden (cultureFor returns null), so the
@@ -252,7 +255,7 @@ function SaveMenu() {
         .toLowerCase()
         .replace(/[^\w]+/g, "-")
         .replace(/^-+|-+$/g, "") || "save";
-    a.download = `anno-${game === "anno117" ? "117" : "1800"}-${slug}.json`;
+    a.download = `anno-${GAME_CONTENT[game].fileSlug}-${slug}.json`;
     document.body.appendChild(a);
     a.click();
     a.remove();

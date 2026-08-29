@@ -1,8 +1,9 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { fmt } from "@/lib/data";
-import { BAND_LABELS, datasetFor } from "@/lib/dataset";
+import { bandLabels, datasetFor } from "@/lib/dataset";
 import { CalcState, Selection, baseRate, buildingName, needActive } from "@/lib/engine";
+import { GAME_CONTENT } from "@/lib/games";
 import { GoodIcon } from "../GoodIcon";
 import { Dropdown } from "../ui/Dropdown";
 import { CatPill } from "./CatPill";
@@ -341,7 +342,13 @@ function PopPanel({
           </>
         )}
       </div>
-      {D.regionIsPlanning ? <BandPicker st={st} patch={patch} /> : <LifestyleToggle st={st} patch={patch} />}
+      {/* Which needs control a game gets is its dataset's model, not its
+          region behaviour — a third model would add a third case here. */}
+      {D.needsModel === "bands" ? (
+        <BandPicker st={st} patch={patch} />
+      ) : (
+        <LifestyleToggle st={st} patch={patch} />
+      )}
       <div className="setrow" style={{ margin: "6px 0 0" }}>
         <span>
           Consumption rate <span className="muted">(item buffs lower it)</span>
@@ -473,6 +480,7 @@ function LifestyleToggle({
  *  is how far up the player is actually supplying them. */
 function BandPicker({ st, patch }: { st: CalcState; patch: (p: Partial<CalcState>) => void }) {
   const band = st.band ?? 2;
+  const labels = bandLabels(datasetFor(st));
   return (
     <>
       <div className="setrow" style={{ margin: "8px 0 2px" }}>
@@ -481,7 +489,7 @@ function BandPicker({ st, patch }: { st: CalcState; patch: (p: Partial<CalcState
         </span>
       </div>
       <div className="chips" style={{ marginBottom: 4 }}>
-        {BAND_LABELS.map((label, i) => (
+        {labels.map((label, i) => (
           <span
             key={label}
             className={`chip ${band === i ? "on" : ""}`}
@@ -502,8 +510,8 @@ function BandPicker({ st, patch }: { st: CalcState; patch: (p: Partial<CalcState
 
 function Settings({ st, patch }: { st: CalcState; patch: (p: Partial<CalcState>) => void }) {
   const D = datasetFor(st);
-  const hasCoalChoice = D.game === "anno1800";
-  const hasElectricity = D.game === "anno1800";
+  const hasCoalChoice = D.hasCoalChoice;
+  const hasElectricity = D.hasElectricity;
   return (
     <div className="settings">
       <div className="setrow">
@@ -561,12 +569,7 @@ function Settings({ st, patch }: { st: CalcState; patch: (p: Partial<CalcState>)
       )}
       <div className="setrow">
         <span>
-          Silos{" "}
-          <span className="muted">
-            {D.game === "anno117"
-              ? "(Sheep/Pig/Horse ×2, eat Wheat)"
-              : "(animal farms ×2, eat feed)"}
-          </span>
+          Silos <span className="muted">{GAME_CONTENT[D.game].siloHint}</span>
         </span>{" "}
         <span className="toggle" id="siloTog">
           <button className={st.silo ? "" : "on"} onClick={() => patch({ silo: false })}>
