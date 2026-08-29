@@ -296,6 +296,38 @@ check(
   popToggle("Crown Falls").textContent
 );
 
+// --- suggested trade flows (M9) --------------------------------------------
+// Ditchwater's lumberjacks cut 12 t/min of Wood nobody there uses; Crown
+// Falls' sawmill eats 4 with no hut behind it — the suggestion carries the
+// DEFICIT (4), not the whole surplus. That is the strip's whole job: one
+// chip, good + t/min + from → to, and the accept tap records the link — after
+// which the ledger routes the wood and the suggestion has nothing to say.
+const strip = () => document.querySelector(".trsuggest");
+const sugChips = () => [...document.querySelectorAll(".trsuggest .trsug")];
+check(
+  "the strip offers Ditchwater's wood to Crown Falls",
+  sugChips().length === 1 &&
+    /Wood 4 · Ditchwater → Crown Falls/.test(sugChips()[0].textContent),
+  strip()?.textContent
+);
+await fire(sugChips()[0]);
+check(
+  "accepting records the link",
+  JSON.parse(localStorage.getItem("anno_island_links") || "[]").some(
+    (l) => l.good === "Wood" && l.from === "Ditchwater" && l.to === "Crown Falls"
+  ),
+  localStorage.getItem("anno_island_links")
+);
+check("…and the suggestion clears — the ledger routes it now", !strip());
+const woodRow = [...blockFor("Crown Falls").querySelectorAll(".iledgrow")].find((r) =>
+  r.textContent.includes("Wood") && !r.textContent.includes("Timber")
+);
+check(
+  "Crown Falls' Wood row shows the import",
+  /🚢← Ditchwater/.test(woodRow?.textContent || ""),
+  woodRow?.textContent
+);
+
 let bad = 0;
 for (const x of results) {
   console.log(`${x.ok ? "ok  " : "FAIL"} - ${x.name}${x.ok || !x.detail ? "" : "  << " + x.detail}`);

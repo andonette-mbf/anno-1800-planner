@@ -20,6 +20,7 @@ import {
   islandLedger,
   itemGood,
   siloCapable,
+  suggestTrades,
 } from "@/lib/ledger";
 import { planCheck, planSeed } from "@/lib/plancheck";
 import CultureBlock from "./CultureBlock";
@@ -882,6 +883,13 @@ export function TrackerView({
     applyTrade(ledgers, regions, flows, game);
     return ledgers;
   })();
+  // M9 — suggested trade flows: pair one island's leftover with another's
+  // shortfall, on the POST-trade ledgers, so accepted links and ship routes
+  // are already subtracted and a spent surplus isn't offered twice. With the
+  // quest list filtered to one island, only its arrivals/departures show.
+  const tradeIdeas = suggestTrades(allLedgers, flows).filter(
+    (s) => !effFilter || s.from === effFilter || s.to === effFilter
+  );
   // How many islands are missing something. The per-island block works this out
   // again for its own header; doing it here too keeps the tally at the top of
   // the card honest when every island is folded away.
@@ -1670,7 +1678,29 @@ export function TrackerView({
           )}
           {/* The zoo/museum/garden roll-up that used to sit here moved with
               the pieces to the 🏛 Culture tab (build 101) — inside this card
-              they were three folds deep. */}
+              they were three folds deep. The trade suggestions (M9) took the
+              spot: cross-island advice belongs above the per-island blocks. */}
+          {tradeIdeas.length > 0 && (
+            <div className="trsuggest">
+              <span
+                className="muted"
+                title="Worked out from the ledgers after every link and ship route has moved its goods: an island's leftover set against another's shortfall. Tap one to add the link — the ledger then routes it and the suggestion clears."
+              >
+                🧭 Suggested:
+              </span>
+              {tradeIdeas.map((s) => (
+                <button
+                  key={`${s.good}|${s.from}|${s.to}`}
+                  className="trchip trsug"
+                  title={`${s.to} is ${fmt(s.tpm)} t/min short of ${s.good} that ${s.from} has spare — tap to link it`}
+                  onClick={() => addIslandLink(s.good, s.from, s.to)}
+                >
+                  <GoodIcon name={s.good} game={game} />
+                  {s.good} {fmt(s.tpm)} · {s.from} → {s.to}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="plrow">
             <Dropdown
               className="qisle"

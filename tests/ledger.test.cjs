@@ -361,6 +361,114 @@ const near = (a, b) => Math.abs(a - b) < 1e-9;
   ok("resident demand is in the rows applyTrade serves");
 }
 
+// --- M9: suggestions pair what's left with what's still short --------------
+// suggestTrades reads post-trade ledgers and never mutates them. Cattle Farms
+// (OW, 0.5 t/min Beef each) against Artisanal Kitchens (0.5 t/min Beef eaten
+// each) keep every number hand-derivable; the kitchens' Goulash surplus and
+// Bell Peppers gap must produce NO suggestions, since no island wants the one
+// or makes the other — a pairing needs both ends.
+{
+  const farms = (n) => [{ t: "Cattle Farm", n, done: true }];
+  const kitchens = (n) => [{ t: "Artisanal Kitchen", n, done: true }];
+
+  // One surplus, two deficits: Pasture has 4 spare, Kitchenia is short 3,
+  // Snackville 1. Largest deficit first, and the second taker gets what the
+  // first left, priced separately.
+  const led = {
+    Pasture: rows(farms(8), OW),
+    Kitchenia: rows(kitchens(6), OW),
+    Snackville: rows(kitchens(2), OW),
+  };
+  const sug = L.suggestTrades(led);
+  if (sug.length !== 2) fail(`expected 2 suggestions, got ${JSON.stringify(sug)}`);
+  const [s1, s2] = sug;
+  if (s1?.good !== "Beef" || s1.from !== "Pasture" || s1.to !== "Kitchenia" || !near(s1.tpm, 3))
+    fail(`the largest deficit is served first, got ${JSON.stringify(s1)}`);
+  if (s2?.good !== "Beef" || s2.from !== "Pasture" || s2.to !== "Snackville" || !near(s2.tpm, 1))
+    fail(`the smaller deficit takes the rest, got ${JSON.stringify(s2)}`);
+  if (!near(led.Pasture.find((r) => r.name === "Beef").net, 4))
+    fail("suggesting must not mutate the ledgers");
+
+  // A spent surplus is not offered twice: 4 spare against two shortfalls of 3.
+  // The alphabetically-first of the tied deficits gets its 3; the other is
+  // offered only the 1 that remains, never a fresh 3.
+  const tied = {
+    Pasture: rows(farms(8), OW),
+    Aleville: rows(kitchens(6), OW),
+    Bunsburg: rows(kitchens(6), OW),
+  };
+  const tsug = L.suggestTrades(tied);
+  if (tsug.length !== 2 || !near(tsug[0].tpm, 3) || tsug[0].to !== "Aleville")
+    fail(`tied deficits break on island name, got ${JSON.stringify(tsug)}`);
+  if (!near(tsug[1].tpm, 1) || tsug[1].to !== "Bunsburg")
+    fail(`the second taker gets the remainder only, got ${JSON.stringify(tsug)}`);
+
+  // A link already covering a flow: run applyTrade first, then suggest on what
+  // it left. Pasture→Kitchenia ships the need (3) AND the leftover 1 (pass 2:
+  // exported means gone), so Pasture has nothing more to offer and Kitchenia
+  // sits on 1 t/min of stock — which is now THE surplus, and the strip chains
+  // it onward to Snackville rather than re-offering Pasture's.
+  const flows = [{ good: "Beef", from: "Pasture", to: "Kitchenia" }];
+  const covered = {
+    Pasture: rows(farms(8), OW),
+    Kitchenia: rows(kitchens(6), OW),
+    Snackville: rows(kitchens(2), OW),
+  };
+  L.applyTrade(covered, { Pasture: OW, Kitchenia: OW, Snackville: OW }, flows);
+  const csug = L.suggestTrades(covered, flows);
+  if (csug.length !== 1)
+    fail(`a covered flow must not be re-suggested, got ${JSON.stringify(csug)}`);
+  if (
+    csug[0]?.from !== "Kitchenia" ||
+    csug[0].to !== "Snackville" ||
+    !near(csug[0].tpm, 1)
+  )
+    fail(`the chained stock should move onward, got ${JSON.stringify(csug)}`);
+
+  // The both-ways guard: a recorded link the wrong way round (Kitchenia has no
+  // Beef to send Pasture, and Pasture isn't short) must not draw the reverse
+  // suggestion — the same good never sails both directions between two islands.
+  const backwards = [{ good: "Beef", from: "Kitchenia", to: "Pasture" }];
+  const wrongway = {
+    Pasture: rows(farms(8), OW),
+    Kitchenia: rows(kitchens(6), OW),
+  };
+  L.applyTrade(wrongway, { Pasture: OW, Kitchenia: OW }, backwards);
+  const wsug = L.suggestTrades(wrongway, backwards);
+  if (wsug.length !== 0)
+    fail(`no suggestion may reverse a recorded flow, got ${JSON.stringify(wsug)}`);
+
+  // Balanced books suggest nothing.
+  if (L.suggestTrades({ Pasture: rows(farms(8), OW) }).length)
+    fail("a lone surplus with no taker is not a suggestion");
+  ok("suggestions pair surpluses with deficits and respect existing flows");
+}
+
+// --- M9 + M8: resident demand drives suggestions ---------------------------
+// The point of the M8 gate: a final good's surplus is only real net of what
+// the local population eats. Ovenia bakes 2 t/min of Bread; its own 1000
+// workers eat 0.9091, so only the remainder is offered to breadless Homestead.
+{
+  const eatHome = 1000 * 0.0009091;
+  const led = {
+    Ovenia: L.islandLedger([{ t: "Bakery", n: 2, done: true }], "anno1800", OW, {
+      workers: 1000,
+    }),
+    Homestead: L.islandLedger([], "anno1800", OW, { workers: 1000 }),
+  };
+  L.applyTrade(led, { Ovenia: OW, Homestead: OW }, []);
+  const sug = L.suggestTrades(led);
+  const bread = sug.find((s) => s.good === "Bread");
+  if (!bread || bread.from !== "Ovenia" || bread.to !== "Homestead")
+    fail(`Ovenia's spare bread should be offered to Homestead, got ${JSON.stringify(sug)}`);
+  if (!near(bread.tpm, Math.min(2 - eatHome, eatHome)))
+    fail(`the offer is net of Ovenia's own eaters, got ${bread.tpm}`);
+  // Both islands are short of Fish nobody catches — no source, no suggestion.
+  if (sug.some((s) => s.good === "Fish"))
+    fail("a shortfall with no surplus anywhere must stay a shortfall");
+  ok("suggestions offer only what residents leave over");
+}
+
 if (failures) {
   console.error(`\n${failures} failure(s)`);
   process.exit(1);

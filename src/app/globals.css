@@ -142,6 +142,10 @@ a.plx:hover{color:var(--accent)}
 button.trchip{cursor:pointer}
 button.trchip:hover{color:var(--ink);border-color:var(--ink)}
 .ddbtn.trlink{width:auto;display:inline-flex;padding:1px 7px;margin-left:6px;font-size:10px;color:var(--muted);background:0 0;border-color:var(--line)}
+/* Suggested trade flows (M9): the read-only strip at the top of the Islands
+   card — each chip a one-tap addIslandLink. */
+.trsuggest{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;margin:0 0 10px;font-size:12px}
+.trsuggest .trchip{margin-left:0;font-size:11px;display:inline-flex;align-items:center;gap:4px}
 /* Tucked checklist (build 98): the count doubles as the toggle. */
 .isletuck{background:0 0;border:0;padding:0;font:inherit;color:var(--muted);cursor:pointer;white-space:nowrap}
 .isletuck:hover{color:var(--ink)}

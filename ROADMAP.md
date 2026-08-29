@@ -534,15 +534,33 @@ is in CLAUDE.md.
   drives the row in jsdom (type → stored → chip on the Bread row → survives
   fold + reload). M9's precondition is met.
 
+- **M9 — trade routes** (build 107, `/m9-trade-routes`): the ledgers now argue
+  for routes. `suggestTrades` in ledger.ts pairs one island's leftover with
+  another's shortfall per good — fed the POST-`applyTrade` ledgers, so
+  accepted links, ship routes and resident demand are already subtracted, a
+  spent surplus is never offered twice, and a covered deficit isn't one.
+  Pairing is deterministic (goods A→Z, largest deficit first, served from the
+  largest surplus, ties on island name) with running balances, so imported
+  stock chains onward (A→B's leftover lands at B and is offered B→C).
+  Recorded flows are never re-suggested and neither is their reverse — a good
+  can't sail both ways between two islands. The UI is a read-only 🧭 strip at
+  the top of the Islands card (where the collections roll-up sat pre-101):
+  each chip is good picture + t/min + from → to, the tap calls
+  `addIslandLink`, and the suggestion clears because the ledger then routes
+  it. The quest list's island filter narrows the strip to that island's
+  arrivals/departures. No new state anywhere — the strip is a pure view of
+  the ledgers. `test:ledger` grew the hand-derived pairing sections (one
+  surplus two deficits in order, tied deficits, the spent-surplus guard, a
+  link already covering a flow + chained stock, the both-ways guard,
+  residents-net-of-surplus) and `test:islands` drives the strip in jsdom
+  (chip appears → accept records the link → strip clears → import chip on
+  the row). The roadmap's manual-routes fallback was already satisfied by
+  builds 96–100.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)
 
-- **M9 — trade routes** (session prompt: `/m9-trade-routes`; M8 done, build
-  106): cross-island suggestions matching surpluses to deficits ("ship 2 t/min
-  Rum: New World → Crown Falls") now that M8 makes final-goods demand honest. Manual
-  route records already exist (builds 96–100 trade links + ship routes), so
-  this is purely the read-only suggestion layer with one-tap accept.
 - **M6** — backup & restore (session prompt: `/m6-backup`): one-button JSON
   export/import of all companion state; phone polish (touch targets, PWA
   install). Now that saves exist, the export should be per save (and an

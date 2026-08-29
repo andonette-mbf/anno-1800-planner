@@ -499,6 +499,69 @@ export function applyTrade(
   }
 }
 
+/** A trade the ledgers argue for (M9): `to` is short `tpm` t/min of `good`
+ *  that `from` has spare. Names are display forms, same as the ledger rows. */
+export interface TradeSuggestion {
+  good: string;
+  from: string;
+  to: string;
+  tpm: number;
+}
+
+/** Pair what's left over with what's still short, per good, across islands.
+ *
+ *  Feed this the POST-trade ledgers (after `applyTrade`), never the raw ones:
+ *  a surplus an accepted link already ships is spent — it must not be offered
+ *  twice — and a deficit a ship route covers is not a deficit. Rows are read,
+ *  never mutated.
+ *
+ *  The pairing is deterministic: goods alphabetically, each good's largest
+ *  deficit first, served from its largest surplus first (ties break on island
+ *  name); a source's remaining spare carries over, so a second taker gets
+ *  what's left, not the full amount again. Recorded flows (`flows`: links and
+ *  ship routes) are never re-suggested, and neither is their reverse — a good
+ *  must not sail both ways between the same two islands. */
+export function suggestTrades(
+  ledgers: Record<string, LedgerRow[]>,
+  flows: TradeFlow[] = []
+): TradeSuggestion[] {
+  const key = (g: string, a: string, b: string) => `${g}|${a}|${b}`.trim().toLowerCase();
+  const taken = new Set<string>();
+  for (const f of flows) {
+    if (!f.good || !f.from || !f.to) continue;
+    taken.add(key(f.good, f.from, f.to));
+    taken.add(key(f.good, f.to, f.from));
+  }
+  type Side = { isle: string; amt: number };
+  const perGood = new Map<string, { sur: Side[]; def: Side[] }>();
+  for (const [isle, rows] of Object.entries(ledgers))
+    for (const r of rows) {
+      if (Math.abs(r.net) <= 1e-9) continue;
+      let g = perGood.get(r.name);
+      if (!g) perGood.set(r.name, (g = { sur: [], def: [] }));
+      if (r.net > 0) g.sur.push({ isle, amt: r.net });
+      else g.def.push({ isle, amt: -r.net });
+    }
+  const bySize = (a: Side, b: Side) => b.amt - a.amt || a.isle.localeCompare(b.isle);
+  const out: TradeSuggestion[] = [];
+  for (const good of [...perGood.keys()].sort((a, b) => a.localeCompare(b))) {
+    const { sur, def } = perGood.get(good)!;
+    if (!sur.length || !def.length) continue;
+    sur.sort(bySize);
+    def.sort(bySize);
+    for (const d of def)
+      for (const s of sur) {
+        if (d.amt <= 1e-9) break;
+        if (s.amt <= 1e-9 || taken.has(key(good, s.isle, d.isle))) continue;
+        const amt = Math.min(s.amt, d.amt);
+        s.amt -= amt;
+        d.amt -= amt;
+        out.push({ good, from: s.isle, to: d.isle, tpm: amt });
+      }
+  }
+  return out;
+}
+
 /** The consumption knobs resident demand is scaled by (M8) — the calculator's
  *  own settings: 1800's lifestyle toggle + consumption slider, 117's needs
  *  band. Global per save, matching the calculator's single setting. */
