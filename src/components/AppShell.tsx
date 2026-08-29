@@ -4,7 +4,13 @@ import { datasetFor } from "@/lib/dataset";
 import { CalcState, defaultStateFor } from "@/lib/engine";
 import { GAMES, type Game } from "@/lib/games";
 import { decodeHash, encodeHash } from "@/lib/hash";
-import { DEFAULT_SAVE_NAME, useAuth, useCompanion } from "@/lib/store";
+import {
+  DEFAULT_SAVE_NAME,
+  makeSaveExport,
+  parseSaveExport,
+  useAuth,
+  useCompanion,
+} from "@/lib/store";
 import { LeftPanel } from "./calc/LeftPanel";
 import { Results } from "./calc/Results";
 import { QuickAdd } from "./QuickAdd";
@@ -216,15 +222,83 @@ export function AppShell() {
 // calculator is deliberately outside this: its plans are blueprints you reuse
 // across playthroughs, not part of one.
 function SaveMenu() {
-  const { saves, saveId, setSave, addSave, duplicateSave, renameSave, deleteSave } =
-    useCompanion();
+  const {
+    saves,
+    saveId,
+    setSave,
+    addSave,
+    duplicateSave,
+    renameSave,
+    deleteSave,
+    importSave,
+    data,
+    game,
+  } = useCompanion();
+  const fileRef = useRef<HTMLInputElement>(null);
   const name = saves.find((s) => s.id === saveId)?.name ?? DEFAULT_SAVE_NAME;
   const ask = (q: string, fallback: string, run: (v: string) => void) => {
     const v = window.prompt(q, fallback);
     if (v !== null && v.trim()) run(v);
   };
+  // One save = one JSON file (M6). A Blob URL download, so it works offline
+  // and never touches the server.
+  const doExport = () => {
+    const json = JSON.stringify(makeSaveExport(game, name, data), null, 2);
+    const url = URL.createObjectURL(new Blob([json], { type: "application/json" }));
+    const a = document.createElement("a");
+    a.href = url;
+    const slug =
+      name
+        .toLowerCase()
+        .replace(/[^\w]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "save";
+    a.download = `anno-${game === "anno117" ? "117" : "1800"}-${slug}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+  const onImportFile = async (f: File | null) => {
+    if (!f) return;
+    let parsed = null;
+    try {
+      parsed = parseSaveExport(JSON.parse(await f.text()));
+    } catch {}
+    if (!parsed) {
+      window.alert(
+        "That file isn't a backup made by this app — expected a JSON export from the save menu."
+      );
+      return;
+    }
+    // A 117 blob imported into 1800 would show ids nothing can parse, so a
+    // mismatch imports into ITS game (switching to it) or not at all.
+    if (parsed.game !== game) {
+      const label = GAMES.find((g) => g.id === parsed.game)?.label ?? parsed.game;
+      if (
+        !window.confirm(
+          `This backup is from ${label}. Switch to ${label} and import it there?`
+        )
+      )
+        return;
+    }
+    importSave(parsed);
+  };
   return (
-    <Dropdown
+    <>
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".json,application/json"
+        style={{ display: "none" }}
+        onChange={(e) => {
+          const f = e.target.files?.[0] ?? null;
+          // Cleared before the async read, so picking the same file again
+          // still fires a change event. The File handle stays readable.
+          e.target.value = "";
+          onImportFile(f);
+        }}
+      />
+      <Dropdown
       className="savemenu"
       ariaLabel="Which save the Tracker is showing"
       title="One save per Anno save game — each keeps its own quests, islands and inventory. Saves belong to the game above; the calculator is shared."
@@ -233,6 +307,8 @@ function SaveMenu() {
       onChange={(v) => {
         if (v === "__new") ask("Name the new save:", `Save ${saves.length + 1}`, addSave);
         else if (v === "__dup") ask("Name the copy:", `${name} copy`, duplicateSave);
+        else if (v === "__export") doExport();
+        else if (v === "__import") fileRef.current?.click();
         else if (v === "__rename")
           ask("Rename this save:", name, (n) => renameSave(saveId, n));
         else if (v === "__delete") {
@@ -265,6 +341,16 @@ function SaveMenu() {
             { value: "__dup", label: "⧉ Duplicate…", title: "Copy this save's quests and islands" },
             { value: "__rename", label: "✎ Rename…" },
             {
+              value: "__export",
+              label: "⬇ Export…",
+              title: "Download this save as a JSON backup file",
+            },
+            {
+              value: "__import",
+              label: "⬆ Import…",
+              title: "Load a backup file as a NEW save — never over this one",
+            },
+            {
               value: "__delete",
               label: "✕ Delete…",
               title:
@@ -275,7 +361,8 @@ function SaveMenu() {
           ],
         },
       ]}
-    />
+      />
+    </>
   );
 }
 

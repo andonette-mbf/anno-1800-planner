@@ -509,6 +509,63 @@ function parsePopCfg(raw: unknown): PopCfg {
   };
 }
 
+// The player's island-name list: strings, blanks dropped.
+function parseIslands(raw: unknown): string[] {
+  return Array.isArray(raw) ? raw.map(String).filter(Boolean) : [];
+}
+
+// island → linked plan snapshot. A plan is kept only when it has the two
+// things that make it loadable: a name and a state object.
+function parsePlans(raw: unknown): Record<string, IslandPlan> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  return Object.fromEntries(
+    Object.entries(raw as Record<string, unknown>).filter(([, v]) => {
+      const o = v as { name?: unknown; st?: unknown };
+      return !!o && typeof o.name === "string" && !!o.st && typeof o.st === "object";
+    })
+  ) as Record<string, IslandPlan>;
+}
+
+// island → region tag. Only non-empty strings survive.
+function parseRegions(raw: unknown): Record<string, string> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  return Object.fromEntries(
+    Object.entries(raw as Record<string, unknown>).filter(
+      ([, v]) => typeof v === "string" && v
+    )
+  ) as Record<string, string>;
+}
+
+// Stored quests back into QuestItems, tolerating every older shape (see the
+// field comments on QuestItem). Timers that ran out while the data was at rest
+// ring on the way in — the point of a timer is that the task comes back on its
+// own.
+function parseQuests(raw: unknown, sessions: number): QuestItem[] {
+  if (!Array.isArray(raw)) return [];
+  const quests = raw
+    .map((x) => ({
+      t: String(x?.t ?? ""),
+      done: !!x?.done,
+      added: Number(x?.added) || 0,
+      // Items from before session-aging start aging from now.
+      sess: Number.isFinite(Number(x?.sess)) ? Number(x.sess) : sessions,
+      ...(x?.note ? { note: String(x.note) } : {}),
+      ...(x?.w && !x?.done ? { w: true } : {}),
+      ...(x?.wn ? { wn: String(x.wn) } : {}),
+      // A bare string is a pre-build-70 single blocker.
+      ...(() => {
+        const on = parseBlockers(x?.wq);
+        return on.length && !x?.done ? { wq: on } : {};
+      })(),
+      ...(Number(x?.wt) > 0 && !x?.done ? { wt: Number(x.wt) } : {}),
+      ...(x?.wr && !x?.done
+        ? { wr: (x.wr === "deps" ? "deps" : "timer") as "timer" | "deps" }
+        : {}),
+    }))
+    .filter((x) => x.t);
+  return ringTimers(healBlockers(quests));
+}
+
 function loadLocal(game: Game = "anno1800", id = ""): CompanionData {
   const k = (base: string) => skey(game, base, id);
   const openq: Record<string, string> = {};
@@ -529,8 +586,7 @@ function loadLocal(game: Game = "anno1800", id = ""): CompanionData {
   const sessions = Math.max(0, Math.floor(Number(ls.get(k("anno_sessions"))) || 0));
   let islands: string[] = [];
   try {
-    const il = JSON.parse(ls.get(k("anno_islands")) || "[]");
-    if (Array.isArray(il)) islands = il.map(String).filter(Boolean);
+    islands = parseIslands(JSON.parse(ls.get(k("anno_islands")) || "[]"));
   } catch {}
   let islandChecks: Record<string, CheckItem[]> = {};
   try {
@@ -542,22 +598,11 @@ function loadLocal(game: Game = "anno1800", id = ""): CompanionData {
   } catch {}
   let islandPlans: Record<string, IslandPlan> = {};
   try {
-    const ip = JSON.parse(ls.get(k("anno_island_plans")) || "{}");
-    if (ip && typeof ip === "object" && !Array.isArray(ip))
-      islandPlans = Object.fromEntries(
-        Object.entries(ip).filter(([, v]) => {
-          const o = v as { name?: unknown; st?: unknown };
-          return !!o && typeof o.name === "string" && !!o.st && typeof o.st === "object";
-        })
-      ) as Record<string, IslandPlan>;
+    islandPlans = parsePlans(JSON.parse(ls.get(k("anno_island_plans")) || "{}"));
   } catch {}
   let islandRegions: Record<string, string> = {};
   try {
-    const ir = JSON.parse(ls.get(k("anno_island_regions")) || "{}");
-    if (ir && typeof ir === "object" && !Array.isArray(ir))
-      islandRegions = Object.fromEntries(
-        Object.entries(ir).filter(([, v]) => typeof v === "string" && v)
-      ) as Record<string, string>;
+    islandRegions = parseRegions(JSON.parse(ls.get(k("anno_island_regions")) || "{}"));
   } catch {}
   let islandCulture: Record<string, Record<string, string[]>> = {};
   try {
@@ -584,32 +629,7 @@ function loadLocal(game: Game = "anno1800", id = ""): CompanionData {
     islandLinks = parseLinks(JSON.parse(ls.get(k("anno_island_links")) || "[]"));
   } catch {}
   try {
-    const q = JSON.parse(ls.get(k("anno_quests")) || "[]");
-    if (Array.isArray(q))
-      quests = q
-        .map((x) => ({
-          t: String(x?.t ?? ""),
-          done: !!x?.done,
-          added: Number(x?.added) || 0,
-          // Items from before session-aging start aging from now.
-          sess: Number.isFinite(Number(x?.sess)) ? Number(x.sess) : sessions,
-          ...(x?.note ? { note: String(x.note) } : {}),
-          ...(x?.w && !x?.done ? { w: true } : {}),
-          ...(x?.wn ? { wn: String(x.wn) } : {}),
-          // A bare string is a pre-build-70 single blocker.
-          ...(() => {
-            const on = parseBlockers(x?.wq);
-            return on.length && !x?.done ? { wq: on } : {};
-          })(),
-          ...(Number(x?.wt) > 0 && !x?.done ? { wt: Number(x.wt) } : {}),
-          ...(x?.wr && !x?.done
-            ? { wr: (x.wr === "deps" ? "deps" : "timer") as "timer" | "deps" }
-            : {}),
-        }))
-        .filter((x) => x.t);
-    // Timers that ran out while the app was shut ring on the way in — the point
-    // of a timer is that the task comes back on its own.
-    quests = ringTimers(healBlockers(quests));
+    quests = parseQuests(JSON.parse(ls.get(k("anno_quests")) || "[]"), sessions);
   } catch {}
   return {
     openq,
@@ -789,6 +809,99 @@ function fromBlob(blob: SyncBlob, local: Record<Game, GameSaves>): Record<Game, 
   };
 }
 
+// ---------- backup (M6) ----------
+
+/** One save as a downloadable file: the wrapper says what it is holding —
+ *  which app wrote it, which game and save it came from — and `data` is the
+ *  save verbatim, retired Playbook/Session fields included, because an export
+ *  that drops them isn't a backup. */
+export interface SaveExport {
+  app: "anno-planner";
+  version: 1;
+  game: Game;
+  name: string;
+  exportedAt: string;
+  data: CompanionData;
+}
+
+export function makeSaveExport(game: Game, name: string, data: CompanionData): SaveExport {
+  return {
+    app: "anno-planner",
+    version: 1,
+    game,
+    name,
+    exportedAt: new Date().toISOString(),
+    data,
+  };
+}
+
+/** What an import needs to land: which game's list it belongs in, what to call
+ *  it, and clean contents. */
+export interface ParsedImport {
+  game: Game;
+  name: string;
+  data: CompanionData;
+}
+
+/** A whole save out of an untrusted blob. An imported file is outside data —
+ *  same trust level as the server's sync blob — so every field goes through
+ *  the same parser loadLocal runs on its localStorage key, and unknown keys
+ *  are dropped by construction: the result holds exactly CompanionData. */
+function parseSaveData(raw: unknown): CompanionData {
+  const o = (
+    raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {}
+  ) as Record<string, unknown>;
+  const strMap = (v: unknown, keys: readonly string[]) => {
+    const src = (v && typeof v === "object" && !Array.isArray(v) ? v : {}) as Record<
+      string,
+      unknown
+    >;
+    const out: Record<string, string> = {};
+    for (const key of keys) out[key] = typeof src[key] === "string" ? (src[key] as string) : "";
+    return out;
+  };
+  const sessions = Math.max(0, Math.floor(Number(o.sessions) || 0));
+  const ic = (
+    o.islandChecks && typeof o.islandChecks === "object" && !Array.isArray(o.islandChecks)
+      ? o.islandChecks
+      : {}
+  ) as Record<string, unknown>;
+  return {
+    openq: strMap(o.openq, OQ_KEYS),
+    focus: strMap(o.focus, FOCUS_KEYS),
+    shutdown: Array.isArray(o.shutdown) ? o.shutdown.map(Boolean) : [],
+    parkinglot: Array.isArray(o.parkinglot) ? o.parkinglot.map(String) : [],
+    quests: parseQuests(o.quests, sessions),
+    sessions,
+    islands: parseIslands(o.islands),
+    islandChecks: Object.fromEntries(Object.entries(ic).map(([k, v]) => [k, parseChecks(v)])),
+    islandPlans: parsePlans(o.islandPlans),
+    islandRegions: parseRegions(o.islandRegions),
+    islandCulture: parseCulture(o.islandCulture),
+    islandItems: parseCulture(o.islandItems),
+    islandPop: parseIslandPop(o.islandPop),
+    popCfg: parsePopCfg(o.popCfg),
+    ships: parseShips(o.ships),
+    islandLinks: parseLinks(o.islandLinks),
+  };
+}
+
+/** Validate + sanitize a parsed backup file. Null means "not ours": wrong app
+ *  marker, a wrapper version this build doesn't know, or an unknown game —
+ *  refused whole rather than half-imported. */
+export function parseSaveExport(raw: unknown): ParsedImport | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const o = raw as { app?: unknown; version?: unknown; game?: unknown; name?: unknown; data?: unknown };
+  if (o.app !== "anno-planner" || o.version !== 1) return null;
+  if (!isGame(o.game)) return null;
+  if (!o.data || typeof o.data !== "object" || Array.isArray(o.data)) return null;
+  return {
+    game: o.game,
+    name: String(o.name ?? "").trim() || "Imported save",
+    data: parseSaveData(o.data),
+  };
+}
+
 // ---------- auth ----------
 
 type AuthStatus = "loading" | "off" | "anon" | "authed";
@@ -830,6 +943,9 @@ interface CompanionCtx {
   renameSave: (id: string, name: string) => void;
   /** Delete a save and its contents; refuses to remove the last one. */
   deleteSave: (id: string) => void;
+  /** Land a parsed backup (parseSaveExport's output) as a NEW save of its
+   *  game and show it — never overwriting the save you're on (M6). */
+  importSave: (p: ParsedImport) => void;
   sync: "local" | "syncing" | "synced" | "error";
   setOpenq: (k: string, v: string) => void;
   setFocus: (k: string, v: string) => void;
@@ -1105,6 +1221,32 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           delete data[id];
           return { list, cur: g.cur === id ? list[0].id : g.cur, data };
         }),
+      // Not through updateSaves, which is bound to the game being shown — a
+      // backup lands in ITS OWN game's list, which may be the other one.
+      importSave: ({ game: g, name, data: d }) => {
+        setAll((prev) => {
+          const gsave = prev[g];
+          // The save you're on is never touched: a name clash makes a new
+          // "(imported)" sibling rather than replacing anything.
+          const taken = new Set(gsave.list.map((s) => s.name.toLowerCase()));
+          let final = name;
+          if (taken.has(final.toLowerCase())) final = `${name} (imported)`;
+          for (let n = 2; taken.has(final.toLowerCase()); n++)
+            final = `${name} (imported ${n})`;
+          const id = newSaveId();
+          const gnext: GameSaves = {
+            list: [...gsave.list, { id, name: final }],
+            cur: id,
+            data: { ...gsave.data, [id]: d },
+          };
+          const next = { ...prev, [g]: gnext } as Record<Game, GameSaves>;
+          saveGame(g, gnext);
+          if (canSync.current) push(next);
+          else ls.set("anno_dirty", "1");
+          return next;
+        });
+        if (g !== game) setGame(g);
+      },
       sync,
       setOpenq: (k, v) => update((d) => ({ ...d, openq: { ...d.openq, [k]: v } })),
       setFocus: (k, v) => update((d) => ({ ...d, focus: { ...d.focus, [k]: v } })),
@@ -1655,7 +1797,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           };
         }),
     }),
-    [data, game, gs, setGame, sync, update, updateSaves]
+    [data, game, gs, push, setGame, sync, update, updateSaves]
   );
 
   const auth = useMemo<AuthCtx>(

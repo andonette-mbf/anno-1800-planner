@@ -385,3 +385,21 @@ button.trchip:hover{color:var(--ink);border-color:var(--ink)}
 .ddbtn:hover{border-color:#111}
 .ddbtn:hover .ddcar{border-top-color:#111}
 .ddbtn.open{border-color:#111;box-shadow:0 0 0 1px #111}
+
+/* ---------------------------------------------------- Phone polish (M6)
+   Finger-sized targets on touch screens only. The desktop density is right
+   for a pointer, but the chips, the little ✕s and the tab row all sit well
+   under 40px tall — the floor a fingertip needs. Padding does the growing;
+   type stays the size it is. */
+@media (pointer: coarse) {
+  .chip { padding: 9px 14px; min-height: 40px; display: inline-flex; align-items: center; }
+  .plx { padding: 8px 10px; min-width: 40px; min-height: 40px; }
+  .sel .x { padding: 8px 12px; min-height: 40px; }
+  .tab { padding: 10px 14px; min-height: 40px; }
+  .pbtn { padding: 9px 12px; min-height: 40px; }
+  .linkbtn { min-height: 40px; }
+  .toggle button { padding: 10px 12px; min-height: 40px; }
+  .gameswitch button { padding: 11px 14px; min-height: 40px; }
+  .savemenu { min-height: 40px; }
+  .checkrow input[type=checkbox] { width: 22px; height: 22px; }
+}

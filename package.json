@@ -23,6 +23,7 @@
     "extract:items117": "node scripts/extract-items-117.mjs",
     "test:games": "node tests/store-games.test.mjs",
     "test:saves": "node tests/store-saves.test.mjs",
+    "test:backup": "node tests/store-backup.test.mjs",
     "test:islands": "node tests/island-ui.test.mjs",
     "test:fleet": "node tests/fleet-ui.test.mjs",
     "test:quickadd": "node tests/quickadd-ui.test.mjs",

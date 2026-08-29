@@ -129,7 +129,7 @@ function Footer({ st }: { st: CalcState }) {
         </>
       )}
       <br />
-      <span style={{ opacity: 0.55 }}>build 107 · suggested routes</span>
+      <span style={{ opacity: 0.55 }}>build 108 · backup &amp; restore</span>
     </div>
   );
 }

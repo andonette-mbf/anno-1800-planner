@@ -557,14 +557,31 @@ is in CLAUDE.md.
   the row). The roadmap's manual-routes fallback was already satisfied by
   builds 96–100.
 
+- **M6 — backup & restore + phone polish** (build 108, `/m6-backup`): each
+  save exports as a JSON file and imports as a NEW save. The wrapper is
+  `{app: "anno-planner", version: 1, game, name, exportedAt, data}` with
+  `data` the `CompanionData` verbatim — retired Playbook/Session fields
+  included, since an export that drops them isn't a backup. Export is a Blob
+  URL download from the save menu ("⬇ Export…"); "⬆ Import…" opens a file
+  picker, `parseSaveExport` refuses anything that isn't ours (wrong app
+  marker/version/game, non-object data) whole, and `parseSaveData` runs every
+  field through the SAME parsers `loadLocal` uses on its keys (extracted, not
+  copied: `parseQuests`/`parseIslands`/`parsePlans`/`parseRegions` now serve
+  both) so unknown keys drop by construction. `importSave` lands the blob in
+  ITS game's list — a mismatched game asks before switching — under the
+  wrapper's name, "(imported)"-suffixed past collisions, and never touches
+  the save you're on. `test:backup` proves the byte-identical export → wipe →
+  import round trip and that hostile/garbage files are refused without state
+  damage. Phone polish: a `@media (pointer: coarse)` block floors the small
+  controls (chips, ✕s, tabs, toggles) at 40px, and the app is installable —
+  `src/app/manifest.ts` (standalone, black-bar theme colour) + app icons
+  (the black-square A mark, 192/512 + maskable) + `icon.png`/`apple-icon.png`
+  which double as the site's first favicon. Deliberately no service worker:
+  installability no longer needs one and the app is localStorage-first.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)
-
-- **M6** — backup & restore (session prompt: `/m6-backup`): one-button JSON
-  export/import of all companion state; phone polish (touch targets, PWA
-  install). Now that saves exist, the export should be per save (and an
-  import should land as a new one).
 
 - **M12 — any Anno, not just two** (asked for Aug 2026: "plan to do this for
   any and all annos"; session prompt: `/m12-any-anno`). Adding Anno 117 made
