@@ -196,7 +196,9 @@ export function AppShell() {
           ).map(([v, label]) => (
             <button
               key={v}
-              className={`chip ${view === v ? "on" : ""}`}
+              // Highlight what's SHOWN, not what's stored — a hidden tab's id
+              // can be stored while its fallback tab is what renders.
+              className={`chip ${shown === v ? "on" : ""}`}
               onClick={() => {
                 go(v);
                 window.scrollTo(0, 0);
