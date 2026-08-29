@@ -715,7 +715,10 @@ export function TrackerView({
     setIslandLinkCap,
     saveUserRecipe,
     removeUserRecipe,
+    setNotes,
   } = useCompanion();
+  // Draft in the 🗒 Notes add box, kept while you flip tabs like other drafts.
+  const [noteDraft, setNoteDraft] = useState("");
   const { status } = useAuth();
   // Per-game content: region tags, starter kits, inventory chips, wiki base.
   const {
@@ -1781,6 +1784,47 @@ export function TrackerView({
                   ))}
               </div>
             )}
+          </div>
+        </div>
+      </div>
+      )}
+      {/* 🗒 Notes (asked for during M13): a plain notes-to-self list under the
+          quests — "this run: don't over-build schnapps". The storage is the
+          Playbook era's parking lot, which build 38 unlisted but storage and
+          sync kept carrying, so old blobs surface their notes again here.
+          Rides the save: a duplicated save keeps its notes, a fresh one
+          starts clean. */}
+      {section === "tasks" && (
+      <div className="card">
+        <div className="hd">
+          <h2>🗒 Notes</h2>
+          <span className="muted">notes to self — they ride this save</span>
+        </div>
+        <div className="bd doc">
+          {(data.parkinglot || []).map((n, i) => (
+            <div className="plitem questrow" key={`${i}:${n}`}>
+              <span style={{ flex: 1 }}>{linkify(n)}</span>
+              <button
+                className="plx"
+                title="Remove note"
+                onClick={() => setNotes((data.parkinglot || []).filter((_, j) => j !== i))}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+          <div className="plrow">
+            <input
+              placeholder="Leave yourself a note… (Enter to add)"
+              value={noteDraft}
+              onChange={(e) => setNoteDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && noteDraft.trim()) {
+                  setNotes([...(data.parkinglot || []), noteDraft]);
+                  setNoteDraft("");
+                }
+              }}
+            />
           </div>
         </div>
       </div>

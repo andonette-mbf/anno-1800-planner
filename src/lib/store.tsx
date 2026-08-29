@@ -1087,6 +1087,10 @@ interface CompanionCtx {
   saveUserRecipe: (r: UserRecipe) => void;
   /** Forget a taught building's numbers. */
   removeUserRecipe: (building: string) => void;
+  /** Replace the save's 🗒 notes. The field is the Playbook era's parking lot
+   *  (build 38 removed its UI, storage and sync never stopped carrying it) —
+   *  revived as a plain notes-to-self list on the Tasks tab. */
+  setNotes: (notes: string[]) => void;
 }
 
 const CompanionContext = createContext<CompanionCtx | null>(null);
@@ -1875,6 +1879,11 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             ),
           };
         }),
+      setNotes: (notes) =>
+        update((d) => ({
+          ...d,
+          parkinglot: notes.map((n) => String(n).trim()).filter(Boolean),
+        })),
       saveUserRecipe: (r) =>
         update((d) => ({
           ...d,
