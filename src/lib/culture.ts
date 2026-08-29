@@ -64,8 +64,16 @@ export const RARITY_ORDER: Record<string, number> = Object.fromEntries(
 const norm = (s: string) => s.trim().toLowerCase();
 
 /** The pack for a game, or null where the game has no such buildings (117). */
+// Per-game packs (M12): null = the game has no set-collection mechanic, and
+// everything culture-shaped (the 🏛 tab included) stays hidden for it. 117's
+// null is a decision, not a gap — Rome has no zoo/museum/garden.
+const CULTURE_BY_GAME: Record<Game, CultureBuilding[] | null> = {
+  anno1800: CULTURE,
+  anno117: null,
+};
+
 export function cultureFor(game: Game): CultureBuilding[] | null {
-  return game === "anno1800" ? CULTURE : null;
+  return CULTURE_BY_GAME[game];
 }
 
 /** Every piece in a building, sets first then loose — the lookup a "which set

@@ -96,15 +96,26 @@ export const ITEM_RARITY_ORDER: Record<string, number> = Object.fromEntries(
 
 const norm = (s: string) => s.trim().toLowerCase();
 
+// Per-game packs (M12): a game without one gets null and no socket panels —
+// same rule as cultureFor. Add a game by adding its row.
+const ITEMS_BY_GAME: Record<Game, ItemSocket[] | null> = {
+  anno1800: ITEM_SOCKETS,
+  anno117: ITEM_SOCKETS_117,
+};
+const PATRONS_BY_GAME: Record<Game, Patron[] | null> = {
+  anno1800: null,
+  anno117: PATRONS,
+};
+
 /** The pack for a game — both have one since M11c. */
 export function itemsFor(game: Game): ItemSocket[] | null {
-  return game === "anno1800" ? ITEM_SOCKETS : ITEM_SOCKETS_117;
+  return ITEMS_BY_GAME[game];
 }
 
 /** The pickable patron deities, or null for a game without the Religion
  *  system (1800). */
 export function patronsFor(game: Game): Patron[] | null {
-  return game === "anno117" ? PATRONS : null;
+  return PATRONS_BY_GAME[game];
 }
 
 /** The sockets that live on an island. Ships is the fleet's, not an island's. */

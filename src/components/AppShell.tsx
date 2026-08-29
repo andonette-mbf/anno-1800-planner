@@ -1,5 +1,6 @@
 "use client";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { cultureFor } from "@/lib/culture";
 import { datasetFor } from "@/lib/dataset";
 import { CalcState, defaultStateFor } from "@/lib/engine";
 import { GAMES, GAME_CONTENT, type Game } from "@/lib/games";
@@ -128,7 +129,10 @@ export function AppShell() {
   // Title, logo and lead wording are the game's own (M12).
   const C = GAME_CONTENT[game];
   const label = GAMES.find((g) => g.id === game)?.label ?? game;
-  const rome = game === "anno117";
+  // A game whose culture pack is null has no 🏛 tab (M12) — the rule, not a
+  // game check: 117 has no set-collection mechanic, so its tab stays hidden
+  // honestly, and any future game earns the tab by shipping a pack.
+  const hasCulture = cultureFor(game) !== null;
   return (
     <>
       {/* Build 89: one black bar across the top, and the game switch lives in
@@ -171,9 +175,9 @@ export function AppShell() {
           {C.lead && ` ${C.lead}`}
         </div>
         <nav className="appnav" id="appnav">
-          {/* 117 has no zoo/museum/garden (cultureFor returns null), so the
-              tab would be permanently empty — hide it there instead. */}
-          {(rome ? VIEWS.filter(([v]) => v !== "culture") : VIEWS).map(([v, label]) => (
+          {/* No culture pack (cultureFor null) means the tab would be
+              permanently empty — hide it for that game. */}
+          {(hasCulture ? VIEWS : VIEWS.filter(([v]) => v !== "culture")).map(([v, label]) => (
             <button
               key={v}
               className={`chip ${view === v ? "on" : ""}`}
@@ -207,11 +211,11 @@ export function AppShell() {
         {/* Kept mounted rather than swapped, so the boxes you were half way
             through typing in survive a tab change. */}
         <div style={{ display: view === "calc" ? "none" : "block" }}>
-          {/* Switching to 117 while on the (1800-only) Culture tab lands on
-              Islands, where those buildings live. */}
+          {/* Switching to a cultureless game while on the Culture tab lands
+              on Islands, where those buildings live. */}
           <TrackerView
             calcState={st}
-            section={rome && view === "culture" ? "islands" : (view as TrackerSection)}
+            section={!hasCulture && view === "culture" ? "islands" : (view as TrackerSection)}
             go={go}
           />
         </div>
