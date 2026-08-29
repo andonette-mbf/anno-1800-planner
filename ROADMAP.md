@@ -583,6 +583,23 @@ is in CLAUDE.md.
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)
 
+- **M13 — teach the ledger** (asked for Aug 2026, mid-M12: "input our own
+  data as we learn it from the game… like how long something takes to
+  produce"). **Phase A DONE (build 114):** on the four packless games, every
+  inventory line grows a ⏱ chip that unfolds into the tile's own sentence —
+  makes N t of GOOD every S seconds, eats X, Y — and the line starts
+  producing. `UserRecipe` rows live per save (`anno_user_recipes`, riding
+  storage/sync/backup/import untouched); `teachRecipes()` in ledger.ts
+  builds a packless game's ENTIRE index from them, called by the store
+  provider every render (signature-cached). Games with a pack ignore
+  teaching — their numbers stay canonical, pinned by test. Taught goods have
+  no pack ids, so the display name IS the id, and taught buildings register
+  in every region. **Possible phase B, decide with the user:** a taught
+  game flipping `hasCalc` on once enough is taught — the calculator running
+  off `userRecipes` (needs a user-built Dataset, not just an index; share
+  links would only decode for the author). **Also landed (build 115):** the
+  🗒 Notes card on the Tasks tab — the Playbook parking lot revived as
+  notes-to-self, per save.
 - **M12 — any Anno, not just two** (asked for Aug 2026: "plan to do this for
   any and all annos"; session prompt: `/m12-any-anno`). Adding Anno 117 made
   the app work for two games. This is
