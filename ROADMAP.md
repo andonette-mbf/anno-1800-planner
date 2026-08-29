@@ -590,6 +590,25 @@ is in CLAUDE.md.
   settings, with no changes to the code that does the work**. This isn't a
   redesign: it's a list of the places that still name Anno 117 directly.
 
+  **GROUNDWORK DONE (build 109)** — all six items below landed, one commit
+  each, with every suite green throughout. What a new game now takes: extend
+  the `Game` union, add its `GAMES` row (labels + storage prefix), its
+  `GAME_CONTENT` entry (regions, chips, wording: logo/lead/credits/hints/
+  fileSlug), its `DATASETS` entry, and a `GoodIcon` map row — the compiler
+  walks you to each Record. The ledger, calculator, storage, sync, saves,
+  backup, share links, icons and feature tabs then follow with no further
+  code. Notables: `gameKey` in games.ts is THE storage-prefix rule; the
+  ledger's non-1800 index is `buildFromDataset` (fed by a new
+  `Dataset.recipes()` — every in-region producer, the calculator's pick
+  first; verified byte-identical to the old build117 before the swap);
+  `Dataset` also gained `startRegion`, `needsModel` ("thresholds"|"bands" —
+  picks the lifestyle toggle vs band chips), `hasCoalChoice`,
+  `hasElectricity`; feature packs (`cultureFor`/`itemsFor`/`patronsFor`,
+  growth tiers) are per-game records where null/absent simply hides the
+  feature. **Still open, per game:** the data-source survey below (nobody
+  has run it yet), then packs/icons/tests — and the "packless Tracker-only
+  game" question at the bottom is now purely a decision, not code.
+
   **Already done, and proved by 117 — don't redo it.** The calculator reads no
   game's tables directly; each game's numbers are one entry in `DATASETS`, and
   `datasetFor(st)` picks the right one. Each game's own content — region names,
