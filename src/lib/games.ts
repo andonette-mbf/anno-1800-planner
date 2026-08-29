@@ -4,7 +4,7 @@
 // landed; the 117 side is derived from data-117.json (real building names, so
 // the entries parse back into the ledger) rather than typed from memory.
 
-export type Game = "anno1800" | "anno117";
+export type Game = "anno1800" | "anno117" | "anno1701" | "anno1404" | "anno2070" | "anno2205";
 
 // Adding a game (M12): extend the union above, give it a row here — id, switcher
 // labels, and its own storage prefix — then fill in GAME_CONTENT below and the
@@ -14,6 +14,13 @@ export const GAMES: { id: Game; label: string; short: string; prefix: string }[]
   // single-file app read the unprefixed `anno_*` keys. Never reuse "anno_".
   { id: "anno1800", label: "Anno 1800", short: "⚓ 1800", prefix: "anno_" },
   { id: "anno117", label: "Anno 117", short: "🏛 117", prefix: "anno117_" },
+  // The other 3D Annos (M12) — Tracker-only until each gets a data pack
+  // (`trackerOnly` in dataset.ts hides their 🧮 tab). The two established
+  // games stay first; these four follow in setting order.
+  { id: "anno1701", label: "Anno 1701", short: "⛵ 1701", prefix: "anno1701_" },
+  { id: "anno1404", label: "Anno 1404", short: "🕌 1404", prefix: "anno1404_" },
+  { id: "anno2070", label: "Anno 2070", short: "🌊 2070", prefix: "anno2070_" },
+  { id: "anno2205", label: "Anno 2205", short: "🌕 2205", prefix: "anno2205_" },
 ];
 
 export function isGame(v: unknown): v is Game {
@@ -234,7 +241,101 @@ const ANNO117: GameContent = {
   shipTypes: [],
 };
 
+// ------------------------------------------------ Tracker-only games (M12)
+//
+// The four other 3D Annos, registered with no data pack yet — the Tracker
+// (quests, islands, typed inventory, fleet) is fully live, the calculator
+// waits for a pack (`trackerOnly` in dataset.ts hides its tab). All the
+// calculator-facing wording is "" because nothing renders it; each game's
+// 🌍 tags are the settle-able place kinds the game actually has. Building
+// chips, services and ship types are deliberately empty rather than typed
+// from memory — the inventory takes free text, and real lists arrive with
+// each game's pack (the 117 rule).
+const TRACKER_ONLY: Omit<GameContent, "fileSlug" | "logo" | "credits" | "wikiSearch"> = {
+  lead: "",
+  siloHint: "",
+  sharedExample: "",
+  growthHint: "",
+  regionLabels: {},
+  regionNum: {},
+  suggestions: [],
+  services: [],
+  starters: [{ key: "none", label: "No region" }],
+  shipTypes: [],
+};
+
+const noPackCredits = (label: string): string =>
+  `${label}: Tracker only for now — quests, islands, inventory and fleet. ` +
+  "The calculator needs a data pack (ROADMAP M12). Not affiliated with Ubisoft.";
+
+// 1701 settles one climate of island — no region tags to speak of. It also
+// has NO wiki: anno1701.fandom.com doesn't exist (checked Aug 2026; the only
+// 1701 Fandom wiki is a 20-article DS-port stub), so the 🔗 lookup falls back
+// to a plain web search rather than a wiki that would 404.
+const ANNO1701: GameContent = {
+  ...TRACKER_ONLY,
+  logo: "⛵",
+  fileSlug: "1701",
+  credits: noPackCredits("Anno 1701"),
+  wikiSearch: "https://www.google.com/search?q=Anno%201701%20",
+};
+
+// 1404's two worlds — Occidental islands and the Orient's date-palm south.
+const ANNO1404: GameContent = {
+  ...TRACKER_ONLY,
+  logo: "🕌",
+  fileSlug: "1404",
+  credits: noPackCredits("Anno 1404"),
+  regionLabels: { oc: "Occident", or: "Orient" },
+  regionNum: { oc: 1, or: 2 },
+  starters: [
+    { key: "oc", label: "Occident" },
+    { key: "or", label: "Orient" },
+    { key: "none", label: "No region" },
+  ],
+  wikiSearch: "https://anno1404.fandom.com/wiki/Special:Search?query=",
+};
+
+// 2070 settles islands and, with Deep Ocean, underwater plateaus.
+const ANNO2070: GameContent = {
+  ...TRACKER_ONLY,
+  logo: "🌊",
+  fileSlug: "2070",
+  credits: noPackCredits("Anno 2070"),
+  regionLabels: { is: "Island", uw: "Underwater plateau" },
+  regionNum: { is: 1, uw: 2 },
+  starters: [
+    { key: "is", label: "Island" },
+    { key: "uw", label: "Underwater plateau" },
+    { key: "none", label: "No region" },
+  ],
+  wikiSearch: "https://anno2070.fandom.com/wiki/Special:Search?query=",
+};
+
+// 2205's settlements are whole sectors, one map each.
+const ANNO2205: GameContent = {
+  ...TRACKER_ONLY,
+  logo: "🌕",
+  fileSlug: "2205",
+  credits: noPackCredits("Anno 2205"),
+  regionLabels: { te: "Temperate", ar: "Arctic", lu: "Lunar", tu: "Tundra", orb: "Orbit" },
+  regionNum: { te: 1, ar: 2, lu: 3, tu: 4, orb: 5 },
+  starters: [
+    { key: "te", label: "Temperate" },
+    { key: "ar", label: "Arctic" },
+    { key: "lu", label: "Lunar" },
+    { key: "tu", label: "Tundra" },
+    { key: "orb", label: "Orbit" },
+    { key: "none", label: "No region" },
+  ],
+  wikiSearch: "https://anno2205.fandom.com/wiki/Special:Search?query=",
+};
+
 export const GAME_CONTENT: Record<Game, GameContent> = {
   anno1800: ANNO1800,
   anno117: ANNO117,
+  anno1701: ANNO1701,
+  anno1404: ANNO1404,
+  anno2070: ANNO2070,
+  anno2205: ANNO2205,
 };

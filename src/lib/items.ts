@@ -98,13 +98,22 @@ const norm = (s: string) => s.trim().toLowerCase();
 
 // Per-game packs (M12): a game without one gets null and no socket panels —
 // same rule as cultureFor. Add a game by adding its row.
+// Tracker-only games (M12): no packs, so no socket panels and no patrons.
 const ITEMS_BY_GAME: Record<Game, ItemSocket[] | null> = {
   anno1800: ITEM_SOCKETS,
   anno117: ITEM_SOCKETS_117,
+  anno1701: null,
+  anno1404: null,
+  anno2070: null,
+  anno2205: null,
 };
 const PATRONS_BY_GAME: Record<Game, Patron[] | null> = {
   anno1800: null,
   anno117: PATRONS,
+  anno1701: null,
+  anno1404: null,
+  anno2070: null,
+  anno2205: null,
 };
 
 /** The pack for a game — both have one since M11c. */

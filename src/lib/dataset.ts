@@ -486,7 +486,17 @@ export function trackerOnly(game: Game): Dataset {
   };
 }
 
-export const DATASETS: Record<Game, Dataset> = { anno1800: ANNO1800, anno117: ANNO117 };
+export const DATASETS: Record<Game, Dataset> = {
+  anno1800: ANNO1800,
+  anno117: ANNO117,
+  // The other 3D Annos (M12) — Tracker-only until each finds a licensed,
+  // machine-readable source (the survey lives in ROADMAP M12). Swapping a
+  // shell for a real dataset is the whole calculator upgrade.
+  anno1701: trackerOnly("anno1701"),
+  anno1404: trackerOnly("anno1404"),
+  anno2070: trackerOnly("anno2070"),
+  anno2205: trackerOnly("anno2205"),
+};
 
 /** The dataset a state belongs to. No `game` means 1800, which is what keeps
  *  every pre-M10 share link, saved plan and golden-test scenario working. */

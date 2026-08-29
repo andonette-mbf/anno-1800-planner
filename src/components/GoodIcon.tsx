@@ -14,6 +14,12 @@ import type { Game } from "@/lib/games";
 const ICONS: Record<Game, Record<string, string>> = {
   anno1800: icons,
   anno117: icons117,
+  // Tracker-only games (M12): no data pack means no goods to picture yet.
+  // Each game's icon set arrives with its pack and fetch script.
+  anno1701: {},
+  anno1404: {},
+  anno2070: {},
+  anno2205: {},
 };
 
 export function GoodIcon({ name, game }: { name?: string | null; game?: Game }) {

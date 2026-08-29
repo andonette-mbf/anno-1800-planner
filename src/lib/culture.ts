@@ -70,6 +70,11 @@ const norm = (s: string) => s.trim().toLowerCase();
 const CULTURE_BY_GAME: Record<Game, CultureBuilding[] | null> = {
   anno1800: CULTURE,
   anno117: null,
+  // No set-collection mechanic in any of these either.
+  anno1701: null,
+  anno1404: null,
+  anno2070: null,
+  anno2205: null,
 };
 
 export function cultureFor(game: Game): CultureBuilding[] | null {
