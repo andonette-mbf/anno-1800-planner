@@ -2067,9 +2067,10 @@ export function TrackerView({
                         })()}
                       {/* Electricity is Old World only; an island with no
                           region set still gets the chip (names merge across
-                          worlds, so we can't tell which one it is). */}
+                          worlds, so we can't tell which one it is). Cape
+                          Trelawney counts as Old World via the alias. */}
                       {elecCapable(c.t, game) &&
-                        (!region || region === "ow") &&
+                        (!region || chipRegion === "ow") &&
                         (() => {
                           const nb = c.n || 1;
                           const ec = Math.min(c.e || 0, nb);
