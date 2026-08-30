@@ -295,13 +295,6 @@ const GROWTH_TIERS_117: GrowthTier[] = (() => {
   });
 })();
 
-/** "Serve Bread" / "Build a Market" / "Build the Colosseum" — a 117 goal is an
- *  instruction, and goods are supplied where buildings are put up. */
-function growthVerb(s: PopSource117): string {
-  if (s.kind === "good") return "Serve";
-  if (s.kind === "wonder") return "Build the";
-  return /^[aeiou]/i.test(s.lbl) ? "Build an" : "Build a"; // an Alder Council
-}
 
 // Partial, deliberately: growth is a per-game model (thresholds vs banded
 // house capacity), so a game without one — a Tracker-only game especially —
@@ -926,18 +919,33 @@ export function TrackerView({
   // ambiguous — 1 is the Old World in 1800 and Latium in 117. Each dataset
   // carries its own region names (1800 keeps data.ts's wording, "The Arctic").
   const REGION_LABEL = (n: number) => DATASETS[game].regions[n] ?? String(n);
-  // Custom growth goal: an inline row (number + island), no window.prompt.
-  // Opens when "Add a custom number of X…" is picked; island defaults to the
-  // filtered island (or your only island).
+  // Growth goal row: island, tier, number (the old curated milestone menu
+  // was overkill — asked for, build 117).
   const [growthTid, setGrowthTid] = useState<string | null>(null);
   const [growthN, setGrowthN] = useState("");
   const [growthIsle, setGrowthIsle] = useState("");
+  // Picks survive a game switch in state, but another game's tier id or
+  // island name means nothing here — treat them as unpicked rather than
+  // leaving a dead Add button pointing at a tier the dropdown can't show.
+  const goalTid = growthTid && GROWTH_TIERS.some((t) => t.tid === growthTid) ? growthTid : null;
+  // The row's effective island: the picked one, else the quest filter's,
+  // else the only island — so the common case is tier + number and done.
+  const goalIsle =
+    (islands.includes(growthIsle) ? growthIsle : "") ||
+    effFilter ||
+    (islands.length === 1 ? islands[0] : "");
+  const goalRegion = REGION_NUM[(data.islandRegions || {})[goalIsle]] || 0;
+  // Tiers the picked island's region can house; no island or no 🌍 tag falls
+  // back to the play-scoped list.
+  const goalTiers = goalRegion
+    ? GROWTH_TIERS.filter((t) => t.region === goalRegion)
+    : growthTiers;
   const addGrowth = () => {
-    const t = GROWTH_TIERS.find((x) => x.tid === growthTid);
+    const t = GROWTH_TIERS.find((x) => x.tid === goalTid);
     const n = Math.floor(Number(growthN));
     if (!t || !(n > 0)) return;
     addQuest(
-      `${growthIsle ? `${growthIsle}: ` : ""}Add ${n} ${t.lbl}`,
+      `${goalIsle ? `${goalIsle}: ` : ""}Add ${n} ${t.lbl}`,
       // In 117 the house count depends on how well you feed them, so quote
       // both ends rather than a single figure that is only true at one band.
       t.fhBasic && t.fhBasic !== t.fh
@@ -947,7 +955,8 @@ export function TrackerView({
           )} on basic needs alone (${t.fhBasic} per house).`
         : `≈${houses(n, t.fh)} residences at ${t.fh} per house.`
     );
-    setGrowthTid(null);
+    // Number clears, island and tier stay — the next goal is usually a
+    // sibling on the same island.
     setGrowthN("");
   };
   // Route task builder ("from, to, what"), collapsed until asked for.
@@ -1150,141 +1159,66 @@ export function TrackerView({
               }))}
             />
           </div>
-          <div className="plrow">
-            <Dropdown
-              ariaLabel="Add a population growth goal"
-              placeholder="📈 Add a population growth goal…"
-              title={GAME_CONTENT[game].growthHint}
-              value=""
-              onChange={(v) => {
-                const [tid, mark, srcId] = v.split(":");
-                const t = GROWTH_TIERS.find((x) => x.tid === tid);
-                if (!t) return;
-                // The island that grows: the filtered one, else an island in
-                // this tier's region (Workers → your Old World island), else
-                // the first island — a goal should always name its island.
-                const inRegion = islands.filter(
-                  (n) => REGION_NUM[(data.islandRegions || {})[n]] === t.region
-                );
-                if (mark === "custom") {
-                  setGrowthTid(t.tid);
-                  setGrowthN("");
-                  setGrowthIsle(effFilter || inRegion[0] || islands[0] || "");
-                  return;
-                }
-                const isle = effFilter || (inRegion.length === 1 ? inRegion[0] : "");
-                // 117: a need-value goal — supply this, every house of the
-                // tier gains residents. No thresholds exist in 117 to hit.
-                if (mark === "g") {
-                  const s = t.gains?.find((x) => x.id === srcId);
-                  if (!s) return;
-                  const gain = `${s.pop} resident${s.pop > 1 ? "s" : ""}`;
-                  const holds =
-                    s.kind === "wonder"
-                      ? `Counts on top of the ${t.fh} a fully-supplied ${t.lbl} house holds — a Wonder is one per island, so it lifts every settlement on it.`
-                      : `A fully-supplied ${t.lbl} house holds ${t.fh}${
-                          t.fhBasic && t.fhBasic !== t.fh
-                            ? ` (basic needs alone: ${t.fhBasic})`
-                            : ""
-                        }.`;
-                  addQuest(
-                    `${isle ? `${isle}: ` : ""}${growthVerb(s)} ${s.lbl} ${
-                      s.kind === "good" ? "to" : "for"
-                    } your ${t.lbl} — +${gain} per house`,
-                    `+${gain} in every ${t.lbl} house. ${holds} ${
-                      s.kind === "good"
-                        ? "Size the chain in the calculator's population mode."
-                        : "A building, not a chain — nothing to produce for it."
-                    }`
-                  );
-                  return;
-                }
-                const target = Number(mark);
-                const goods = t.marks.find(([v]) => v === target)?.[1] || [];
-                addQuest(
-                  `${isle ? `${isle}: ` : ""}Grow to ${target} ${t.lbl} — unlocks ${goods.join(" + ")}`,
-                  `${houses(target, t.fh)} residences at ${t.fh} per house. New ${
-                    goods.length > 1 ? "needs" : "need"
-                  }: ${goods.join(", ")} — size the farms in the calculator's population mode.`
-                );
-              }}
-              options={growthTiers.map((t) => ({
-                group:
-                  (growthRegions.size > 1 ? `${t.lbl} · ${REGION_LABEL(t.region)}` : t.lbl) +
-                  // 117 houses have no fixed size, so say what this tier's
-                  // holds when fed — it is the number the goals build toward.
-                  (t.gains ? ` · up to ${t.fh} per house` : ""),
-                options: [
-                  ...t.marks.map(([target, goods]) => ({
-                    value: `${t.tid}:${target}`,
-                    label: `Grow to ${target} ${t.lbl} → ${goods.join(" + ")}`,
-                  })),
-                  ...(t.gains || []).map((s) => ({
-                    value: `${t.tid}:g:${s.id}`,
-                    label: `${growthVerb(s)} ${s.lbl} → +${s.pop} per house${
-                      s.kind === "wonder" ? " (Wonder)" : ""
-                    }`,
-                  })),
-                  // Named, not offered: supplying these grows nothing, which
-                  // is the trap worth flagging where the choice is made.
-                  ...(t.noGain?.length
-                    ? [
-                        {
-                          value: "",
-                          disabled: true,
-                          label:
-                            "— no residents: " +
-                            t.noGain.slice(0, 4).join(", ") +
-                            (t.noGain.length > 4 ? ` +${t.noGain.length - 4} more` : ""),
-                        },
-                      ]
-                    : []),
-                  { value: `${t.tid}:custom`, label: `Add a custom number of ${t.lbl}…` },
-                ],
-              }))}
-            />
-          </div>
-          {growthTid &&
-            (() => {
-              const t = GROWTH_TIERS.find((x) => x.tid === growthTid);
-              if (!t) return null;
-              return (
-                <div className="plrow">
-                  <input
-                    type="number"
-                    min={1}
-                    autoFocus
-                    style={{ width: 96, flex: "0 0 auto" }}
-                    placeholder="how many"
-                    aria-label={`How many ${t.lbl} to add`}
-                    value={growthN}
-                    onChange={(e) => setGrowthN(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") addGrowth();
-                    }}
-                  />
-                  <span className="muted" style={{ alignSelf: "center", flex: "0 0 auto" }}>
-                    {t.lbl} on
-                  </span>
-                  <Dropdown
-                    className="qisle"
-                    ariaLabel="Which island grows"
-                    value={growthIsle}
-                    onChange={setGrowthIsle}
-                    options={[
-                      { value: "", label: "(no island)" },
-                      ...islands.map((n) => ({ value: n, label: n })),
-                    ]}
-                  />
-                  <button className="linkbtn" disabled={!(Math.floor(Number(growthN)) > 0)} onClick={addGrowth}>
-                    ＋ Add
-                  </button>
-                  <button className="plx" title="Cancel" onClick={() => setGrowthTid(null)}>
-                    ✕
-                  </button>
-                </div>
-              );
-            })()}
+          {/* 📈 growth goal: island, tier, number — one row (asked for over
+              the old curated menu of every milestone, which was overkill).
+              The tier list scopes to the picked island's region; the note on
+              the added goal still works the residences out. */}
+          {GROWTH_TIERS.length > 0 && (
+            <div className="plrow">
+              <span
+                className="muted"
+                style={{ alignSelf: "center", flex: "0 0 auto" }}
+                title={GAME_CONTENT[game].growthHint}
+              >
+                📈
+              </span>
+              <Dropdown
+                className="qisle"
+                ariaLabel="Which island grows"
+                placeholder="🏝 island…"
+                value={goalIsle}
+                onChange={setGrowthIsle}
+                options={[
+                  { value: "", label: "(no island)" },
+                  ...islands.map((n) => ({ value: n, label: n })),
+                ]}
+              />
+              <Dropdown
+                className="qisle"
+                ariaLabel="Which tier grows"
+                placeholder="tier…"
+                title={GAME_CONTENT[game].growthHint}
+                value={goalTid ?? ""}
+                onChange={(v) => setGrowthTid(v || null)}
+                options={goalTiers.map((t) => ({
+                  value: t.tid,
+                  label:
+                    growthRegions.size > 1 && !goalRegion
+                      ? `${t.lbl} · ${REGION_LABEL(t.region)}`
+                      : t.lbl,
+                }))}
+              />
+              <input
+                type="number"
+                min={1}
+                style={{ width: 96, flex: "0 0 auto" }}
+                placeholder="how many"
+                aria-label="How many residents to add"
+                value={growthN}
+                onChange={(e) => setGrowthN(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") addGrowth();
+                }}
+              />
+              <button
+                className="linkbtn"
+                disabled={!goalTid || !(Math.floor(Number(growthN)) > 0)}
+                onClick={addGrowth}
+              >
+                ＋ Add
+              </button>
+            </div>
+          )}
           <div className="plrow">
             <Dropdown
               className="qisle"

@@ -99,8 +99,8 @@ const ANNO1800: GameContent = {
   sharedExample:
     "Add two lines that use a common input — e.g. Steel Beams + Weapons (both need Steel & Iron), or a preset.",
   growthHint:
-    "Growth milestones from the game's own need tables — each is the point a new need unlocks. " +
-    "'Custom…' asks for any number. Scoped to your islands' 🌍 regions (or the filtered island's).",
+    "A growth goal: which island, which tier, how many more residents. The note works out the " +
+    "residences at full occupancy; the tier list follows the island's 🌍 region.",
   regionLabels: {
     ow: "Old World",
     ct: "Cape Trelawney",
@@ -196,10 +196,9 @@ const ANNO117: GameContent = {
   sharedExample:
     "Add two lines that use a common input — e.g. Tiles + Amphorae (both need clay and a coal fire), or a preset.",
   growthHint:
-    "A 117 residence has no fixed size — it holds the sum of what its supplied needs are worth, " +
-    "so each goal is a need and the residents it adds to every house of that tier. Needs worth " +
-    "nothing are named, not offered. 'Custom…' asks for any number. Scoped to your islands' 🌍 " +
-    "regions (or the filtered island's).",
+    "A growth goal: which island, which tier, how many more residents. A 117 residence has no " +
+    "fixed size — it holds what its supplied needs are worth — so the note quotes both ends of " +
+    "the band spread. The tier list follows the island's 🌍 region.",
   regionLabels: { la: "Latium", al: "Albion" },
   regionNum: { la: 1, al: 2 },
   // Public-service buildings each region's residences actually ask for, from
