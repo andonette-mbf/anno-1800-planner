@@ -15,7 +15,7 @@ import { GAMES, GAME_CONTENT, gameKey, type Game } from "@/lib/games";
 import {
   applyTrade,
   buildingOptionsFor,
-  elecCapable,
+  powerKind,
   islandLedger,
   itemGood,
   siloCapable,
@@ -2065,33 +2065,39 @@ export function TrackerView({
                             />
                           );
                         })()}
-                      {/* Electricity is Old World only; an island with no
+                      {/* Power is per-world: ⚡ electricity on Old World
+                          goods (Cape Trelawney counts via the alias), ⛽
+                          New World Rising fuel stations on New World goods
+                          — the same ×2 in the ledger. An island with no
                           region set still gets the chip (names merge across
-                          worlds, so we can't tell which one it is). Cape
-                          Trelawney counts as Old World via the alias. */}
-                      {elecCapable(c.t, game) &&
-                        (!region || chipRegion === "ow") &&
-                        (() => {
-                          const nb = c.n || 1;
-                          const ec = Math.min(c.e || 0, nb);
-                          return (
-                            <ModChip
-                              n={nb}
-                              count={ec}
-                              unit="powered building"
-                              one="⚡ power"
-                              many="⚡"
-                              title={
-                                nb === 1
-                                  ? ec > 0
-                                    ? "Powered — output doubled. Tap when it's off the grid again."
-                                    : "Not powered — tap once a power plant covers it (output ×2)."
-                                  : `${ec} of the ${nb} are inside a power plant's radius — powered ones make ×2. Powered and silo'd together makes ×4.`
-                              }
-                              onSet={(v) => setIslandElec(name, i, v)}
-                            />
-                          );
-                        })()}
+                          worlds, so we can't tell which one it is). */}
+                      {(() => {
+                        const pk = powerKind(c.t, game);
+                        if (!pk) return null;
+                        if (region && chipRegion !== (pk === "elec" ? "ow" : "nw"))
+                          return null;
+                        const sym = pk === "elec" ? "⚡" : "⛽";
+                        const plant = pk === "elec" ? "power plant" : "fuel station";
+                        const nb = c.n || 1;
+                        const ec = Math.min(c.e || 0, nb);
+                        return (
+                          <ModChip
+                            n={nb}
+                            count={ec}
+                            unit="powered building"
+                            one={`${sym} ${pk === "elec" ? "power" : "fuel"}`}
+                            many={sym}
+                            title={
+                              nb === 1
+                                ? ec > 0
+                                  ? `Powered — output doubled. Tap when the ${plant} no longer covers it.`
+                                  : `Not powered — tap once a ${plant} covers it (output ×2).`
+                                : `${ec} of the ${nb} are inside a ${plant}'s radius — powered ones make ×2. Powered and silo'd together makes ×4.`
+                            }
+                            onSet={(v) => setIslandElec(name, i, v)}
+                          />
+                        );
+                      })()}
                       {/* Teach the ledger this building's numbers (M13) —
                           only in a game with no data pack, where every item
                           would otherwise stay free text forever. */}
@@ -2151,7 +2157,7 @@ export function TrackerView({
                   {ledger.length > 0 && (
                     <div
                       className="iledger"
-                      title="Ticked buildings only, at 100% productivity. Silo'd farms make double and use feed; ⚡ powered buildings make double. The 👥 resident counts eat at their need rates (rows they touch carry a 👥 chip). Greyed rows are end products (pop goods, construction materials) — the chain balance lives in the dark rows, which should net near 0."
+                      title="Ticked buildings only, at 100% productivity. Silo'd farms make double and use feed; ⚡/⛽ powered buildings make double. The 👥 resident counts eat at their need rates (rows they touch carry a 👥 chip). Greyed rows are end products (pop goods, construction materials) — the chain balance lives in the dark rows, which should net near 0."
                     >
                       <div className="iledgrow iledghead">
                         <span>

@@ -138,15 +138,23 @@ const near = (a, b) => Math.abs(a - b) < 1e-9;
     fail("a Bakery should still eat 1 t/min Flour");
   if (!L.siloCapable("Cattle Farm") || L.siloCapable("Bakery"))
     fail("silo capability moved");
-  if (!L.elecCapable("Bakery") || L.elecCapable("Rum Distillery"))
-    fail("electricity capability moved");
+  // Power comes in two flavours since build 120: Old World electricity and
+  // New World Rising fuel stations — the same ×2. Enbesa/Arctic take neither.
+  if (L.powerKind("Bakery") !== "elec" || L.powerKind("Rum Distillery") !== "fuel")
+    fail("power capability moved");
+  if (L.elecCapable("Brick Dry-House") || L.elecCapable("Whaling Station"))
+    fail("Enbesa/Arctic buildings should take no power");
+  // 2 Rum Distilleries, 1 fuelled: (2 + 1) × 2 = 6 t/min of Rum.
+  const rum = rows([{ t: "Rum Distillery", n: 2, e: 1, done: true }], NW);
+  if (!near(rum.find((r) => r.name === "Rum").produced, 6))
+    fail("2 Rum Distilleries, 1 fuelled should make 6 t/min Rum");
   // 2 Sheep Farms, 1 silo'd: (2 + 1) x 2 = 6 t/min, and 0.2 t/min of Grain feed.
   const sheep = rows([{ t: "Sheep Farm", n: 2, s: 1, done: true }], OW);
   if (!near(sheep.find((r) => r.name === "Wool").produced, 6))
     fail("2 Sheep Farms, 1 silo'd should make 6 t/min Wool");
   if (!near(sheep.find((r) => r.name === "Grain").used, 0.2))
     fail("one silo should eat 0.2 t/min of Grain");
-  ok("chains, silos and electricity are unchanged");
+  ok("chains, silos, electricity and fuel stations behave");
 }
 
 // --- end products are flagged, intermediates are not ----------------------

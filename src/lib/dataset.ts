@@ -172,6 +172,12 @@ export interface Dataset {
   recipes(st: DatasetState, id: string): Recipe[];
   /** Can this good's building take electricity (×2)? 117: never. */
   electrifiable(id: string): boolean;
+  /** Can this good's building take a New World Rising fuel station instead —
+   *  the same ×2, worn as a ⛽ counter in the island ledger? Tracker-only:
+   *  the legacy calculator predates the DLC and the golden tests pin its
+   *  electricity rule, so the engine never reads this. Absent = no game
+   *  mechanic (117, packless games). */
+  fuelStation?(id: string): boolean;
   /** Is this need consumed at the current settings? */
   needActive(st: DatasetState, d: NeedDef, tid: string): boolean;
   /** Display order key, replacing 1800's raw `region` subtraction. */
@@ -268,6 +274,9 @@ const ANNO1800: Dataset = {
     ];
   },
   electrifiable: (id) => GOODS[id].region === 1,
+  // Mirrors the electricity rule's shape: every New World good's producer,
+  // farms included — over-broad exactly the way `electrifiable` is.
+  fuelStation: (id) => GOODS[id].region === 2,
   needActive(st, d) {
     if (d[1] === 2 && !st.lifestyle) return false;
     if (d[2] && (+(st.pop[d[2]] ?? 0) || 0) < (d[3] ?? 0)) return false;

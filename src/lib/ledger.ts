@@ -406,12 +406,25 @@ export function siloCapable(itemName: string, game: Game = "anno1800"): boolean 
   return !!v && !v.silo && !!v.siloFeed;
 }
 
-/** Can this inventory item be electrified? The calculator's own rule,
- *  verbatim: the dataset's `electrifiable` — Old World production buildings
- *  in 1800, nothing in a game without power. */
-export function elecCapable(itemName: string, game: Game = "anno1800"): boolean {
+/** How can this inventory item be powered? "elec" is the calculator's
+ *  `electrifiable` rule verbatim (1800's Old World, nothing in 117); "fuel"
+ *  is the dataset's `fuelStation` rule (New World Rising's ⛽, the same ×2,
+ *  Tracker-only — the legacy calculator predates the DLC). */
+export function powerKind(
+  itemName: string,
+  game: Game = "anno1800"
+): "elec" | "fuel" | null {
   const v = ix(game).variants.get(itemName.trim().toLowerCase());
-  return !!v && DATASETS[game].electrifiable(v.good);
+  if (!v) return null;
+  if (DATASETS[game].electrifiable(v.good)) return "elec";
+  if (DATASETS[game].fuelStation?.(v.good)) return "fuel";
+  return null;
+}
+
+/** Can this inventory item be powered at all (electricity or fuel station)?
+ *  The ledger's ×2 maths is identical for both. */
+export function elecCapable(itemName: string, game: Game = "anno1800"): boolean {
+  return powerKind(itemName, game) !== null;
 }
 
 /** The inventory item name for a produced good — the ledger's own entry, so a
@@ -743,8 +756,9 @@ export function islandLedger(
     // sc of the line's n farms have a silo (make ×2, eat feed) — a line can
     // be part-silo'd. Legacy "(silo)" names mean all of them.
     const sc = feedGood ? (v.silo ? n : Math.min(Math.max(0, c.s || 0), n)) : 0;
-    // ec of them are powered (×2, Old World only, no feed edge — same rule as
-    // the engine's `electrifiable`). Where a building has both, the two
+    // ec of them are powered (×2, no feed edge) — Old World electricity per
+    // the engine's `electrifiable`, or a New World Rising fuel station per
+    // the dataset's `fuelStation`. Where a building has both, the two
     // multipliers stack to ×4, as in `effRate`; with both counters partial the
     // powered ones are taken to be the silo'd ones first.
     const ec = elecCapable(c.t, game) ? Math.min(Math.max(0, c.e || 0), n) : 0;
