@@ -16,6 +16,7 @@
     "test:quests": "node tests/quest-ui.test.mjs",
     "test:items": "node tests/items.test.cjs",
     "test:items117": "node tests/items117.test.cjs",
+    "test:fertility": "node tests/fertility.test.cjs",
     "test:items-ui": "node tests/items-ui.test.mjs",
     "extract:117": "node scripts/extract-117.mjs",
     "extract:culture": "node scripts/extract-culture.mjs",

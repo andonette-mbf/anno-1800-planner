@@ -25,9 +25,11 @@ import {
 } from "@/lib/ledger";
 import { planCheck, planSeed } from "@/lib/plancheck";
 import CultureBlock from "./CultureBlock";
+import FertilityBlock from "./FertilityBlock";
 import ItemsBlock from "./ItemsBlock";
 import PatronBlock from "./PatronBlock";
 import { itemIn, itemTitle, shipSocket } from "@/lib/items";
+import { FERT_SOCKET, missingFertilities, regionFertility, shortFertName } from "@/lib/fertility";
 import { GoodIcon } from "./GoodIcon";
 import { Dropdown } from "./ui/Dropdown";
 import {
@@ -1034,6 +1036,19 @@ export function TrackerView({
   // again for its own header; doing it here too keeps the tally at the top of
   // the card honest when every island is folded away.
   const islesShort = islands.filter((n) => (allLedgers[n] || []).some((r) => r.fix)).length;
+  // 🌱 (build 122) — per region, the fertilities and deposits no island you
+  // hold there has. Cape Trelawney folds into the Old World (same list, and
+  // the two trade freely). Silent for a region until something is ticked.
+  const fertGaps = useMemo(
+    () =>
+      missingFertilities(
+        game,
+        islands,
+        (n) => (data.islandRegions || {})[n] || "",
+        (n) => (data.islandItems || {})[n]?.[FERT_SOCKET] || []
+      ),
+    [game, islands, data.islandRegions, data.islandItems]
+  );
   // Landmark quick-add chips, collapsed per island until asked for.
   const [chipsOpen, setChipsOpen] = useState<Record<string, boolean>>({});
   // Which islands' 👥 resident editors are unfolded. Session-local, like the
@@ -1803,6 +1818,34 @@ export function TrackerView({
               ))}
             </div>
           )}
+          {fertGaps.map((g) => (
+            <div className="trsuggest fertgaps" key={g.key}>
+              <span
+                className="muted"
+                title={
+                  `From the 🌱 ticks on ${g.islands.join(", ")}: what the region can have that none of them does. Settle or seed for these.`
+                }
+              >
+                🌱 {g.label} lacks:
+              </span>
+              {g.missing.fert.length + g.missing.deposits.length === 0 ? (
+                <span className="muted">nothing — every fertility is on one of your islands</span>
+              ) : (
+                <>
+                  {g.missing.fert.map((n) => (
+                    <span className="trchip" key={n} title={n}>
+                      {shortFertName(n)}
+                    </span>
+                  ))}
+                  {g.missing.deposits.map((n) => (
+                    <span className="trchip fertdep" key={n} title={`${n} (deposit)`}>
+                      ⛏ {shortFertName(n)}
+                    </span>
+                  ))}
+                </>
+              )}
+            </div>
+          ))}
           <div className="plrow">
             <Dropdown
               className="qisle"
@@ -1849,6 +1892,13 @@ export function TrackerView({
               const shut = !!isleShut[name];
               const tuck = !!isleTuck[name];
               const cul = cultureByIsle.get(name) || [];
+              // 🌱 count for the folded header — only once something's ticked.
+              const fertList = regionFertility(game, region);
+              const fertHave = fertList
+                ? ((data.islandItems || {})[name]?.[FERT_SOCKET] || []).filter(
+                    (n) => fertList.fert.includes(n) || fertList.deposits.includes(n)
+                  ).length
+                : 0;
               // 👥 residents (M8): this island's headcounts, and the tiers its
               // 🌍 region can even house — untagged islands get the full list.
               const pops = (data.islandPop || {})[name] || {};
@@ -1910,6 +1960,16 @@ export function TrackerView({
                         its own ⚠ line — no separate short badge needed. */}
                     {/* …and what its collections are up to, for the same
                         reason: it's a thing you'd otherwise open it to see. */}
+                    {shut && fertHave > 0 && fertList && (
+                      <span
+                        className="isleculture"
+                        title={`${fertHave} of the ${
+                          fertList.fert.length + fertList.deposits.length
+                        } fertilities and deposits this region can have`}
+                      >
+                        🌱 {fertHave}/{fertList.fert.length + fertList.deposits.length}
+                      </span>
+                    )}
                     {shut && cul.length > 0 && (
                       <span
                         className="isleculture"
@@ -2429,6 +2489,10 @@ export function TrackerView({
                   {/* Which deity the island is devoted to (M11c) — 117 only,
                       patronsFor returns null for 1800 and the block hides. */}
                   <PatronBlock island={name} game={game} />
+                  {/* What the island came with (build 122) — the region's
+                      fertilities and deposits as toggles. Feeds the 🌱 line
+                      at the top of the card. */}
+                  <FertilityBlock island={name} game={game} region={region} />
                   {/* Who's socketed in the island's item buildings (M11b) —
                       appears once a Trade Union / Town Hall / Harbourmaster's
                       Office / Arctic Lodge (1800) or Villa / Guesthouse (117,

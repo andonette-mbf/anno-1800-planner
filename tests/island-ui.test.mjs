@@ -328,6 +328,71 @@ check(
   woodRow?.textContent
 );
 
+// --- island fertilities (build 122) ----------------------------------------
+// Tag the islands (Crown Falls is on the Cape, Ditchwater in the Old World)
+// and reload: each card grows a 🌱 block with the region's whole list, the
+// Cape borrowing the Old World's. Ticks land in islandItems under "fert", and
+// the strip at the top pools the two islands into one "Old World · Cape
+// Trelawney" gap list — silent until the first tick.
+await act(async () => app.unmount());
+document.getElementById("root").innerHTML = "";
+localStorage.setItem(
+  "anno_island_regions",
+  JSON.stringify({ "Crown Falls": "ct", Ditchwater: "ow" })
+);
+app = await mount();
+const fertBlk = (n) => blockFor(n).querySelector(".fertblk");
+const fertChips = (n) => [...fertBlk(n).querySelectorAll(".fertchip")];
+const fertChip = (n, label) => fertChips(n).find((c) => c.textContent.trim() === label);
+check("every tagged island grew a 🌱 block", !!fertBlk("Crown Falls") && !!fertBlk("Ditchwater"));
+check(
+  "Cape Trelawney offers the Old World's 7 + 7 (Saltpetre, Zinc among them)",
+  fertChips("Crown Falls").length === 14 &&
+    !!fertChip("Crown Falls", "Saltpetre") &&
+    !!fertChip("Crown Falls", "Zinc"),
+  fertChips("Crown Falls").map((c) => c.textContent).join()
+);
+check("no 🌱 strip before anything is ticked", !document.querySelector(".fertgaps"));
+await fire(fertChip("Crown Falls", "Hops"));
+await fire(fertChip("Ditchwater", "Potatoes"));
+const fertStored = () => JSON.parse(localStorage.getItem("anno_island_items") || "{}");
+check(
+  "ticks land in islandItems under the 'fert' pseudo-socket",
+  fertStored()["Crown Falls"]?.fert?.join() === "Hops" &&
+    fertStored().Ditchwater?.fert?.join() === "Potatoes",
+  localStorage.getItem("anno_island_items")
+);
+check("the ticked chip lights", fertChip("Crown Falls", "Hops").classList.contains("on"));
+const gaps = () => document.querySelector(".fertgaps");
+const gapNames = () => [...gaps().querySelectorAll(".trchip")].map((c) => c.getAttribute("title"));
+check(
+  "the 🌱 strip pools the Cape with the Old World",
+  /Old World · Cape Trelawney lacks/.test(gaps()?.textContent || ""),
+  gaps()?.textContent
+);
+check(
+  "…listing the 12 neither island has — Hops and Potatoes not among them",
+  gapNames().length === 12 &&
+    !gapNames().includes("Hops") &&
+    !gapNames().includes("Potatoes") &&
+    gapNames().includes("Saltpetre") &&
+    gapNames().includes("Zinc (deposit)"),
+  gapNames().join()
+);
+await fire(fertChip("Crown Falls", "Hops"));
+check(
+  "unticking takes it back out of the store and the gap list",
+  !fertStored()["Crown Falls"]?.fert && gapNames().length === 13,
+  localStorage.getItem("anno_island_items") + " / " + gapNames().length
+);
+await fire(blockFor("Ditchwater").querySelector(".isletog"));
+check(
+  "a folded island's header carries its 🌱 count",
+  /🌱 1\/14/.test(blockFor("Ditchwater").textContent),
+  blockFor("Ditchwater").textContent.slice(0, 80)
+);
+await fire(blockFor("Ditchwater").querySelector(".isletog"));
+
 let bad = 0;
 for (const x of results) {
   console.log(`${x.ok ? "ok  " : "FAIL"} - ${x.name}${x.ok || !x.detail ? "" : "  << " + x.detail}`);
