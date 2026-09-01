@@ -406,16 +406,25 @@ export function siloCapable(itemName: string, game: Game = "anno1800"): boolean 
   return !!v && !v.silo && !!v.siloFeed;
 }
 
+/** Farms take no power in the game — their boosts are silos, fertiliser and
+ *  tractors — so the chip stays off field growers, livestock, fisheries and
+ *  hacienda buildings, which the pack only knows by name. The dataset rules
+ *  stay good-based (the calculator's over-broad electricity contract); this
+ *  name test is the ledger's own refinement on top. */
+const FARMISH =
+  /\b(farm|plantation|orchard|vineyard|pasture|garden|apiary|fishery|hunting|whaling)\b|^(hacienda |saltpeter works)/i;
+
 /** How can this inventory item be powered? "elec" is the calculator's
  *  `electrifiable` rule verbatim (1800's Old World, nothing in 117); "fuel"
  *  is the dataset's `fuelStation` rule (New World Rising's ⛽, the same ×2,
- *  Tracker-only — the legacy calculator predates the DLC). */
+ *  Tracker-only — the legacy calculator predates the DLC). Farms: never. */
 export function powerKind(
   itemName: string,
   game: Game = "anno1800"
 ): "elec" | "fuel" | null {
-  const v = ix(game).variants.get(itemName.trim().toLowerCase());
-  if (!v) return null;
+  const n = itemName.trim().toLowerCase();
+  const v = ix(game).variants.get(n);
+  if (!v || FARMISH.test(n)) return null;
   if (DATASETS[game].electrifiable(v.good)) return "elec";
   if (DATASETS[game].fuelStation?.(v.good)) return "fuel";
   return null;

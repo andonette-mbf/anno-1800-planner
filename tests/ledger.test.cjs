@@ -142,6 +142,9 @@ const near = (a, b) => Math.abs(a - b) < 1e-9;
   // New World Rising fuel stations — the same ×2. Enbesa/Arctic take neither.
   if (L.powerKind("Bakery") !== "elec" || L.powerKind("Rum Distillery") !== "fuel")
     fail("power capability moved");
+  // Farms never take power — silos, fertiliser and tractors are their boosts.
+  for (const farm of ["Potato Farm", "Sheep Farm", "Caoutchouc Plantation", "Fishery", "Orchard: Jam", "Hacienda Hot Sauce Factory"])
+    if (L.powerKind(farm)) fail(`${farm} should take no power (it's a farm)`);
   if (L.elecCapable("Brick Dry-House") || L.elecCapable("Whaling Station"))
     fail("Enbesa/Arctic buildings should take no power");
   // 2 Rum Distilleries, 1 fuelled: (2 + 1) × 2 = 6 t/min of Rum.
