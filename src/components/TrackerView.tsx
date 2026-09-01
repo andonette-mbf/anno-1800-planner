@@ -316,6 +316,10 @@ const ISLE_SHUT_KEY = (g: Game) => gameKey(g, "anno_isle_shut");
 // Islands whose CHECKLIST is tucked away (build 98) — the block stays open
 // with its ledger and summaries, only the item rows fold.
 const ISLE_TUCK_KEY = (g: Game) => gameKey(g, "anno_isle_tuck");
+// Islands whose LEDGER is folded (build 123) — independent of both folds
+// above: the ledger sits outside the island fold, so it needs its own. Folded
+// it keeps a one-line count (rows, ⚠ short) — the signal build 99 moved here.
+const ISLE_LEDG_KEY = (g: Game) => gameKey(g, "anno_isle_ledger");
 /** A handle on an island block, so the collections roll-up can scroll to one.
  *  Islands are identified by name everywhere else too, so this follows a rename
  *  for free. */
@@ -1118,6 +1122,26 @@ export function TrackerView({
       } catch {}
       return next;
     });
+  // Folded ledgers (build 123) — same shape as the two folds above.
+  const [ledgShut, setLedgShut] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    let shut: Record<string, boolean> = {};
+    try {
+      const raw = JSON.parse(localStorage.getItem(ISLE_LEDG_KEY(game)) || "[]");
+      if (Array.isArray(raw)) shut = Object.fromEntries(raw.map((n) => [String(n), true]));
+    } catch {}
+    setLedgShut(shut);
+  }, [game]);
+  const toggleLedg = (name: string) =>
+    setLedgShut((cur) => {
+      const next = { ...cur };
+      if (next[name]) delete next[name];
+      else next[name] = true;
+      try {
+        localStorage.setItem(ISLE_LEDG_KEY(game), JSON.stringify(Object.keys(next)));
+      } catch {}
+      return next;
+    });
   // What each island's zoo / museum / botanical garden holds (build 91). The
   // panel itself is inside the island fold and then inside the building fold,
   // so the answer to "what's on what island" needed to live outside both.
@@ -1891,6 +1915,8 @@ export function TrackerView({
               const plan = (data.islandPlans || {})[name];
               const shut = !!isleShut[name];
               const tuck = !!isleTuck[name];
+              const lshut = !!ledgShut[name];
+              const shortN = ledger.filter((r) => r.fix).length;
               const cul = cultureByIsle.get(name) || [];
               // 🌱 count for the folded header — only once something's ticked.
               const fertList = regionFertility(game, region);
@@ -2216,14 +2242,32 @@ export function TrackerView({
                       exactly its header plus this production list (build 99). */}
                   {ledger.length > 0 && (
                     <div
-                      className="iledger"
+                      className={"iledger" + (lshut ? " shut" : "")}
                       title="Ticked buildings only, at 100% productivity. Silo'd farms make double and use feed; ⚡/⛽ powered buildings make double. The 👥 resident counts eat at their need rates (rows they touch carry a 👥 chip). Greyed rows are end products (pop goods, construction materials) — the chain balance lives in the dark rows, which should net near 0."
                     >
                       <div className="iledgrow iledghead">
                         <span>
-                          Ledger — t/min at base rates
+                          <button
+                            className="iledgtog"
+                            aria-expanded={!lshut}
+                            title={lshut ? "Open the ledger" : "Fold the ledger away — its count stays"}
+                            onClick={() => toggleLedg(name)}
+                          >
+                            {lshut ? "▸" : "▾"} Ledger
+                            {lshut
+                              ? ` · ${ledger.length} row${ledger.length === 1 ? "" : "s"}`
+                              : " — t/min at base rates"}
+                          </button>
+                          {lshut && shortN > 0 && (
+                            <span
+                              className="isleshort"
+                              title="Open the ledger for what to build"
+                            >
+                              ⚠ {shortN} short
+                            </span>
+                          )}
                           {/* A SHORT final never hides — count only the healthy ones. */}
-                          {ledger.some((r) => r.final && r.net > -1e-9) && (
+                          {!lshut && ledger.some((r) => r.final && r.net > -1e-9) && (
                             <button
                               className="iledgtgl"
                               title="End products (pop goods, construction materials) — the greyed rows. Shorts always show."
@@ -2234,7 +2278,7 @@ export function TrackerView({
                                 : "hide finals"}
                             </button>
                           )}
-                          {ledger.some((r) => Math.abs(r.net) <= 1e-9) && (
+                          {!lshut && ledger.some((r) => Math.abs(r.net) <= 1e-9) && (
                             <button
                               className="iledgtgl"
                               title="Balanced rows (net 0) — hidden, the list is exactly your surpluses and shortfalls."
@@ -2246,11 +2290,16 @@ export function TrackerView({
                             </button>
                           )}
                         </span>
-                        <span className="num">makes</span>
-                        <span className="num">uses</span>
-                        <span className="num">net</span>
+                        {!lshut && (
+                          <>
+                            <span className="num">makes</span>
+                            <span className="num">uses</span>
+                            <span className="num">net</span>
+                          </>
+                        )}
                       </div>
-                      {ledger
+                      {!lshut &&
+                        ledger
                         .filter((r) => !hideFin || !r.final || r.net < -1e-9)
                         .filter((r) => !hideZero || Math.abs(r.net) > 1e-9)
                         .map((r) => {
@@ -2383,7 +2432,7 @@ export function TrackerView({
                         </div>
                         );
                       })}
-                      {ledger.some((r) => r.fix) && (
+                      {!lshut && ledger.some((r) => r.fix) && (
                         <div className="iledgfix">
                           ⚠ Short — build{" "}
                           {ledger

@@ -163,6 +163,13 @@ button.trchip:hover{color:var(--ink);border-color:var(--ink)}
 /* "hide finals" toggle in the ledger head — text-sized, dotted like a link. */
 .iledgtgl{background:0 0;border:0;padding:0;margin-left:8px;font:inherit;color:var(--muted);cursor:pointer;text-decoration:underline dotted;text-transform:none;letter-spacing:0}
 .iledgtgl:hover{color:var(--ink)}
+/* The ledger's own fold (build 123): the title is the toggle, inheriting the
+   head's small caps; folded, the head is the whole ledger, so it takes one
+   column and carries the ⚠ short count. */
+.iledgtog{background:0 0;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-transform:inherit;letter-spacing:inherit}
+.iledgtog:hover{color:var(--ink)}
+.iledger.shut .iledghead{grid-template-columns:1fr}
+.iledger.shut .iledghead .isleshort{margin-left:8px;font-size:10px}
 .qfilter{margin:0 0 10px}
 .gicon{width:18px;height:18px;object-fit:contain;vertical-align:-4px;margin-right:3px;display:inline-block}
 .linkbtn:disabled{opacity:.4;cursor:default}

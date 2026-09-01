@@ -393,6 +393,53 @@ check(
 );
 await fire(blockFor("Ditchwater").querySelector(".isletog"));
 
+// --- the ledger folds on its own (build 123) ---------------------------------
+// Independent of the island fold and the checklist tuck: fold the ledger with
+// the island open, the rows and ⚠ line go, a one-line count stays; fold the
+// island on top and the folded ledger is still what shows; reload keeps it.
+const ledgOf = (n) => blockFor(n).querySelector(".iledger");
+const ledgRows = (n) => ledgOf(n).querySelectorAll(".iledgrow:not(.iledghead)").length;
+const ledgTog = (n) => ledgOf(n).querySelector(".iledgtog");
+check("the ledger title is a toggle", !!ledgTog("Crown Falls") && ledgRows("Crown Falls") > 0);
+await fire(ledgTog("Crown Falls"));
+check(
+  "folding it removes the rows and the ⚠ line",
+  ledgOf("Crown Falls").classList.contains("shut") &&
+    ledgRows("Crown Falls") === 0 &&
+    !ledgOf("Crown Falls").querySelector(".iledgfix"),
+  String(ledgRows("Crown Falls"))
+);
+check(
+  "…but the head keeps a row count and the short count",
+  /Ledger · \d+ rows/.test(ledgTog("Crown Falls").textContent) &&
+    /⚠ \d+ short/.test(ledgOf("Crown Falls").textContent),
+  ledgOf("Crown Falls").textContent
+);
+check(
+  "the fold is remembered per game",
+  JSON.parse(localStorage.getItem("anno_isle_ledger") || "[]").join() === "Crown Falls",
+  localStorage.getItem("anno_isle_ledger")
+);
+check("Ditchwater's ledger is untouched", !ledgOf("Ditchwater").classList.contains("shut"));
+await fire(blockFor("Crown Falls").querySelector(".isletog"));
+check(
+  "folding the island on top keeps the folded ledger head",
+  blockFor("Crown Falls").classList.contains("shut") &&
+    !!ledgTog("Crown Falls") &&
+    ledgRows("Crown Falls") === 0
+);
+await fire(blockFor("Crown Falls").querySelector(".isletog"));
+await act(async () => app.unmount());
+document.getElementById("root").innerHTML = "";
+app = await mount();
+check("…and a reload", ledgOf("Crown Falls").classList.contains("shut"));
+await fire(ledgTog("Crown Falls"));
+check(
+  "opening it brings the rows and ⚠ line back",
+  ledgRows("Crown Falls") > 0 && !!ledgOf("Crown Falls").querySelector(".iledgfix"),
+  String(ledgRows("Crown Falls"))
+);
+
 let bad = 0;
 for (const x of results) {
   console.log(`${x.ok ? "ok  " : "FAIL"} - ${x.name}${x.ok || !x.detail ? "" : "  << " + x.detail}`);
