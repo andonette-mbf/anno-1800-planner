@@ -1843,18 +1843,31 @@ export function TrackerView({
             </div>
           )}
           {fertGaps.map((g) => (
-            <div className="trsuggest fertgaps" key={g.key}>
-              <span
-                className="muted"
-                title={
-                  `From the 🌱 ticks on ${g.islands.join(", ")}: what the region can have that none of them does. Settle or seed for these.`
-                }
-              >
-                🌱 {g.label} lacks:
-              </span>
+            <div
+              className={
+                "trsuggest fertgaps" +
+                (g.missing.fert.length + g.missing.deposits.length === 0 ? " fertfull" : "")
+              }
+              key={g.key}
+            >
               {g.missing.fert.length + g.missing.deposits.length === 0 ? (
-                <span className="muted">nothing — every fertility is on one of your islands</span>
+                <span
+                  className="muted"
+                  title={`Every fertility and deposit this region can have is ticked on one of ${g.islands.join(", ")}.`}
+                >
+                  🌱 {g.label} — <b>full set ✓</b>
+                </span>
               ) : (
+                <span
+                  className="muted"
+                  title={
+                    `From the 🌱 ticks on ${g.islands.join(", ")}: what the region can have that none of them does. Settle or seed for these.`
+                  }
+                >
+                  🌱 {g.label} lacks:
+                </span>
+              )}
+              {g.missing.fert.length + g.missing.deposits.length === 0 ? null : (
                 <>
                   {g.missing.fert.map((n) => (
                     <span className="trchip" key={n} title={n}>

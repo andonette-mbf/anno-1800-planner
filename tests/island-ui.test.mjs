@@ -392,6 +392,16 @@ check(
   blockFor("Ditchwater").textContent.slice(0, 80)
 );
 await fire(blockFor("Ditchwater").querySelector(".isletog"));
+// Tick everything the Cape island lacks: the region's line turns into the
+// full-set announcement (build 124) — the point of keeping the list.
+for (const c of fertChips("Crown Falls").filter((c) => !c.classList.contains("on"))) await fire(c);
+check(
+  "with every fertility ticked somewhere, the region reports a full set",
+  gaps()?.classList.contains("fertfull") && /full set ✓/.test(gaps().textContent) && !gaps().querySelector(".trchip"),
+  gaps()?.textContent
+);
+await fire(fertChip("Crown Falls", "Saltpetre"));
+check("…and drops back to 'lacks' when one goes", /lacks:/.test(gaps().textContent) && gapNames().join() === "Saltpetre", gaps().textContent);
 
 // --- the ledger folds on its own (build 123) ---------------------------------
 // Independent of the island fold and the checklist tuck: fold the ledger with

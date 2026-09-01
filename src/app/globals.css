@@ -305,6 +305,7 @@ button.trchip:hover{color:var(--ink);border-color:var(--ink)}
 .fertsep{align-self:center;padding:0 3px;font-size:11px}
 .fertgaps .trchip{cursor:default}
 .fertgaps .fertdep{opacity:.8}
+.fertfull b{color:var(--green)}
 .cuisle:last-child{margin-bottom:0}
 .cuislehd{margin:0 0 4px;padding:4px 0;border-bottom:1px solid var(--line);font-size:14px}
 .culink{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;width:100%;background:0 0;border:0;border-top:1px dashed var(--line);cursor:pointer;text-align:left;font:inherit;color:var(--ink)}
