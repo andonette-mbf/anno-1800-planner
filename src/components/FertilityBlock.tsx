@@ -46,7 +46,7 @@ export default function FertilityBlock({
       title={
         (has(n) ? `${island} has ${n}` : `${island} lacks ${n}`) +
         (kind === "deposit" ? " (deposit)" : "") +
-        " — tap to flip"
+        " — press to change"
       }
       onClick={() => setIslandItem(island, FERT_SOCKET, n, !has(n))}
     >
@@ -61,7 +61,7 @@ export default function FertilityBlock({
           className="muted"
           title="Tick what the island's info panel shows. The 🌱 line at the top of the Islands card then lists what no island in the region has."
         >
-          {count}/{total} — tap what this island has
+          {count}/{total} — mark the ones this island has
         </span>
       </div>
       <div className="chips fertchips">

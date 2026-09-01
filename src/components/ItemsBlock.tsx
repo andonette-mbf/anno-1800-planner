@@ -80,7 +80,7 @@ function SocketPanel({
                 key={n}
                 className={"chip cuitem" + (it ? " rar" + it.r.replace(/\W+/g, "") : "")}
                 title={
-                  (it ? itemTitle(it) + " — " : "") + `tap to take it out of the ${s.label}`
+                  (it ? itemTitle(it) + " — " : "") + `press to take it out of the ${s.label}`
                 }
                 onClick={() => setIslandItem(island, s.id, n, false)}
               >

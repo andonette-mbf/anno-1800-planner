@@ -475,7 +475,7 @@ function TeachChip({
           recipe
             ? `Taught: makes ${recipe.amount ?? 1}t of ${recipe.good} every ${recipe.time}s` +
               (recipe.inputs?.length ? `, eats ${recipe.inputs.join(", ")}` : "") +
-              ". Tap to correct or forget."
+              ". Press to correct or forget."
             : `The app has no numbers for this game — read them off ${itemName}'s tile and teach the ledger what it makes.`
         }
         onClick={openForm}
@@ -1389,7 +1389,7 @@ export function TrackerView({
               {!ciOpen ? (
                 <button
                   className="linkbtn"
-                  title="Task to come back to an island later — the 👁 on an island block does the same in one tap"
+                  title="Task to come back to an island later — the 👁 on an island block does the same in one press"
                   onClick={() => {
                     setCiIsle(effFilter || islands[0] || "");
                     setCiOpen(true);
@@ -1481,8 +1481,8 @@ export function TrackerView({
                       className="chip schip qrang"
                       title={
                         q.wr === "deps"
-                          ? "The last task it was waiting on got ticked off while you were playing, so it came back up here — tap to clear the mark"
-                          : "Its timer ran out while you were playing, so it came back up here — tap to clear the mark"
+                          ? "The last task it was waiting on got ticked off while you were playing, so it came back up here — press to clear the mark"
+                          : "Its timer ran out while you were playing, so it came back up here — press to clear the mark"
                       }
                       onClick={() => clearQuestRang(i)}
                     >
@@ -1625,7 +1625,7 @@ export function TrackerView({
                         <button
                           key={b}
                           className="chip schip wqchip"
-                          title={`Waiting on “${b}” — tap to unlink. This task frees itself once every blocker is ticked off.`}
+                          title={`Waiting on “${b}” — press to unlink. This task frees itself once every blocker is ticked off.`}
                           onClick={() => removeQuestBlocker(i, b)}
                         >
                           ⛓ {b} ✕
@@ -1678,7 +1678,7 @@ export function TrackerView({
                           title={`Frees itself at ${new Date(q.wt).toLocaleTimeString([], {
                             hour: "2-digit",
                             minute: "2-digit",
-                          })} — tap to cancel the timer`}
+                          })} — press to cancel the timer`}
                           onClick={() => setQuestTimer(i, null)}
                         >
                           ⏱ {countdown(q.wt - now)}
@@ -1825,7 +1825,7 @@ export function TrackerView({
             <div className="trsuggest">
               <span
                 className="muted"
-                title="Worked out from the ledgers after every link and ship route has moved its goods: an island's leftover set against another's shortfall. Tap one to add the link — the ledger then routes it and the suggestion clears."
+                title="Worked out from the ledgers after every link and ship route has moved its goods: an island's leftover set against another's shortfall. Press one to add the link — the ledger then routes it and the suggestion clears."
               >
                 🧭 Suggested:
               </span>
@@ -1833,7 +1833,7 @@ export function TrackerView({
                 <button
                   key={`${s.good}|${s.from}|${s.to}`}
                   className="trchip trsug"
-                  title={`${s.to} is ${fmt(s.tpm)} t/min short of ${s.good} that ${s.from} has spare — tap to link it`}
+                  title={`${s.to} is ${fmt(s.tpm)} t/min short of ${s.good} that ${s.from} has spare — press to link it`}
                   onClick={() => addIslandLink(s.good, s.from, s.to)}
                 >
                   <GoodIcon name={s.good} game={game} />
@@ -2054,7 +2054,7 @@ export function TrackerView({
                     {plan ? (
                       <button
                         className="chip schip on"
-                        title={`Linked plan “${plan.name}” — built vs planned below. Tap to unlink.`}
+                        title={`Linked plan “${plan.name}” — built vs planned below. Press to unlink.`}
                         onClick={() => {
                           if (window.confirm(`Unlink plan “${plan.name}” from ${name}?`))
                             setIslandPlan(name, null);
@@ -2130,7 +2130,7 @@ export function TrackerView({
                     : items.map((c, i) => ({ c, i }))
                   ).map(({ c, i }) => (
                     <div className={"plitem questrow" + (c.done ? "" : " gap")} key={`${i}:${c.t}`}>
-                      <label className="qmain" title="Tap to toggle">
+                      <label className="qmain" title="Press to toggle">
                         <input
                           type="checkbox"
                           checked={c.done}
@@ -2156,8 +2156,8 @@ export function TrackerView({
                               title={
                                 nb === 1
                                   ? sc > 0
-                                    ? "Silo fitted — output doubled, eats feed. Tap to remove."
-                                    : "No silo yet — tap when you bolt one on (output ×2, eats feed)."
+                                    ? "Silo fitted — output doubled, eats feed. Press to remove."
+                                    : "No silo yet — press once you bolt one on (output ×2, eats feed)."
                                   : `${sc} of the ${nb} farms have a silo — one module max per farm, and a line can be part-silo'd. Silo'd farms make ×2 and eat feed.`
                               }
                               onSet={(v) => setIslandSilo(name, i, v)}
@@ -2189,8 +2189,8 @@ export function TrackerView({
                             title={
                               nb === 1
                                 ? ec > 0
-                                  ? `Powered — output doubled. Tap when the ${plant} no longer covers it.`
-                                  : `Not powered — tap once a ${plant} covers it (output ×2).`
+                                  ? `Powered — output doubled. Press when the ${plant} no longer covers it.`
+                                  : `Not powered — press once a ${plant} covers it (output ×2).`
                                 : `${ec} of the ${nb} are inside a ${plant}'s radius — powered ones make ×2. Powered and silo'd together makes ×4.`
                             }
                             onSet={(v) => setIslandElec(name, i, v)}
@@ -2342,7 +2342,7 @@ export function TrackerView({
                                 <button
                                   key={i.from}
                                   className="trchip"
-                                  title={`${fmt(i.tpm)} t/min imported from ${i.from}${i.tpm <= 0 ? " — nothing spare there to send right now" : ""} — tap to unlink`}
+                                  title={`${fmt(i.tpm)} t/min imported from ${i.from}${i.tpm <= 0 ? " — nothing spare there to send right now" : ""} — press to unlink`}
                                   onClick={() => removeIslandLink(r.name, i.from, name)}
                                 >
                                   🚢← {i.from} {fmt(i.tpm)} ✕
@@ -2590,7 +2590,7 @@ export function TrackerView({
                             <button
                               key={s}
                               className="chip"
-                              title={`One tap: ${name} has ${s}`}
+                              title={`One press: ${name} has ${s}`}
                               onClick={() => addIslandCheck(name, s)}
                             >
                               ＋ {s}
@@ -2990,7 +2990,7 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
                 className="shipsum"
                 title={
                   isGone(s)
-                    ? `${s.name} is off the fleet — tap to put it back`
+                    ? `${s.name} is off the fleet — press to put it back`
                     : `Edit ${s.name}`
                 }
                 onClick={() => setEditing(i)}
@@ -3166,7 +3166,7 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
                   <button
                     key={c}
                     className="chip schip cargochip"
-                    title={`${c} — tap to take it off the run`}
+                    title={`${c} — press to take it off the run`}
                     onClick={() =>
                       setShip(i, { cargo: (s.cargo || []).filter((x) => x !== c) })
                     }
@@ -3220,7 +3220,7 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
                         (it ? " rar" + it.r.replace(/\W+/g, "") : "")
                       }
                       title={
-                        (it ? itemTitle(it) + " — " : "") + "tap to take it off the ship"
+                        (it ? itemTitle(it) + " — " : "") + "press to take it off the ship"
                       }
                       onClick={() =>
                         setShip(i, { items: (s.items || []).filter((x) => x !== n) })

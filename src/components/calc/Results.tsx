@@ -115,7 +115,7 @@ function Footer({ st }: { st: CalcState }) {
       {/* Each game names its own sources (M12) — see GameContent.credits. */}
       {GAME_CONTENT[datasetFor(st).game].credits}
       <br />
-      <span style={{ opacity: 0.55 }}>build 124 · full set ✓</span>
+      <span style={{ opacity: 0.55 }}>build 125 · press, not tap</span>
     </div>
   );
 }

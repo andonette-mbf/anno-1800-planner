@@ -47,7 +47,7 @@ function ItemChip({
   return (
     <button
       className={"chip cuitem rar" + item.r + (on ? " on" : "")}
-      title={itemTitle(item) + (on ? " — displayed here. Tap to remove." : " — tap when you display it here.")}
+      title={itemTitle(item) + (on ? " — displayed here. Press to remove." : " — press once you display it here.")}
       aria-pressed={on}
       onClick={() => toggle(!on)}
     >

@@ -153,7 +153,7 @@ function QuickTimer() {
     const mm = Math.floor(left / 60000);
     const ss = String(Math.floor((left % 60000) / 1000)).padStart(2, "0");
     return (
-      <button className="chip schip on" title="Tap to cancel the timer" onClick={cancel}>
+      <button className="chip schip on" title="Press to cancel the timer" onClick={cancel}>
         ⏲ {mm}:{ss}
       </button>
     );
@@ -391,7 +391,7 @@ export function QuickAdd({ go }: { go: (tab: QuickTab) => void }) {
                 title={
                   kind === "ship"
                     ? "What you called it in game — the fleet is read by name."
-                    : "Adding one you already have bumps its count, so four taps is four sawmills."
+                    : "Adding one you already have bumps its count, so pressing it four times is four sawmills."
                 }
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => {
@@ -408,7 +408,7 @@ export function QuickAdd({ go }: { go: (tab: QuickTab) => void }) {
                   placeholder="×1"
                   value={count}
                   aria-label="How many of it"
-                  title="How many went up — ×4 adds four sawmills in one tap."
+                  title="How many went up — ×4 adds four sawmills in one press."
                   onChange={(e) => setCount(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") add();
