@@ -196,6 +196,12 @@ button.trchip:hover{color:var(--ink);border-color:var(--ink)}
 .waitblk{margin-top:10px;padding-top:6px;border-top:1px dashed var(--line)}
 /* Wraps because a task can be waiting on several others at once (build 70):
    one ⛓ chip each, and they'd otherwise squash the row's buttons. */
+/* Switched-off line (build 129): built but paused — dashed frame, faded name,
+   and the ▶ resume button carries the accent so it's findable. */
+.questrow.off{border-style:dashed;background:var(--panel2)}
+.questrow.off .qmain>span{opacity:.55;font-style:italic;text-decoration:none}
+.qoff{font-size:12px}
+.qoff.on{color:var(--gold2);opacity:1}
 .questrow.waiting{border-style:dashed;background:var(--panel2);flex-wrap:wrap}
 .questrow.waiting .qmain{flex:1 0 60%}
 .questrow.waiting .qmain>span{color:var(--muted)}

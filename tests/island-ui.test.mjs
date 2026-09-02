@@ -456,6 +456,73 @@ check(
   String(ledgRows("Crown Falls"))
 );
 
+// --- switch a building off (build 129) ---------------------------------------
+// The ⏸ on a built row pauses the line: it stays in the inventory (still
+// built, still 2/2) but leaves the ledger — its output AND its inputs. Press
+// ▶ and it's back. Crown Falls' Sawmill: pausing drops Timber (+4); the Wood
+// row stays — the trade link still lands Ditchwater's surplus as stock.
+const rowOf = (isle, t) =>
+  [...blockFor(isle).querySelectorAll(".questrow")].find((r) => r.textContent.includes(t));
+const ledgNames = (isle) =>
+  [...blockFor(isle).querySelectorAll(".iledgrow:not(.iledghead)")].map(
+    (r) => r.querySelector("span").textContent
+  );
+if (ledgOf("Crown Falls").classList.contains("shut")) await fire(ledgTog("Crown Falls"));
+check("the built Sawmill row carries a ⏸", rowOf("Crown Falls", "Sawmill")?.querySelector(".qoff")?.textContent === "⏸");
+await fire(rowOf("Crown Falls", "Sawmill").querySelector(".qoff"));
+check(
+  "pausing marks the row off and stores the flag",
+  rowOf("Crown Falls", "Sawmill").classList.contains("off") &&
+    JSON.parse(localStorage.getItem("anno_island_checks"))["Crown Falls"].some(
+      (c) => c.t === "Sawmill" && c.off === true
+    ),
+  localStorage.getItem("anno_island_checks")
+);
+check(
+  "…and the ledger forgets the line — Timber gone, Wood draw stopped",
+  !ledgNames("Crown Falls").some((n) => n.includes("Timber")),
+  ledgNames("Crown Falls").join()
+);
+check(
+  "the island still counts it as built",
+  blockFor("Crown Falls").textContent.includes("2/2")
+);
+await fire(rowOf("Crown Falls", "Sawmill").querySelector(".qoff"));
+check(
+  "▶ brings it back",
+  !rowOf("Crown Falls", "Sawmill").classList.contains("off") &&
+    ledgNames("Crown Falls").some((n) => n.includes("Timber")),
+  ledgNames("Crown Falls").join()
+);
+
+// --- import from, not just export to (build 130) -----------------------------
+// A short row grows its own "← import…" picker — the mirror of the surplus
+// row's export one. Crown Falls is short of Flour; importing from Ditchwater
+// records the same {good, from, to} link the export path would.
+const flourRow = () =>
+  [...blockFor("Crown Falls").querySelectorAll(".iledgrow")].find((r) =>
+    r.textContent.includes("Flour")
+  );
+check("the short Flour row offers ← import…", !!flourRow()?.querySelector(".trlink"));
+await fire(flourRow().querySelector(".trlink"));
+const impOpt = [...document.querySelectorAll(".ddpop .ddopt")].find((o) =>
+  o.textContent.includes("Ditchwater")
+);
+check("…listing Ditchwater", !!impOpt);
+await fire(impOpt);
+check(
+  "picking it records the link with this island as the destination",
+  JSON.parse(localStorage.getItem("anno_island_links") || "[]").some(
+    (l) => l.good === "Flour" && l.from === "Ditchwater" && l.to === "Crown Falls"
+  ),
+  localStorage.getItem("anno_island_links")
+);
+check(
+  "…and the row now shows the 🚢← chip",
+  /🚢← Ditchwater/.test(flourRow()?.textContent || ""),
+  flourRow()?.textContent
+);
+
 let bad = 0;
 for (const x of results) {
   console.log(`${x.ok ? "ok  " : "FAIL"} - ${x.name}${x.ok || !x.detail ? "" : "  << " + x.detail}`);

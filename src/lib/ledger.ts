@@ -757,7 +757,9 @@ export function islandLedger(
     if (I.finalGood(goodId)) finals.add(name);
   };
   for (const c of items) {
-    if (!c.done) continue;
+    // Switched off (build 129): built but paused — no output, and none of its
+    // consumption edges either (inputs, silo feed, fuel all stop with it).
+    if (!c.done || c.off) continue;
     const v = I.variants.get(c.t.trim().toLowerCase());
     if (!v) continue;
     const n = Math.max(1, c.n || 1);

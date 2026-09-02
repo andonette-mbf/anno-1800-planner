@@ -37,6 +37,27 @@ const NW = 2;
 const AR = 4;
 const EN = 5;
 const rows = (items, region) => L.islandLedger(items, "anno1800", region);
+
+// --- switched-off lines (build 129): paused = invisible to the ledger -------
+{
+  const off = rows([{ t: "Sawmill", done: true, off: true }], 1);
+  if (off.length) fail(`an off Sawmill should ledger nothing, got ${off.length} rows`);
+  else ok("off line — a paused Sawmill makes and uses nothing");
+  const mix = rows(
+    [
+      { t: "Lumberjack's Hut", done: true },
+      { t: "Sawmill", done: true, off: true },
+    ],
+    1
+  );
+  const wood = mix.find((r) => r.name === "Wood");
+  if (!wood || wood.used !== 0 || wood.produced <= 0)
+    fail(`with the Sawmill off, Wood should be pure surplus: ${JSON.stringify(mix)}`);
+  else ok("off line — the paused Sawmill stops eating the Hut's wood");
+  const sil = rows([{ t: "Sheep Farm", done: true, s: 1, off: true }], 1);
+  if (sil.length) fail("an off silo'd farm should not even eat feed");
+  else ok("off line — pausing stops the silo feed too");
+}
 const row = (items, name, region) => rows(items, region).find((r) => r.name === name);
 const near = (a, b) => Math.abs(a - b) < 1e-9;
 

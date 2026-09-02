@@ -704,6 +704,7 @@ export function TrackerView({
     bumpIslandCheck,
     setIslandSilo,
     setIslandElec,
+    setIslandOff,
     seedIslandChecks,
     setIslandPlan,
     setIslandRegion,
@@ -2136,7 +2137,12 @@ export function TrackerView({
                         .sort((a, b) => a.c.t.localeCompare(b.c.t))
                     : items.map((c, i) => ({ c, i }))
                   ).map(({ c, i }) => (
-                    <div className={"plitem questrow" + (c.done ? "" : " gap")} key={`${i}:${c.t}`}>
+                    <div
+                      className={
+                        "plitem questrow" + (c.done ? (c.off ? " off" : "") : " gap")
+                      }
+                      key={`${i}:${c.t}`}
+                    >
                       <label className="qmain" title="Press to toggle">
                         <input
                           type="checkbox"
@@ -2204,6 +2210,22 @@ export function TrackerView({
                           />
                         );
                       })()}
+                      {/* ⏸ pause (build 129): built but switched off in-game —
+                          the ledger skips the line, freeing its inputs for
+                          something else. Only a built row can pause. */}
+                      {c.done && (
+                        <button
+                          className={"plx qoff" + (c.off ? " on" : "")}
+                          title={
+                            c.off
+                              ? `${c.t} is switched off — making and using nothing. Press to start it up.`
+                              : `Running. Press when you switch it off in game — it stays built, but leaves the ledger.`
+                          }
+                          onClick={() => setIslandOff(name, i, !c.off)}
+                        >
+                          {c.off ? "▶" : "⏸"}
+                        </button>
+                      )}
                       {/* Teach the ledger this building's numbers (M13) —
                           only in a game with no data pack, where every item
                           would otherwise stay free text forever. */}
@@ -2339,6 +2361,13 @@ export function TrackerView({
                             o !== name &&
                             !r.exp?.some((d) => d.to.toLowerCase() === o.toLowerCase())
                         );
+                        // …and the mirror (build 130): a short row offers the
+                        // islands that could send the good here instead.
+                        const importable = islands.filter(
+                          (o) =>
+                            o !== name &&
+                            !r.imp?.some((d) => d.from.toLowerCase() === o.toLowerCase())
+                        );
                         return (
                         <div className={"iledgrow" + (r.final ? " fin" : "")} key={r.name}>
                           <span>
@@ -2421,6 +2450,17 @@ export function TrackerView({
                               >
                                 👥 {fmt(r.res)}
                               </span>
+                            )}
+                            {r.net < -1e-9 && importable.length > 0 && (
+                              <Dropdown
+                                className="ddbtn trlink"
+                                ariaLabel={`Import ${r.name} from another island`}
+                                title={`Short of ${r.name} — link the island that sends it, and this row prices only what's left uncovered`}
+                                placeholder="← import…"
+                                value=""
+                                onChange={(v) => v && addIslandLink(r.name, v, name)}
+                                options={importable.map((o) => ({ value: o, label: o }))}
+                              />
                             )}
                             {r.net > 1e-9 && exportable.length > 0 && (
                               <Dropdown

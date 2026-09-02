@@ -90,6 +90,10 @@ export interface CheckItem {
   // How many of the line's n buildings are inside a power plant's radius
   // (Old World only) — same part-line idea as silos. Absent = none.
   e?: number;
+  // Switched off (build 129): built, but paused in-game — the ledger skips the
+  // whole line (no output, no inputs, no feed, no fuel) while the row stays in
+  // the inventory and still counts as built for the plan check. Absent = running.
+  off?: boolean;
 }
 
 // A calculator plan linked to an island (M4) — a snapshot taken at link time
@@ -463,7 +467,7 @@ function parseChecks(raw: unknown): CheckItem[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .map((x) => {
-      const o = x as { t?: unknown; done?: unknown; n?: unknown; s?: unknown; e?: unknown };
+      const o = x as { t?: unknown; done?: unknown; n?: unknown; s?: unknown; e?: unknown; off?: unknown };
       const n = Math.max(1, Math.floor(Number(o?.n)) || 1);
       // Electrified count (build 52) — no older form to migrate.
       const e = Math.min(n, Math.max(0, Math.floor(Number(o?.e)) || 0));
@@ -486,6 +490,7 @@ function parseChecks(raw: unknown): CheckItem[] {
         ...(n > 1 ? { n } : {}),
         ...(s > 0 ? { s } : {}),
         ...(e > 0 ? { e } : {}),
+        ...(o?.off ? { off: true as const } : {}),
       };
     })
     .filter((x) => x.t);
@@ -1047,6 +1052,8 @@ interface CompanionCtx {
   bumpIslandCheck: (island: string, i: number, delta: 1 | -1) => void;
   setIslandSilo: (island: string, i: number, count: number) => void;
   setIslandElec: (island: string, i: number, count: number) => void;
+  /** Pause (or resume) a built line (build 129) — off means the ledger skips it. */
+  setIslandOff: (island: string, i: number, off: boolean) => void;
   seedIslandChecks: (island: string, seed: { t: string; n: number }[]) => void;
   setIslandPlan: (island: string, plan: IslandPlan | null) => void;
   /** Put a culture item into (or take it out of) an island's zoo/museum/
@@ -1720,6 +1727,18 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
       // Append buildings the island doesn't list yet as UNTICKED items — red
       // gaps to build, same pattern as the region starter kits (M7b: seeding
       // an island from its linked plan).
+      setIslandOff: (island, i, off) =>
+        update((d) => ({
+          ...d,
+          islandChecks: {
+            ...(d.islandChecks || {}),
+            [island]: ((d.islandChecks || {})[island] || []).map((c, j) => {
+              if (j !== i) return c;
+              const { off: _o, ...rest } = c;
+              return off ? { ...rest, off: true } : rest;
+            }),
+          },
+        })),
       seedIslandChecks: (island, seed) =>
         update((d) => {
           const cur = (d.islandChecks || {})[island] || [];
