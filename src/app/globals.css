@@ -478,3 +478,6 @@ input,select,.ddbtn{background:var(--bg2)}
 .callout{background:var(--bg2)}
 .iledgrow .net.neg{color:var(--red)}
 .iledgrow .net.pos{color:var(--green)}
+/* Flat actives (build 128): the legacy 145° gold gradient gave every pressed
+   chip a lit-from-the-corner bevel. Solid deep gold instead — no shading. */
+.chip.on,.toggle button.on,.logo{background:var(--gold2)}
