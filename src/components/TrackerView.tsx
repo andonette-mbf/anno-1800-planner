@@ -1842,7 +1842,12 @@ export function TrackerView({
               ))}
             </div>
           )}
-          {fertGaps.map((g) => (
+          {fertGaps.length > 0 && (
+          <div className="fertsummary">
+            <p className="fertsumhd" title="Per region, the fertilities and deposits your islands there cover — ✓ when every one the region can have is on some island. Record an island's own under its 🌱 block.">
+              🌱 Region fertilities
+            </p>
+            {fertGaps.map((g) => (
             <div
               className={
                 "trsuggest fertgaps" +
@@ -1855,7 +1860,7 @@ export function TrackerView({
                   className="muted"
                   title={`Every fertility and deposit this region can have is ticked on one of ${g.islands.join(", ")}.`}
                 >
-                  🌱 {g.label} — <b>full set ✓</b>
+                  ✓ {g.label} — <b>full set ✓</b>
                 </span>
               ) : (
                 <span
@@ -1864,7 +1869,7 @@ export function TrackerView({
                     `From the 🌱 ticks on ${g.islands.join(", ")}: what the region can have that none of them does. Settle or seed for these.`
                   }
                 >
-                  🌱 {g.label} lacks:
+                  {g.label} lacks:
                 </span>
               )}
               {g.missing.fert.length + g.missing.deposits.length === 0 ? null : (
@@ -1882,7 +1887,9 @@ export function TrackerView({
                 </>
               )}
             </div>
-          ))}
+            ))}
+          </div>
+          )}
           <div className="plrow">
             <Dropdown
               className="qisle"

@@ -366,6 +366,12 @@ check("the ticked chip lights", fertChip("Crown Falls", "Hops").classList.contai
 const gaps = () => document.querySelector(".fertgaps");
 const gapNames = () => [...gaps().querySelectorAll(".trchip")].map((c) => c.getAttribute("title"));
 check(
+  "the strips sit in a titled 'Region fertilities' block",
+  document.querySelector(".fertsummary .fertsumhd")?.textContent.includes("Region fertilities") &&
+    !!document.querySelector(".fertsummary .fertgaps"),
+  document.querySelector(".fertsummary")?.textContent.slice(0, 60)
+);
+check(
   "the 🌱 strip pools the Cape with the Old World",
   /Old World · Cape Trelawney lacks/.test(gaps()?.textContent || ""),
   gaps()?.textContent
@@ -397,7 +403,7 @@ await fire(blockFor("Ditchwater").querySelector(".isletog"));
 for (const c of fertChips("Crown Falls").filter((c) => !c.classList.contains("on"))) await fire(c);
 check(
   "with every fertility ticked somewhere, the region reports a full set",
-  gaps()?.classList.contains("fertfull") && /full set ✓/.test(gaps().textContent) && !gaps().querySelector(".trchip"),
+  gaps()?.classList.contains("fertfull") && /✓ Old World · Cape Trelawney/.test(gaps().textContent) && /full set ✓/.test(gaps().textContent) && !gaps().querySelector(".trchip"),
   gaps()?.textContent
 );
 await fire(fertChip("Crown Falls", "Saltpetre"));

@@ -70,7 +70,9 @@ a.plx:hover{color:var(--accent)}
 .shipjob,.shipwhere{font-size:12px;color:var(--muted);white-space:nowrap}
 /* Quick add above the calculator (build 86): one line, so it never competes
    with the numbers underneath it. */
-.qacard{margin-bottom:14px}
+/* The tracker's cards live in .docwrap (880px); the always-mounted quick-add
+   sat outside it at the full 1120px wrap and dwarfed them (build 126). */
+.qacard{margin:0 auto 14px;max-width:880px}
 .qakind{margin-bottom:9px}
 .qarow{margin:0;align-items:center;flex-wrap:wrap}
 .qaisle{width:auto;flex:0 1 180px;min-width:130px;font-size:12.5px;padding:7px 10px;color:var(--muted)}
@@ -306,6 +308,12 @@ button.trchip:hover{color:var(--ink);border-color:var(--ink)}
 .fertgaps .trchip{cursor:default}
 .fertgaps .fertdep{opacity:.8}
 .fertfull b{color:var(--green)}
+/* The region roll-up wears a light frame with its own title (build 126), so
+   "have I got the set?" is one glance, not a scan of the suggestion strips. */
+.fertsummary{border:1px dashed var(--line);border-radius:var(--rs);padding:8px 11px 2px;margin:0 0 12px}
+.fertsummary .fertgaps{margin-bottom:8px}
+.fertsumhd{margin:0 0 6px;font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)}
+.fertgaps .fertgrp{white-space:nowrap}
 .cuisle:last-child{margin-bottom:0}
 .cuislehd{margin:0 0 4px;padding:4px 0;border-bottom:1px solid var(--line);font-size:14px}
 .culink{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;width:100%;background:0 0;border:0;border-top:1px dashed var(--line);cursor:pointer;text-align:left;font:inherit;color:var(--ink)}
@@ -433,3 +441,17 @@ button.trchip:hover{color:var(--ink);border-color:var(--ink)}
   .savemenu { min-height: 40px; }
   .checkrow input[type=checkbox] { width: 22px; height: 22px; }
 }
+
+/* ---- Corners (build 126) ----------------------------------------------------
+   The legacy sheet squared everything (border-radius:0 throughout, --r:0).
+   Rounding happens here as overrides instead of edits to the minified line:
+   same selectors, declared later, so they win. Two sizes and a pill — boxes
+   --r, controls --rs, tiny status pills fully round. */
+:root{--r:12px;--rs:8px}
+.card,.pop,.callout{border-radius:var(--r)}
+.logo{border-radius:var(--rs)}
+.chip,.linkbtn,.pbtn,.toggle,.ddbtn,input,select,textarea,.sel,.stat,.shareCard,.plitem,.isleblk,.trchip,.planlink,.iledgtgl,.teachform input{border-radius:var(--rs)}
+.tab{border-radius:var(--rs) var(--rs) 0 0}
+.badge,.qage,.pill,.tag,.isleshort{border-radius:999px}
+.dot{border-radius:50%}
+.checkrow input[type=checkbox]{border-radius:4px}
