@@ -2361,13 +2361,6 @@ export function TrackerView({
                             o !== name &&
                             !r.exp?.some((d) => d.to.toLowerCase() === o.toLowerCase())
                         );
-                        // …and the mirror (build 130): a short row offers the
-                        // islands that could send the good here instead.
-                        const importable = islands.filter(
-                          (o) =>
-                            o !== name &&
-                            !r.imp?.some((d) => d.from.toLowerCase() === o.toLowerCase())
-                        );
                         return (
                         <div className={"iledgrow" + (r.final ? " fin" : "")} key={r.name}>
                           <span>
@@ -2451,17 +2444,6 @@ export function TrackerView({
                                 👥 {fmt(r.res)}
                               </span>
                             )}
-                            {r.net < -1e-9 && importable.length > 0 && (
-                              <Dropdown
-                                className="ddbtn trlink"
-                                ariaLabel={`Import ${r.name} from another island`}
-                                title={`Short of ${r.name} — link the island that sends it, and this row prices only what's left uncovered`}
-                                placeholder="← import…"
-                                value=""
-                                onChange={(v) => v && addIslandLink(r.name, v, name)}
-                                options={importable.map((o) => ({ value: o, label: o }))}
-                              />
-                            )}
                             {r.net > 1e-9 && exportable.length > 0 && (
                               <Dropdown
                                 className="trlink"
@@ -2500,6 +2482,33 @@ export function TrackerView({
                             .map((r) => `${r.fix!.count}× ${r.fix!.building}`)
                             .join(" · ")}{" "}
                           <span className="muted">(or equivalent)</span>
+                          {/* …or ship it in (build 131): the import picker sits
+                              here, on the line that says you're short — one per
+                              short good, islands already sending it excluded. */}
+                          {ledger
+                            .filter((r) => r.fix)
+                            .map((r) => {
+                              const importable = islands.filter(
+                                (o) =>
+                                  o !== name &&
+                                  !r.imp?.some(
+                                    (d) => d.from.toLowerCase() === o.toLowerCase()
+                                  )
+                              );
+                              if (!importable.length) return null;
+                              return (
+                                <Dropdown
+                                  key={r.name}
+                                  className="ddbtn trlink"
+                                  ariaLabel={`Import ${r.name} from another island`}
+                                  title={`…or ship ${r.name} in instead of building — link the island that sends it, and this advice re-prices on what's left uncovered`}
+                                  placeholder={`← import ${r.name}…`}
+                                  value=""
+                                  onChange={(v) => v && addIslandLink(r.name, v, name)}
+                                  options={importable.map((o) => ({ value: o, label: o }))}
+                                />
+                              );
+                            })}
                         </div>
                       )}
                     </div>

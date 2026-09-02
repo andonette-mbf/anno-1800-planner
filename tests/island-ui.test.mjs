@@ -495,16 +495,25 @@ check(
   ledgNames("Crown Falls").join()
 );
 
-// --- import from, not just export to (build 130) -----------------------------
-// A short row grows its own "← import…" picker — the mirror of the surplus
-// row's export one. Crown Falls is short of Flour; importing from Ditchwater
-// records the same {good, from, to} link the export path would.
+// --- import where it's short (builds 130–131) --------------------------------
+// The "← import Flour…" picker sits on the ⚠ Short line — the place that says
+// you're short — as the alternative to the build advice, NOT on the ledger row
+// (build 131 moved it after 130 put it there). Picking an island records the
+// same {good, from, to} link the export path would.
 const flourRow = () =>
   [...blockFor("Crown Falls").querySelectorAll(".iledgrow")].find((r) =>
     r.textContent.includes("Flour")
   );
-check("the short Flour row offers ← import…", !!flourRow()?.querySelector(".trlink"));
-await fire(flourRow().querySelector(".trlink"));
+const fixLine = () => blockFor("Crown Falls").querySelector(".iledgfix");
+// Residents put several goods short, so the line carries one picker per good —
+// address the Flour one by its label.
+const flourPick = () =>
+  [...(fixLine()?.querySelectorAll(".trlink") || [])].find((x) =>
+    x.textContent.includes("import Flour")
+  );
+check("the ledger row itself carries no picker", !flourRow()?.querySelector(".trlink"));
+check("the ⚠ Short line offers ← import Flour…", !!flourPick(), fixLine()?.textContent);
+await fire(flourPick());
 const impOpt = [...document.querySelectorAll(".ddpop .ddopt")].find((o) =>
   o.textContent.includes("Ditchwater")
 );
