@@ -13,6 +13,7 @@ import { DATASETS, bandLabels } from "@/lib/dataset";
 import { CalcState, DEFAULT_STATE } from "@/lib/engine";
 import { GAMES, GAME_CONTENT, gameKey, type Game } from "@/lib/games";
 import {
+  applyExternalTrade,
   applyTrade,
   buildingOptionsFor,
   powerKind,
@@ -710,6 +711,7 @@ export function TrackerView({
     setIslandRegion,
     setIslandPop,
     setPopCfg,
+    toggleIslandTrade,
     addIslandLink,
     removeIslandLink,
     setIslandLinkCap,
@@ -1028,6 +1030,9 @@ export function TrackerView({
       regions[n] = REGION_NUM[(data.islandRegions || {})[n] || ""] || 0;
     }
     applyTrade(ledgers, regions, flows, game);
+    // ⚓ (build 132) — goods bought in from off the map. Last, because
+    // applyTrade re-prices every fix from what the islands left uncovered.
+    applyExternalTrade(ledgers, data.islandTrade || {});
     return ledgers;
   })();
   // M9 — suggested trade flows: pair one island's leftover with another's
@@ -2443,6 +2448,30 @@ export function TrackerView({
                               >
                                 👥 {fmt(r.res)}
                               </span>
+                            )}
+                            {/* ⚓ (build 132) — bought in from off the map. On a
+                                short row it is the alternative to building or
+                                shipping: tick it and the ⚠, the "build N×"
+                                advice and the trade ideas for this good go
+                                quiet. Stays on show once ticked, so what is on
+                                contract is visible and untickable. */}
+                            {(r.net < -1e-9 || r.traded) && (
+                              <label
+                                className={"trbuy" + (r.traded ? " on" : "")}
+                                title={
+                                  r.traded
+                                    ? `${r.name} is bought in — this ledger stops asking you to build or ship it. Untick to hear about it again.`
+                                    : `Tick if you buy ${r.name} in — a Docklands contract, say — and this row stops counting as short`
+                                }
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={!!r.traded}
+                                  aria-label={`${r.name} bought in from outside ${name}`}
+                                  onChange={() => toggleIslandTrade(name, r.name)}
+                                />
+                                ⚓{r.traded ? " bought in" : ""}
+                              </label>
                             )}
                             {r.net > 1e-9 && exportable.length > 0 && (
                               <Dropdown

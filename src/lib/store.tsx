@@ -325,6 +325,11 @@ export interface CompanionData {
   // Who lives on each island (M8), keyed island → tier id → headcount. Feeds
   // resident consumption into the island ledger: net = makes − chain − eaten.
   islandPop: Record<string, Record<string, number>>;
+  // Goods this island buys in from off the map (build 132) — a Docklands
+  // contract, or anything else arriving from outside the player's own
+  // islands. Keyed island → good names. The ledger keeps the row but stops
+  // pricing a fix for it, so a good on contract stops reading as short.
+  islandTrade: Record<string, string[]>;
   // The consumption knobs residents are fed at (M8) — ONE setting per save,
   // like the calculator's: 1800's lifestyle toggle + consumption %, 117's
   // needs band. Fields the game doesn't use just sit unread.
@@ -528,6 +533,26 @@ function parseCulture(raw: unknown): Record<string, Record<string, string[]>> {
 // island → tier id → headcount (M8). Zero and junk counts are dropped, so an
 // island nobody lives on leaves no key behind; unknown tier ids are kept, the
 // same forward-compatibility call as parseCulture's unknown buildings.
+/** island → good names (build 132). Trimmed, de-duped case-insensitively,
+ *  and islands left with nothing ticked are dropped rather than stored empty. */
+function parseIslandGoods(raw: unknown): Record<string, string[]> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  const out: Record<string, string[]> = {};
+  for (const [island, list] of Object.entries(raw as Record<string, unknown>)) {
+    if (!Array.isArray(list)) continue;
+    const seen = new Set<string>();
+    const goods: string[] = [];
+    for (const g of list) {
+      const t = String(g).trim();
+      if (!t || seen.has(t.toLowerCase())) continue;
+      seen.add(t.toLowerCase());
+      goods.push(t);
+    }
+    if (goods.length) out[island] = goods;
+  }
+  return out;
+}
+
 function parseIslandPop(raw: unknown): Record<string, Record<string, number>> {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
   const out: Record<string, Record<string, number>> = {};
@@ -667,6 +692,10 @@ function loadLocal(game: Game = "anno1800", id = ""): CompanionData {
   try {
     islandPop = parseIslandPop(JSON.parse(ls.get(k("anno_island_pop")) || "{}"));
   } catch {}
+  let islandTrade: Record<string, string[]> = {};
+  try {
+    islandTrade = parseIslandGoods(JSON.parse(ls.get(k("anno_island_trade")) || "{}"));
+  } catch {}
   let popCfg: PopCfg = { ...DEFAULT_POP_CFG };
   try {
     popCfg = parsePopCfg(JSON.parse(ls.get(k("anno_pop_cfg")) || "{}"));
@@ -700,6 +729,7 @@ function loadLocal(game: Game = "anno1800", id = ""): CompanionData {
     islandCulture,
     islandItems,
     islandPop,
+    islandTrade,
     popCfg,
     ships,
     islandLinks,
@@ -722,6 +752,7 @@ function saveLocal(d: CompanionData, game: Game = "anno1800", id = "") {
   ls.set(k("anno_island_culture"), JSON.stringify(d.islandCulture || {}));
   ls.set(k("anno_island_items"), JSON.stringify(d.islandItems || {}));
   ls.set(k("anno_island_pop"), JSON.stringify(d.islandPop || {}));
+  ls.set(k("anno_island_trade"), JSON.stringify(d.islandTrade || {}));
   ls.set(k("anno_pop_cfg"), JSON.stringify(d.popCfg || DEFAULT_POP_CFG));
   ls.set(k("anno_ships"), JSON.stringify(d.ships || []));
   ls.set(k("anno_island_links"), JSON.stringify(d.islandLinks || []));
@@ -742,6 +773,7 @@ const EMPTY_DATA: CompanionData = {
   islandCulture: {},
   islandItems: {},
   islandPop: {},
+  islandTrade: {},
   popCfg: DEFAULT_POP_CFG,
   ships: [],
   islandLinks: [],
@@ -842,6 +874,7 @@ function fromBlob(blob: SyncBlob, local: Record<Game, GameSaves>): Record<Game, 
     islandCulture: parseCulture(d.islandCulture),
     islandItems: parseCulture(d.islandItems),
     islandPop: parseIslandPop(d.islandPop),
+    islandTrade: parseIslandGoods(d.islandTrade),
     popCfg: parsePopCfg(d.popCfg),
     ships: parseShips(d.ships),
     islandLinks: parseLinks(d.islandLinks),
@@ -953,6 +986,7 @@ function parseSaveData(raw: unknown): CompanionData {
     islandCulture: parseCulture(o.islandCulture),
     islandItems: parseCulture(o.islandItems),
     islandPop: parseIslandPop(o.islandPop),
+    islandTrade: parseIslandGoods(o.islandTrade),
     popCfg: parsePopCfg(o.popCfg),
     ships: parseShips(o.ships),
     islandLinks: parseLinks(o.islandLinks),
@@ -1087,6 +1121,10 @@ interface CompanionCtx {
    *  shows it exported, the destination's deficit stops alarming. */
   addIslandLink: (good: string, from: string, to: string) => void;
   removeIslandLink: (good: string, from: string, to: string) => void;
+  /** Tick a good off as bought in from outside this island's network (build
+   *  132) — a Docklands contract or any off-map supply. Toggles: ticking
+   *  quiets the ledger's ⚠ for it, unticking asks again. */
+  toggleIslandTrade: (island: string, good: string) => void;
   /** Set or clear (null) a link's t/min cap — see TradeLink.tpm. */
   setIslandLinkCap: (good: string, from: string, to: string, tpm: number | null) => void;
   /** Teach (or correct) one building's production numbers (M13) — packless
@@ -1624,6 +1662,9 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           const islandPop = { ...(d.islandPop || {}) };
           for (const k of Object.keys(islandPop))
             if (k.toLowerCase() === n) delete islandPop[k];
+          const islandTrade = { ...(d.islandTrade || {}) };
+          for (const k of Object.keys(islandTrade))
+            if (k.toLowerCase() === n) delete islandTrade[k];
           return {
             ...d,
             islands: (d.islands || []).filter((x) => x.toLowerCase() !== n),
@@ -1633,6 +1674,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             islandCulture,
             islandItems,
             islandPop,
+            islandTrade,
             // Links to or from a removed island go with it.
             islandLinks: (d.islandLinks || []).filter(
               (l) => l.from.toLowerCase() !== n && l.to.toLowerCase() !== n
@@ -1884,6 +1926,26 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         }),
       removeShip: (i) =>
         update((d) => ({ ...d, ships: (d.ships || []).filter((_, j) => j !== i) })),
+      toggleIslandTrade: (island, good) =>
+        update((d) => {
+          const g = good.trim();
+          if (!g) return d;
+          // Match the island key that is already stored, whatever its case,
+          // so a tick doesn't strand itself under a second spelling.
+          const key =
+            Object.keys(d.islandTrade || {}).find(
+              (k) => k.toLowerCase() === island.trim().toLowerCase()
+            ) || island.trim();
+          const cur = (d.islandTrade || {})[key] || [];
+          const has = cur.some((x) => x.toLowerCase() === g.toLowerCase());
+          const next = has
+            ? cur.filter((x) => x.toLowerCase() !== g.toLowerCase())
+            : [...cur, g];
+          const islandTrade = { ...(d.islandTrade || {}) };
+          if (next.length) islandTrade[key] = next;
+          else delete islandTrade[key];
+          return { ...d, islandTrade };
+        }),
       addIslandLink: (good, from, to) =>
         update((d) => ({
           ...d,

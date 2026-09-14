@@ -532,6 +532,60 @@ check(
   flourRow()?.textContent
 );
 
+// --- ⚓ bought in (build 132) -------------------------------------------------
+// The third answer to a shortfall, beside building and shipping: tick the good
+// off as arriving by contract and the row stops counting as short. Ditchwater
+// makes no Flour, so the link above moves 0 and Crown Falls is still short of
+// it — the state the tickbox is for.
+const buyBox = () => flourRow()?.querySelector(".trbuy input");
+const tick = async (el) => {
+  await act(async () => {
+    el.click();
+  });
+};
+check("a short row carries the ⚓ tickbox", !!buyBox(), flourRow()?.textContent);
+check("…unticked to begin with", buyBox()?.checked === false);
+await tick(buyBox());
+check(
+  "ticking records the good against this island",
+  (JSON.parse(localStorage.getItem("anno_island_trade") || "{}")["Crown Falls"] || []).includes(
+    "Flour"
+  ),
+  localStorage.getItem("anno_island_trade")
+);
+check(
+  "the ⚠ line stops asking for Flour",
+  !fixLine()?.textContent.includes("Flour"),
+  fixLine()?.textContent
+);
+check(
+  "…and the row stays, marked bought in",
+  !!flourRow() && /bought in/.test(flourRow()?.textContent || ""),
+  flourRow()?.textContent
+);
+check("the other island is unaffected", !!blockFor("Ditchwater"));
+
+await act(async () => app.unmount());
+document.getElementById("root").innerHTML = "";
+app = await mount();
+check(
+  "the tick survives a reload",
+  buyBox()?.checked === true && !fixLine()?.textContent.includes("Flour"),
+  fixLine()?.textContent
+);
+
+await tick(buyBox());
+check(
+  "unticking asks again",
+  fixLine()?.textContent.includes("Flour"),
+  fixLine()?.textContent
+);
+check(
+  "…and the island is dropped from storage rather than left empty",
+  !("Crown Falls" in JSON.parse(localStorage.getItem("anno_island_trade") || "{}")),
+  localStorage.getItem("anno_island_trade")
+);
+
 let bad = 0;
 for (const x of results) {
   console.log(`${x.ok ? "ok  " : "FAIL"} - ${x.name}${x.ok || !x.detail ? "" : "  << " + x.detail}`);

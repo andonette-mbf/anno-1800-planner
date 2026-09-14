@@ -155,6 +155,14 @@ button.trchip:hover{color:var(--ink);border-color:var(--ink)}
 .trcapin[type=number]{-moz-appearance:textfield;appearance:textfield}
 .trcapx{font:inherit;font-size:10px;border:0;background:0 0;color:var(--muted);padding:0 1px;cursor:pointer}
 .trcapx:hover{color:var(--ink)}
+/* ⚓ bought in (build 132): the tickbox on a short row that says this good
+   arrives by contract rather than being built or shipped. Reads as a chip
+   like its neighbours; ticked, it firms up so a row on contract is legible
+   at a glance without shouting like the ⚠ it replaces. */
+.trbuy{font:inherit;font-size:10px;border:1px solid var(--line);background:0 0;color:var(--muted);padding:1px 5px;margin-left:6px;white-space:nowrap;cursor:pointer;display:inline-flex;align-items:center;gap:3px}
+.trbuy:hover{color:var(--ink);border-color:var(--ink)}
+.trbuy input{width:11px;height:11px;margin:0;cursor:pointer;accent-color:var(--gold)}
+.trbuy.on{color:var(--ink);border-color:var(--gold)}
 /* Suggested trade flows (M9): the read-only strip at the top of the Islands
    card — each chip a one-tap addIslandLink. */
 .trsuggest{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;margin:0 0 10px;font-size:12px}

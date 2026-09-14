@@ -620,6 +620,68 @@ const near = (a, b) => Math.abs(a - b) < 1e-9;
   ok("taught recipes: corrections apply, pack games are untouchable");
 }
 
+// --- ⚓ bought in: a ticked good stops asking (build 132) -------------------
+// The tick says the good arrives from off the map — a Docklands contract —
+// so the row keeps its numbers but loses the `fix` that the ⚠ Short line,
+// the per-island count and the trade ideas all read. Per island: one
+// island's contract says nothing about another's.
+{
+  const kitchen = [{ t: "Artisanal Kitchen", n: 6, done: true }];
+  const farms = [{ t: "Cattle Farm", n: 8, done: true }];
+  const beef = (ledgers, isle) => ledgers[isle].find((r) => r.name === "Beef");
+  const mk = () => ({
+    Pasture: rows(farms, OW),
+    Kitchenia: rows(kitchen, OW),
+    Snackville: rows(kitchen, OW),
+  });
+
+  // Untouched, both kitchen islands are short and priced for building.
+  const before = mk();
+  if (!before.Kitchenia.find((r) => r.name === "Beef").fix)
+    fail("setup: Kitchenia should be short of Beef before anything is ticked");
+
+  const led = mk();
+  L.applyExternalTrade(led, { Kitchenia: ["Beef"] });
+  const hushed = beef(led, "Kitchenia");
+  if (hushed.fix) fail(`a ticked good should lose its fix, got ${JSON.stringify(hushed.fix)}`);
+  if (hushed.traded !== true) fail("a ticked good should be flagged traded");
+  if (!near(hushed.net, -3) || !near(hushed.used, 3))
+    fail(`the numbers should stand — the hole is real, got net ${hushed.net}`);
+  if (!beef(led, "Snackville").fix)
+    fail("ticking one island must not quiet another");
+
+  // Case-insensitive on both island and good, like every other lookup here.
+  const ci = mk();
+  L.applyExternalTrade(ci, { kitchenia: ["beef"] });
+  if (beef(ci, "Kitchenia").fix) fail("island and good matching should be case-insensitive");
+
+  // A bought-in deficit is covered, so no one is asked to ship to it — but
+  // the island that is genuinely short still gets the offer.
+  const sug = mk();
+  L.applyExternalTrade(sug, { Kitchenia: ["Beef"] });
+  const ideas = L.suggestTrades(sug, []);
+  if (ideas.some((i) => i.to === "Kitchenia"))
+    fail(`a bought-in island should not be offered someone's surplus, got ${JSON.stringify(ideas)}`);
+  if (!ideas.some((i) => i.to === "Snackville" && i.from === "Pasture" && i.good === "Beef"))
+    fail(`the island still short should keep its suggestion, got ${JSON.stringify(ideas)}`);
+
+  // Empty / unknown input changes nothing, and applyTrade still runs first:
+  // ticking after a link keeps whatever the link already covered.
+  const none = mk();
+  L.applyExternalTrade(none, {});
+  if (!beef(none, "Kitchenia").fix) fail("an empty tick list must change nothing");
+  const linked = mk();
+  L.applyTrade(linked, { Pasture: OW, Kitchenia: OW, Snackville: OW }, [
+    { good: "Beef", from: "Pasture", to: "Kitchenia" },
+  ]);
+  L.applyExternalTrade(linked, { Snackville: ["Beef"] });
+  if (beef(linked, "Snackville").fix)
+    fail("a tick applied after trade should still quiet the remainder");
+  if (!near(beef(linked, "Kitchenia").net, 1))
+    fail("ticking elsewhere must not disturb what trade moved");
+  ok("⚓ bought in: the row goes quiet, per island, and trade stops offering it");
+}
+
 if (failures) {
   console.error(`\n${failures} failure(s)`);
   process.exit(1);

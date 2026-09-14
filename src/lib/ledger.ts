@@ -481,6 +481,13 @@ export interface LedgerRow {
   // `used`), so net keeps meaning makes − uses.
   imp?: { from: string; tpm: number }[];
   exp?: { to: string; tpm: number }[];
+  // Bought in from off the map (build 132) — a Docklands contract or any
+  // supply that isn't one of the player's own islands. Set by
+  // applyExternalTrade from the island's ticked goods: the deficit is
+  // someone else's problem, so no `fix` is priced and suggestTrades stops
+  // offering the good. The row and its numbers stay as they are — the
+  // shortfall is real, it just isn't news.
+  traded?: boolean;
 }
 
 /** The flows applyTrade reads: explicit links (ticked on a ledger row) and
@@ -647,6 +654,40 @@ export interface TradeSuggestion {
  *  what's left, not the full amount again. Recorded flows (`flows`: links and
  *  ship routes) are never re-suggested, and neither is their reverse — a good
  *  must not sail both ways between the same two islands. */
+/** Mark the goods an island buys in from outside its own network, after
+ *  applyTrade has settled what the islands move between themselves.
+ *
+ *  A ticked good keeps its row and its numbers — you can still see how deep
+ *  the hole is — but loses its `fix`, which is what the ⚠ Short line, the
+ *  per-island short count and the card's tally all read. Ticking is per
+ *  island: one island's Docklands says nothing about another's larder.
+ *
+ *  `traded` is keyed by island name; matching is case-insensitive on both
+ *  islands and goods, like every other lookup here. */
+export function applyExternalTrade(
+  ledgers: Record<string, LedgerRow[]>,
+  traded: Record<string, string[]>
+): void {
+  const byIsle = new Map<string, Set<string>>();
+  for (const [isle, goods] of Object.entries(traded || {})) {
+    if (!Array.isArray(goods) || !goods.length) continue;
+    byIsle.set(
+      isle.trim().toLowerCase(),
+      new Set(goods.map((g) => String(g).trim().toLowerCase()))
+    );
+  }
+  if (!byIsle.size) return;
+  for (const [isle, rows] of Object.entries(ledgers)) {
+    const set = byIsle.get(isle.trim().toLowerCase());
+    if (!set) continue;
+    for (const r of rows) {
+      if (!set.has(r.name.trim().toLowerCase())) continue;
+      r.traded = true;
+      delete r.fix;
+    }
+  }
+}
+
 export function suggestTrades(
   ledgers: Record<string, LedgerRow[]>,
   flows: TradeFlow[] = []
@@ -663,6 +704,9 @@ export function suggestTrades(
   for (const [isle, rows] of Object.entries(ledgers))
     for (const r of rows) {
       if (Math.abs(r.net) <= 1e-9) continue;
+      // Bought in from off the map: the hole is filled, so it is not a
+      // destination looking for someone's surplus.
+      if (r.traded && r.net < 0) continue;
       let g = perGood.get(r.name);
       if (!g) perGood.set(r.name, (g = { sur: [], def: [] }));
       if (r.net > 0) g.sur.push({ isle, amt: r.net });
