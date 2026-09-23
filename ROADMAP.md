@@ -557,7 +557,7 @@ is in CLAUDE.md.
   the row). The roadmap's manual-routes fallback was already satisfied by
   builds 96–100.
 
-- **The route board** (build 134): "can we have a trade route optimiser? I tend
+- **The route board** (builds 134–135): "can we have a trade route optimiser? I tend
   to get lost with all my trade routes and ships." Scope confirmed in-session
   — the board plus consolidation suggestions, on the Ships tab, with the real
   capacity maths (hulls needed per leg) deliberately NOT built: it needs a
@@ -609,15 +609,38 @@ is in CLAUDE.md.
   `applyTrade` output; `test:fleet` drives the card in jsdom and proves the
   tap-to-open.
 
-  **Still open — the capacity half (slice C), if wanted.** "Do I have enough
-  ships for this run?" needs a leg's round-trip time, which no data source has
-  and only the player can measure once, plus hold sizes for any game beyond
-  1800. With both, a leg's real throughput is `slots × 50 ÷ round-trip
-  minutes` against what the ledger says it needs — "this run is two hulls
-  short", "one Clipper covers it three times over". The board is the
-  groundwork for it: the legs, the hulls and the required t/min are all
-  already computed. It was left out on purpose because it is the only part
-  that asks the user to type something in.
+- **Time a lap, size the run** (build 135): the capacity half, asked for
+  immediately — "yes i will need to be able to add the time in, more or less."
+  A lap time (there, unload, back) is the one number in the whole app nothing
+  can supply: it depends on where two islands sit on YOUR map and on the
+  hull's speed. So it's typed, once, per hull.
+
+  **On the ship, not the leg** — `ShipItem.rt`, in minutes. More accurate (a
+  Clipper and a Cargo Ship do not lap the same run in the same time), more
+  natural to measure (you watch one ship do a lap), and free: riding the
+  fleet's own storage meant sync, saves, backup, export/import and island
+  renames all worked with no store changes, the same dividend PatronBlock got
+  from the pseudo-socket trick. `LapChip` is M13's ⏱ teach chip in a new
+  place — same bargain, same shape — and takes `4`, `4.5` or the game's own
+  `4:30`.
+
+  Then `moves = holds × slotTons ÷ rt` per hull, summed as the run's
+  `capacity` against its `needed` (its goods' t/min). `slotTons` is a new
+  `GameContent` field, 1800's flat 50 t per slot; a game without one does no
+  capacity maths rather than borrowing 1800's number.
+
+  **A shortfall is claimed only when EVERY hull on the run is timed.** A
+  part-timed capacity is a floor, not an answer, and calling a run short
+  because you hadn't got round to timing the second ship is exactly the
+  crying-wolf failure the board was built to avoid; the untimed hulls are
+  named instead and the card asks for their times. Same rule for a timed hull
+  whose type has no slot count — a lap time is no use without a hull size.
+
+  Worth knowing for later: with 50 t a slot, most runs come out *massively*
+  over-capacity ("covered 10× over"), which is the honest answer — in 1800 the
+  binding constraint really is slots and hulls, not tonnage. The number earns
+  its keep by telling you which runs can be merged, and the short verdict
+  fires on the long ones.
 
 - **M6 — backup & restore + phone polish** (build 108, `/m6-backup`): each
   save exports as a JSON file and imports as a NEW save. The wrapper is

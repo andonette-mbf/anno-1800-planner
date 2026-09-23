@@ -342,6 +342,35 @@ check(
 );
 await closeEditorAt(0);
 
+// --- typing a lap time in (build 135) -------------------------------------
+// The one number nothing can tell you: how long Bessie takes to get there,
+// unload and come back. Typed once, in the game's own mm:ss if you like, and
+// the run is sized — a Clipper's 4 slots x 50 t, lapped every 4.5 minutes, is
+// 4 x 50 / 4.5 = 44.44 t/min.
+const lapChip = () => legs()[0].querySelector(".laptime");
+check("an untimed hull asks for a lap", lapChip().textContent.includes("time a lap"), lapChip().textContent);
+await fire(lapChip());
+const lapBox = () => document.querySelector(".laptime input");
+check("it opens a box to type into", !!lapBox());
+await setValue(lapBox(), "4:30");
+await fire([...document.querySelectorAll(".laptime button")].find((b) => b.textContent === "\u2713"));
+check(
+  "4:30 is read as four and a half minutes",
+  stored()[0]?.rt === 4.5,
+  JSON.stringify(stored()[0])
+);
+check(
+  "and the chip now says what the hull shifts",
+  lapChip().textContent.includes("44.44") && lapChip().className.includes("on"),
+  lapChip().textContent
+);
+// Clearing it is how you say the route has changed — back to untimed, not a
+// stale figure left standing.
+await fire(lapChip());
+await fire([...document.querySelectorAll(".laptime button")].find((b) => b.textContent === "\uD83D\uDDD1"));
+check("the bin forgets it", stored()[0]?.rt === undefined, JSON.stringify(stored()[0]));
+check("and the chip goes back to asking", lapChip().textContent.includes("time a lap"), lapChip().textContent);
+
 // --- a name you already own ----------------------------------------------
 await setValue(addRow().querySelectorAll("input")[1], "bessie");
 check(

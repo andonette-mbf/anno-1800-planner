@@ -51,6 +51,8 @@ export type RouteNoteKind =
   | "no-route"
   /** Hulls standing idle while a leg goes uncarried. */
   | "idle"
+  /** The timed hulls on this run can't move what it has to move. */
+  | "short"
   /** IDEA: these ships' cargo fits in one of them. */
   | "merge";
 
@@ -70,6 +72,11 @@ export interface RouteShipRef {
   goods: string[];
   /** Cargo slots for its type, when the game knows the hull. */
   holds?: number;
+  /** Minutes for one lap of the run, as timed in game (build 135). */
+  rt?: number;
+  /** What it can actually shift, t/min — `holds × slotTons ÷ rt`. Needs both
+   *  a known hull and a lap time, so it's absent until the run is timed. */
+  moves?: number;
   /** Position in the stored `ships` array. */
   idx: number;
 }
@@ -91,6 +98,13 @@ export interface RouteLeg {
   goods: RouteGood[];
   ships: RouteShipRef[];
   notes: RouteNote[];
+  /** t/min this run has to shift: its goods' figures added up. */
+  needed: number;
+  /** t/min its timed hulls can shift between them. 0 when none are timed. */
+  capacity: number;
+  /** Hulls on the run with no lap time yet — until this is empty, `capacity`
+   *  is a floor rather than the answer, so nothing is called short. */
+  untimed: string[];
 }
 
 export interface RouteBoard {
@@ -117,6 +131,9 @@ export interface RouteBoardInput {
    *  that isn't in it) means no hold check for that ship, which is the honest
    *  answer for a hull we have no number for. */
   holds?: Record<string, number>;
+  /** Tons one cargo slot holds — `GameContent.slotTons`. Without it (or
+   *  without `holds`) a run can't be sized, and no capacity is worked out. */
+  slotTons?: number;
   /** The `doing` value that means "this is a trader". */
   tradeJob: string;
   /** Statuses that take a ship off the fleet — a sunk trader isn't a route
@@ -185,6 +202,8 @@ function coversItsOwn(
 }
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+/** Tonnages in prose: two decimals at most, and no trailing zeroes. */
+const round = (n: number) => String(Math.round(n * 100) / 100);
 const list = (xs: string[]) =>
   xs.length <= 1
     ? xs.join("")
@@ -197,7 +216,7 @@ const list = (xs: string[]) =>
  *  cargo yet, because a trader that has said where but not what is precisely
  *  the sort of half-finished thing this board exists to surface. */
 export function routeBoard(input: RouteBoardInput): RouteBoard {
-  const { links = [], ships = [], islands = [], ledgers = {}, tradeJob } = input;
+  const { links = [], ships = [], islands = [], ledgers = {}, tradeJob, slotTons } = input;
   const gone = new Set((input.gone || []).map(norm));
   const holds = new Map(Object.entries(input.holds || {}).map(([k, v]) => [norm(k), v]));
   const held = new Map(islands.map((n) => [norm(n), n]));
@@ -262,11 +281,19 @@ export function routeBoard(input: RouteBoardInput): RouteBoard {
     // from/to are filled in, so this ship IS a run whatever its job says.
     const d = leg(s.from!, s.to!);
     const hold = holds.get(norm(s.type));
+    const rt = Number(s.rt) > 0 ? Number(s.rt) : undefined;
+    // What a lap is worth: a full hold, delivered once per lap. Needs the hull
+    // size, the game's tons-per-slot and a lap time — any one missing and the
+    // run simply isn't sized rather than being sized on a guess.
+    const moves =
+      hold !== undefined && rt !== undefined && slotTons ? (hold * slotTons) / rt : undefined;
     d.ships.push({
       name: s.name,
       ...(s.type ? { type: s.type } : {}),
       goods: cargo,
       ...(hold === undefined ? {} : { holds: hold }),
+      ...(rt === undefined ? {} : { rt }),
+      ...(moves === undefined ? {} : { moves }),
       idx,
     });
     for (const g of cargo) addGood(d, g, s.name);
@@ -357,6 +384,37 @@ export function routeBoard(input: RouteBoardInput): RouteBoard {
           } has ${plural(s.holds, "cargo slot")} — a slot holds one good.`,
         });
 
+    // --- is there enough hull on this run? (build 135) -------------------
+    //
+    // `needed` is what the ledger says has to cross: the goods' own figures,
+    // which are already net of everything else moving. `capacity` is a full
+    // hold per lap, per timed hull.
+    //
+    // A shortfall is only CLAIMED when every hull on the run has been timed —
+    // otherwise capacity is a floor, and calling a run short because you
+    // hadn't got round to timing the second ship would be crying wolf. The
+    // untimed ones are reported instead, and the card asks for their times.
+    const needed = goods.reduce((a, g) => a + (g.tpm ?? 0), 0);
+    const capacity = d.ships.reduce((a, sh) => a + (sh.moves ?? 0), 0);
+    const untimed = d.ships.filter((sh) => sh.moves === undefined).map((sh) => sh.name);
+    if (!untimed.length && d.ships.length && needed > EPS && capacity + EPS < needed) {
+      const gap = needed - capacity;
+      // Another hull like the best one already on the run is the concrete
+      // answer — "you need more tonnage" is not something you can act on.
+      const best = [...d.ships].sort((a, b) => (b.moves || 0) - (a.moves || 0))[0];
+      const more = best?.moves ? Math.ceil(gap / best.moves - EPS) : 0;
+      notes.push({
+        kind: "short",
+        text:
+          `This run has to shift ${round(needed)} t/min and its ${
+            d.ships.length === 1 ? "hull moves" : "hulls move"
+          } ${round(capacity)} — ${round(gap)} short.` +
+          (more
+            ? ` ${plural(more, `more ${best.type || "hull"}`, `more ${best.type || "hull"}s`)} would cover it.`
+            : ""),
+      });
+    }
+
     // --- IDEA: one hull could do the lot --------------------------------
     // Only when the numbers say so. Distinct goods across every ship on the
     // leg, against the biggest hold among them: if they fit, the rest of the
@@ -379,7 +437,7 @@ export function routeBoard(input: RouteBoardInput): RouteBoard {
       }
     }
 
-    out.push({ from: d.from, to: d.to, goods, ships: d.ships, notes });
+    out.push({ from: d.from, to: d.to, goods, ships: d.ships, notes, needed, capacity, untimed });
   }
 
   // --- hulls doing nothing while a leg goes uncarried --------------------

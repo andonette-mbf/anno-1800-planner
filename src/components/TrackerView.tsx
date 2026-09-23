@@ -24,7 +24,7 @@ import {
   userRate,
   type UserRecipe,
 } from "@/lib/ledger";
-import { routeBoard, type RouteBoard } from "@/lib/routes";
+import { routeBoard, type RouteBoard, type RouteShipRef } from "@/lib/routes";
 import { planCheck, planSeed } from "@/lib/plancheck";
 import CultureBlock from "./CultureBlock";
 import FertilityBlock from "./FertilityBlock";
@@ -719,6 +719,8 @@ export function TrackerView({
     saveUserRecipe,
     removeUserRecipe,
     setNotes,
+    // The route board records a hull's lap time on the ship itself (build 135).
+    setShip,
   } = useCompanion();
   // Draft in the 🗒 Notes add box, kept while you flip tabs like other drafts.
   const [noteDraft, setNoteDraft] = useState("");
@@ -1052,6 +1054,7 @@ export function TrackerView({
     islands,
     ledgers: allLedgers,
     holds: GAME_CONTENT[game].shipHolds,
+    slotTons: GAME_CONTENT[game].slotTons,
     tradeJob: TRADE_JOB,
     gone: [DESTROYED, DECOMMISSIONED],
   });
@@ -2852,7 +2855,12 @@ export function TrackerView({
       )}
       {section === "ships" && (
         <>
-          <RouteBoardCard board={routes} game={game} onShip={setFocusShip} />
+          <RouteBoardCard
+            board={routes}
+            game={game}
+            onShip={setFocusShip}
+            onTime={(i, rt) => setShip(i, { rt })}
+          />
           <FleetCard
             game={game}
             savedLabel={savedLabel}
@@ -2898,6 +2906,99 @@ const CLEAR = "__none";
 
 /** Job menu, keeping whatever is already stored even if it isn't one of ours —
  *  a ship that carried free text from build 75 shouldn't lose it silently. */
+/** The one number in the app nothing can tell you (build 135): how long a ship
+ *  takes to go there, unload and come back. It depends on where the two islands
+ *  sit on YOUR map and on how fast this hull is, so no wiki, pack or extractor
+ *  has it — you watch a lap once and type it in. "More or less" is the whole
+ *  point: it only has to be close enough to tell one hull from three.
+ *
+ *  Shaped like M13's ⏱ teach chip, because it is the same bargain in the same
+ *  place: a number only the player can see, typed once, after which the app
+ *  can do arithmetic it otherwise can't. Accepts "4", "4.5" or "4:30". */
+function LapChip({
+  ship,
+  onSave,
+}: {
+  ship: RouteShipRef;
+  onSave: (rt: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [v, setV] = useState("");
+  // "4:30" is how the game shows you a time, so take it as well as "4.5".
+  const parse = (raw: string): number | null => {
+    const t = raw.trim();
+    if (!t) return null;
+    const mmss = t.match(/^(\d+):([0-5]?\d)$/);
+    const n = mmss ? Number(mmss[1]) + Number(mmss[2]) / 60 : Number(t);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+  const val = parse(v);
+  const save = () => {
+    if (val === null) return;
+    onSave(val);
+    setOpen(false);
+  };
+  if (!open)
+    return (
+      <button
+        className={"chip schip laptime" + (ship.moves !== undefined ? " on" : "")}
+        title={
+          ship.moves !== undefined
+            ? `${ship.name} laps this run in ${fmt(ship.rt!)} min, so it shifts ${fmt(
+                ship.moves
+              )} t/min. Press to change it.`
+            : ship.holds === undefined
+              ? `Time a lap and this could size the run — but ${
+                  ship.type || "this hull"
+                } isn't one whose cargo slots the app knows, so it can't.`
+              : `How long ${ship.name} takes to get there, unload and come back. Watch one lap — near enough will do.`
+        }
+        onClick={() => {
+          setV(ship.rt ? String(ship.rt) : "");
+          setOpen(true);
+        }}
+      >
+        {ship.moves !== undefined ? `⏱ ${fmt(ship.moves)} t/min` : "⏱ time a lap"}
+      </button>
+    );
+  return (
+    <span className="chip schip on teachform laptime">
+      one lap takes
+      <input
+        placeholder="min"
+        title="Minutes there and back, including loading — 4, 4.5 or 4:30"
+        value={v}
+        autoFocus
+        inputMode="decimal"
+        onChange={(e) => setV(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") save();
+          if (e.key === "Escape") setOpen(false);
+        }}
+        style={{ width: "4em" }}
+      />
+      min
+      <button disabled={val === null} title="Save this lap time" onClick={save}>
+        ✓
+      </button>
+      {ship.rt !== undefined && (
+        <button
+          title="Forget it — the route has changed"
+          onClick={() => {
+            onSave(0);
+            setOpen(false);
+          }}
+        >
+          🗑
+        </button>
+      )}
+      <button title="Never mind" onClick={() => setOpen(false)}>
+        ✕
+      </button>
+    </span>
+  );
+}
+
 // ------------------------------------------------------- the route board
 //
 // Build 133: "can we have a trade route optimiser? I tend to get lost with all
@@ -2915,10 +3016,13 @@ function RouteBoardCard({
   board,
   game,
   onShip,
+  onTime,
 }: {
   board: RouteBoard;
   game: Game;
   onShip: (idx: number) => void;
+  /** Record a hull's lap time (0 forgets it) — build 135. */
+  onTime: (idx: number, rt: number) => void;
 }) {
   // The runs that are fine fold away once anything needs attention — the
   // tidy-tracker rule (build 43): a list you scan for problems shouldn't make
@@ -2981,18 +3085,40 @@ function RouteBoardCard({
                 {l.ships.length > 0 && (
                   <p className="routeships">
                     {l.ships.map((sh) => (
-                      <button
-                        className="chip schip routeship"
-                        key={sh.idx}
-                        title={`Open ${sh.name} in the manifest below${
-                          sh.holds === undefined ? "" : ` — ${sh.type} holds ${sh.holds}`
-                        }`}
-                        onClick={() => onShip(sh.idx)}
-                      >
-                        🚢 {sh.name}
-                        {sh.type && <em>{sh.type}</em>}
-                      </button>
+                      <React.Fragment key={sh.idx}>
+                        <button
+                          className="chip schip routeship"
+                          title={`Open ${sh.name} in the manifest below${
+                            sh.holds === undefined ? "" : ` — ${sh.type} holds ${sh.holds}`
+                          }`}
+                          onClick={() => onShip(sh.idx)}
+                        >
+                          🚢 {sh.name}
+                          {sh.type && <em>{sh.type}</em>}
+                        </button>
+                        {/* Only worth asking for a lap time on a game that can
+                            use one — no tons-per-slot, no arithmetic. */}
+                        {!!GAME_CONTENT[game].slotTons && (
+                          <LapChip ship={sh} onSave={(rt) => onTime(sh.idx, rt)} />
+                        )}
+                      </React.Fragment>
                     ))}
+                  </p>
+                )}
+                {/* What it has to shift against what it can (build 135). Only
+                    once every hull is timed — a part-timed figure is a floor,
+                    and showing it as the answer would read as a shortfall that
+                    isn't there. */}
+                {l.needed > 0 && l.ships.length > 0 && !l.untimed.length && l.capacity > 0 && (
+                  <p className="routecap">
+                    shifts <b>{fmt(l.needed)}</b> t/min · {l.ships.length === 1 ? "hull moves" : "hulls move"}{" "}
+                    <b>{fmt(l.capacity)}</b>
+                    {l.capacity >= l.needed && (
+                      <span className="routespare">
+                        {" "}
+                        — covered {Math.floor(l.capacity / l.needed)}× over
+                      </span>
+                    )}
                   </p>
                 )}
                 {l.notes.map((n, i) => (

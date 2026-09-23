@@ -115,7 +115,7 @@ function Footer({ st }: { st: CalcState }) {
       {/* Each game names its own sources (M12) — see GameContent.credits. */}
       {GAME_CONTENT[datasetFor(st).game].credits}
       <br />
-      <span style={{ opacity: 0.55 }}>build 134 · trade routes in one list</span>
+      <span style={{ opacity: 0.55 }}>build 135 · time a lap, size the run</span>
     </div>
   );
 }

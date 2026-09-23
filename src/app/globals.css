@@ -527,3 +527,11 @@ input,select,.ddbtn{background:var(--bg2)}
 .routeloosenote{margin-top:10px!important}
 /* The "N running fine" fold, same shape as the completed-quests toggle. */
 .foldbtn{margin-top:6px}
+/* Lap times and the capacity line (build 135). The ⏱ chip lights up once the
+   run is timed, the way the ⏱ teach chip does when a recipe is known. */
+.laptime{cursor:pointer;font-size:11px;padding:3px 8px}
+.laptime.teachform{cursor:default;gap:5px}
+.laptime input{width:4em;padding:1px 4px;font-size:11px}
+.routecap{margin:5px 0 0!important;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.routecap b{color:var(--ink)}
+.routespare{color:var(--green)}

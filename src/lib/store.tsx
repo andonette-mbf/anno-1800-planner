@@ -161,6 +161,15 @@ export interface ShipItem {
   // Distinct from cargo: cargo is the hold, these are the crew slots. NOT
   // comma-split like cargo, because item names legitimately contain commas.
   items?: string[];
+  // How long one lap of its route takes, in MINUTES (build 135) — load, sail,
+  // unload, sail back. The one number in the whole app that no data source
+  // has: it depends on the distance between two islands on your map and on
+  // this hull's speed, so it can only be watched once in game and typed in.
+  // Kept on the SHIP rather than on the leg for both those reasons — a Clipper
+  // and a Cargo Ship do not lap the same run in the same time — and because
+  // riding the fleet's own storage buys sync, saves, backup and island renames
+  // with no store changes at all. Absent = never timed.
+  rt?: number;
 }
 
 /** One good flowing between two islands (build 96): ticked on a surplus row
@@ -262,6 +271,7 @@ function parseShips(raw: unknown): ShipItem[] {
         to?: unknown;
         cargo?: unknown;
         items?: unknown;
+        rt?: unknown;
       };
       const name = String(o?.name ?? "").trim();
       const type = String(o?.type ?? "").trim();
@@ -273,6 +283,10 @@ function parseShips(raw: unknown): ShipItem[] {
       // Socketed items (M11b): trim + dedupe only — no comma splitting, since
       // item names contain commas ("Dario, the Vintner" would shear in two).
       const items = parseBlockers(o?.items);
+      // A lap time is minutes and must be a real positive number — anything
+      // else (a blank box, a stray string, an infinity) is "never timed".
+      const rtRaw = Number(o?.rt);
+      const rt = Number.isFinite(rtRaw) && rtRaw > 0 ? rtRaw : 0;
       return {
         name,
         ...(type ? { type } : {}),
@@ -282,6 +296,7 @@ function parseShips(raw: unknown): ShipItem[] {
         ...(to ? { to } : {}),
         ...(cargo.length ? { cargo } : {}),
         ...(items.length ? { items } : {}),
+        ...(rt ? { rt } : {}),
       };
     })
     .filter((s) => s.name);
@@ -1921,6 +1936,14 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             const it = parseBlockers(patch.items);
             if (it.length) next.items = it;
             else delete next.items;
+          }
+          // The lap time (build 135): a number, or gone. Clearing it is how you
+          // say "I timed this and now the route has changed" — the run goes
+          // back to being untimed rather than keeping a stale figure.
+          if ("rt" in patch) {
+            const v = Number(patch.rt);
+            if (Number.isFinite(v) && v > 0) next.rt = v;
+            else delete next.rt;
           }
           return { ...d, ships: ships.map((s, j) => (j === i ? next : s)) };
         }),

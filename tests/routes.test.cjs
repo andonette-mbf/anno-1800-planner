@@ -66,7 +66,7 @@ function settle(isles, flows) {
 }
 
 /** The board, with the fleet's own defaults filled in. */
-function board({ isles, links = [], ships = [], islands, holds = HOLDS }) {
+function board({ isles, links = [], ships = [], islands, holds = HOLDS, slotTons = 50 }) {
   const flows = [
     ...links,
     ...ships.flatMap((s) =>
@@ -81,6 +81,7 @@ function board({ isles, links = [], ships = [], islands, holds = HOLDS }) {
     islands: islands || Object.keys(isles),
     ledgers: settle(isles, flows),
     holds,
+    slotTons,
     tradeJob: TRADE,
     gone: ["Destroyed", "Decommissioned"],
   });
@@ -362,6 +363,94 @@ const hasKind = (leg, k) => !!leg && leg.notes.some((n) => n.kind === k);
     fail("an unmeasurable leg is not a leg measured at zero");
   if (leg && leg.goods[0].tpm !== undefined) fail("no ledger means no figure");
   ok("empty — an island you don't hold has no figure, which is not a zero");
+}
+
+// --- enough hull for the job? (build 135) ------------------------------------
+//
+// A lap delivers one full hold: slots x 50 t. So a 4-slot Clipper lapping in
+// 5 minutes moves 4 x 50 / 5 = 40 t/min, against the 4 t/min of Wood this run
+// has to shift — comfortable, and nothing to say.
+{
+  const b = board({
+    isles: { Woodhaven: ["Lumberjack's Hut"], Millport: ["Sawmill"] },
+    links: [{ good: "Wood", from: "Woodhaven", to: "Millport" }],
+    ships: [
+      { name: "Pelican", type: "Clipper", doing: TRADE, from: "Woodhaven", to: "Millport", cargo: ["Wood"], rt: 5 },
+    ],
+  });
+  const leg = legOf(b, "Woodhaven", "Millport");
+  if (!leg || !near(leg.needed, 4)) fail(`the run has to shift 4 t/min, got ${leg && leg.needed}`);
+  if (!near(leg.capacity, 40)) fail(`4 slots x 50 t / 5 min = 40 t/min, got ${leg.capacity}`);
+  if (!near(leg.ships[0].moves, 40)) fail(`the hull's own figure: ${leg.ships[0].moves}`);
+  if (leg.untimed.length) fail(`the hull IS timed: ${JSON.stringify(leg.untimed)}`);
+  if (hasKind(leg, "short")) fail("40 t/min of hull against 4 t/min of cargo is not short");
+  ok("capacity — a timed Clipper moves 40 t/min, ten times what the run needs");
+}
+{
+  // The same run with a 60-minute lap: 4 x 50 / 60 = 3.33 t/min against 4, so
+  // it is 0.67 short, and one more Clipper (another 3.33) covers it.
+  const b = board({
+    isles: { Woodhaven: ["Lumberjack's Hut"], Millport: ["Sawmill"] },
+    links: [{ good: "Wood", from: "Woodhaven", to: "Millport" }],
+    ships: [
+      { name: "Pelican", type: "Clipper", doing: TRADE, from: "Woodhaven", to: "Millport", cargo: ["Wood"], rt: 60 },
+    ],
+  });
+  const leg = legOf(b, "Woodhaven", "Millport");
+  const note = leg && leg.notes.find((n) => n.kind === "short");
+  if (!note) fail(`3.33 t/min of hull against 4 t/min of cargo is short: ${JSON.stringify(kinds(leg))}`);
+  else if (!note.text.includes("0.67 short") || !note.text.includes("1 more Clipper"))
+    fail(`the note should say how short and what would fix it: ${note.text}`);
+  ok("capacity — a slow lap is called short, and priced in more hulls");
+}
+{
+  // Two hulls on the run, only one timed: capacity is then a FLOOR, not the
+  // answer, so nothing is called short — the untimed hull is reported instead.
+  // (A 60-minute Clipper alone would be short; the Kestrel might well cover it.)
+  const b = board({
+    isles: { Woodhaven: ["Lumberjack's Hut"], Millport: ["Sawmill"] },
+    links: [{ good: "Wood", from: "Woodhaven", to: "Millport" }],
+    ships: [
+      { name: "Pelican", type: "Clipper", doing: TRADE, from: "Woodhaven", to: "Millport", cargo: ["Wood"], rt: 60 },
+      { name: "Kestrel", type: "Schooner", doing: TRADE, from: "Woodhaven", to: "Millport", cargo: ["Wood"] },
+    ],
+  });
+  const leg = legOf(b, "Woodhaven", "Millport");
+  if (hasKind(leg, "short")) fail("a part-timed run must not be called short");
+  if (leg.untimed.join() !== "Kestrel") fail(`the untimed hull is named: ${JSON.stringify(leg.untimed)}`);
+  ok("capacity — a run with an untimed hull is never called short, just unfinished");
+}
+{
+  // A timed hull we have no slot count for can't be sized either.
+  const b = board({
+    isles: { Woodhaven: ["Lumberjack's Hut"], Millport: ["Sawmill"] },
+    links: [{ good: "Wood", from: "Woodhaven", to: "Millport" }],
+    ships: [
+      { name: "Nimbus", type: "Airship", doing: TRADE, from: "Woodhaven", to: "Millport", cargo: ["Wood"], rt: 2 },
+    ],
+  });
+  const leg = legOf(b, "Woodhaven", "Millport");
+  if (leg.capacity !== 0 || leg.untimed.join() !== "Nimbus")
+    fail(`a timed hull of unknown size is still unsized: ${JSON.stringify(leg)}`);
+  if (hasKind(leg, "short")) fail("an unsized hull must not produce a verdict");
+  ok("capacity — a lap time is no use without a hull size");
+}
+{
+  // A game with no tons-per-slot (every game but 1800 today) does no capacity
+  // maths at all rather than borrowing 1800's 50.
+  const b = board({
+    isles: { Woodhaven: ["Lumberjack's Hut"], Millport: ["Sawmill"] },
+    links: [{ good: "Wood", from: "Woodhaven", to: "Millport" }],
+    ships: [
+      { name: "Pelican", type: "Clipper", doing: TRADE, from: "Woodhaven", to: "Millport", cargo: ["Wood"], rt: 60 },
+    ],
+    // null, not undefined — a destructuring default would put 50 back.
+    slotTons: null,
+  });
+  const leg = legOf(b, "Woodhaven", "Millport");
+  if (leg.capacity !== 0 || hasKind(leg, "short"))
+    fail(`no tons-per-slot means no sizing: ${JSON.stringify(leg.notes)}`);
+  ok("capacity — a game with no tons-per-slot is left out of the maths");
 }
 
 // --- an end of the leg that isn't yours --------------------------------------

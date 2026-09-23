@@ -95,6 +95,11 @@ export interface GameContent {
    *  listed — "Airship", which is six different hulls from 4 to 8 slots, or
    *  anything free-typed — simply gets no check rather than a guessed one. */
   shipHolds?: Record<string, number>;
+  /** Tons one cargo slot holds (build 135), for working out what a timed run
+   *  can actually move: `slots × slotTons ÷ lap minutes` = t/min. 1800's is
+   *  the wiki's flat 50 t per slot. Absent alongside `shipHolds` means the
+   *  game can't do the capacity maths, and the board simply doesn't offer it. */
+  slotTons?: number;
 }
 
 const ANNO1800: GameContent = {
@@ -217,6 +222,10 @@ const ANNO1800: GameContent = {
     Pegasus: 5,
     Zephyr: 8,
   },
+  // "each of them can store one item or up to 50 tons of a single type of
+  // goods" — Anno 1800 Wiki, Ships. The Oil Tanker is the game's one
+  // exception and isn't a hull anyone runs a mixed route with.
+  slotTons: 50,
 };
 
 // 117's regions are the two sessions, and the dataset stores them as a bitmask
