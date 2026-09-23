@@ -535,3 +535,6 @@ input,select,.ddbtn{background:var(--bg2)}
 .routecap{margin:5px 0 0!important;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 .routecap b{color:var(--ink)}
 .routespare{color:var(--green)}
+/* Construction materials on a run (build 137) read quieter than the goods
+   residents eat — a late brick costs you time, a late loaf costs you people. */
+.routegoods .routewait{opacity:.68}

@@ -3068,12 +3068,25 @@ function RouteBoardCard({
                   <p className="routegoods">
                     {l.goods.map((g) => (
                       <span
-                        className={"chip schip cargochip" + (g.ships.length ? "" : " routeloose")}
+                        className={
+                          "chip schip cargochip" +
+                          (g.ships.length ? "" : " routeloose") +
+                          // Construction materials read quieter (build 137):
+                          // a late brick costs time, a late loaf costs people.
+                          (g.urgency === "build" ? " routewait" : "")
+                        }
                         key={g.good}
                         title={
-                          g.ships.length
+                          (g.catLbl
+                            ? `A ${g.catLbl} at ${l.to} — residents eat it. `
+                            : g.urgency === "build"
+                              ? `Construction material — nobody eats it, so it can wait. `
+                              : g.urgency === "industry"
+                                ? `Feeds a factory at ${l.to}. `
+                                : "") +
+                          (g.ships.length
                             ? `Carried by ${g.ships.join(", ")}`
-                            : "Linked, but no ship on this run is carrying it"
+                            : "Linked, but no ship on this run is carrying it")
                         }
                       >
                         <GoodIcon name={g.good} game={game} />

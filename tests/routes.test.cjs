@@ -321,6 +321,91 @@ const hasKind = (leg, k) => !!leg && leg.notes.some((n) => n.kind === k);
   ok("overloaded — an unknown hull is left alone, not guessed at");
 }
 
+// --- needs vs things that can wait (build 137) -------------------------------
+//
+// From data.json: Bread and Work Clothes are population NEEDS, Beer is a WANT,
+// and Timber, Bricks and Windows are finals no resident eats — construction
+// materials. The urgency is read off the DESTINATION's row, because that is
+// the end that cares what the good is for.
+{
+  const b = board({
+    isles: {
+      Yard: ["Lumberjack's Hut", "Lumberjack's Hut", "Sawmill", "Grain Farm", "Bakery"],
+      Town: ["Fishery"],
+    },
+    ships: [
+      { name: "Mule", type: "Schooner", doing: TRADE, from: "Yard", to: "Town", cargo: ["Timber", "Bread"] },
+    ],
+  });
+  const leg = legOf(b, "Yard", "Town");
+  const bread = leg && leg.goods.find((g) => g.good === "Bread");
+  const timber = leg && leg.goods.find((g) => g.good === "Timber");
+  if (!bread || bread.urgency !== "pop" || bread.catLbl !== "need")
+    fail(`Bread is a population need: ${JSON.stringify(bread)}`);
+  if (!timber || timber.urgency !== "build")
+    fail(`Timber is a construction material, eaten by nobody: ${JSON.stringify(timber)}`);
+  ok("urgency — Bread reads as a need, Timber as construction");
+}
+{
+  // Over on slots: the good to drop is the least urgent one aboard. Three
+  // goods in a 2-slot Schooner, and Bricks is the one nobody eats.
+  const b = board({
+    isles: {
+      Yard: ["Lumberjack's Hut", "Sawmill", "Grain Farm", "Bakery", "Clay Pit", "Brick Factory"],
+      Town: ["Fishery"],
+    },
+    ships: [
+      {
+        name: "Mule",
+        type: "Schooner",
+        doing: TRADE,
+        from: "Yard",
+        to: "Town",
+        cargo: ["Bread", "Bricks", "Timber"],
+      },
+    ],
+  });
+  const leg = legOf(b, "Yard", "Town");
+  const note = leg && leg.notes.find((n) => n.kind === "overloaded");
+  if (!note) fail(`3 goods in 2 slots: ${JSON.stringify(kinds(leg))}`);
+  else if (!/Drop \w+ \(construction\)\.$/.test(note.text) || note.text.includes("Bread ("))
+    fail(`it should name a construction good to drop, never the Bread: ${note.text}`);
+  ok("overloaded — the good it tells you to drop is the one nobody eats");
+}
+{
+  // A run that is short on construction materials only is still short, but it
+  // costs you time rather than population — and the note says exactly that
+  // instead of reading like an emergency.
+  const b = board({
+    isles: { Yard: ["Lumberjack's Hut", "Sawmill"], Town: ["Carpenter"] },
+    links: [{ good: "Timber", from: "Yard", to: "Town" }],
+    ships: [
+      { name: "Mule", type: "Schooner", doing: TRADE, from: "Yard", to: "Town", cargo: ["Timber"], rt: 600 },
+    ],
+  });
+  const leg = legOf(b, "Yard", "Town");
+  const note = leg && leg.notes.find((n) => n.kind === "short");
+  if (!note) fail(`a 600-minute lap cannot keep up: ${JSON.stringify(kinds(leg))}`);
+  else if (!note.text.includes("slower building rather than unhappy residents"))
+    fail(`a construction-only shortfall should say what it really costs: ${note.text}`);
+  ok("short — a construction-only shortfall is time lost, not population");
+}
+{
+  // With a need on the same run, the note names it instead: that IS the thing
+  // at stake, and it must not be buried.
+  const b = board({
+    isles: { Yard: ["Grain Farm", "Bakery"], Town: ["Fishery"] },
+    ships: [
+      { name: "Mule", type: "Schooner", doing: TRADE, from: "Yard", to: "Town", cargo: ["Bread"], rt: 600 },
+    ],
+  });
+  const leg = legOf(b, "Yard", "Town");
+  const note = leg && leg.notes.find((n) => n.kind === "short");
+  if (!note || !note.text.includes("Bread (a need) is on it"))
+    fail(`the need at stake should be named: ${note && note.text}`);
+  ok("short — a need on the run is named as what's at stake");
+}
+
 // --- the destination makes its own now --------------------------------------
 //
 // Fishlea sends Fish to Pantry, which has a Fishery of its own (+2, using

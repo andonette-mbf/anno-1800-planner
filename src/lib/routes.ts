@@ -88,6 +88,15 @@ export interface RouteGood {
   /** t/min actually moving, read off the source row's `exp` — absent when the
    *  source has no ledger (an island you don't hold) or nothing was spare. */
   tpm?: number;
+  /** What the destination wants it FOR (build 137). `pop` is a good residents
+   *  eat, ranked by the game's own category (1800 need < want < lifestyle,
+   *  117's supply bands); `industry` feeds factories there; `build` is a
+   *  construction material — the one kind whose lateness costs time rather
+   *  than population. Unknown on a packless game, and on an island you don't
+   *  hold, where there is no ledger to ask. */
+  urgency?: "pop" | "industry" | "build";
+  /** The game's own word for a `pop` good's category — "need", "want", … */
+  catLbl?: string;
   /** Recorded as a ticked link on the source's ledger row. */
   linked: boolean;
   /** Names of the ships carrying it on this leg. */
@@ -206,6 +215,51 @@ function coversItsOwn(
   return local > EPS && local - r.used >= -EPS;
 }
 
+/** What the far end wants a good FOR, read off ITS row — the destination is
+ *  the end that cares. A good residents eat is `pop`; a final nobody eats is a
+ *  construction material; anything else feeds a factory there.
+ *
+ *  `rank` orders urgency for advice: population goods first, by the game's own
+ *  category (a need above a want), then industry, then construction last. That
+ *  last place is the whole point — a building that waits costs time, a
+ *  resident that goes without costs population. */
+function urgencyOf(
+  ledgers: Record<string, LedgerRow[]>,
+  isle: string,
+  good: string,
+  /** Where to look if the destination's row can't say — see below. */
+  fallback?: string
+): { urgency: RouteGood["urgency"]; catLbl?: string; rank: number } {
+  // A good's nature is the good's, not the island's — Bread is a need
+  // wherever it lands. That matters here because a row created purely by an
+  // arrival (`ensureRow` in applyTrade, for a good the destination neither
+  // makes nor uses) carries no classification at all, which is exactly the
+  // case a trade run is most likely to be. The source made the thing, so its
+  // row knows what it is; fall back to that rather than shrugging.
+  const r =
+    pickClassified(rowOf(ledgers, isle, good)) ??
+    (fallback ? pickClassified(rowOf(ledgers, fallback, good)) : undefined);
+  if (!r) return { urgency: undefined, rank: 50 };
+  if (r.cat !== undefined)
+    return {
+      urgency: "pop",
+      ...(r.catLbl ? { catLbl: r.catLbl } : {}),
+      // Categories are small integers in both packs, so they slot in ahead of
+      // everything else without colliding.
+      rank: r.cat,
+    };
+  if (r.final) return { urgency: "build", rank: 90 };
+  return { urgency: "industry", rank: 60 };
+}
+
+/** A row only speaks for a good's nature if it actually says something. */
+const pickClassified = (r: LedgerRow | undefined) =>
+  r && (r.cat !== undefined || r.final) ? r : undefined;
+
+/** "Beer (a need)" — how a good is named when urgency is the point. */
+const withCat = (g: RouteGood) =>
+  g.catLbl ? `${g.good} (a ${g.catLbl})` : g.urgency === "build" ? `${g.good} (construction)` : g.good;
+
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 /** Tonnages in prose: two decimals at most, and no trailing zeroes. */
 const round = (n: number) => String(Math.round(n * 100) / 100);
@@ -315,13 +369,28 @@ export function routeBoard(input: RouteBoardInput): RouteBoard {
       .sort((a, b) => a.good.localeCompare(b.good))
       .map((g) => {
         const tpm = movedOn(ledgers, d.from, g.good, d.to);
+        const u = urgencyOf(ledgers, d.to, g.good, d.from);
         return {
           good: g.good,
           ...(tpm === undefined ? {} : { tpm }),
+          ...(u.urgency ? { urgency: u.urgency } : {}),
+          ...(u.catLbl ? { catLbl: u.catLbl } : {}),
           linked: g.linked,
           ships: g.ships,
         };
       });
+
+    // Goods worst-first by urgency (build 137), for the notes that have to
+    // choose between them: what to drop when the hold is too small, and what
+    // is really at stake when the run can't keep up. A–Z within a rank, so the
+    // advice is stable.
+    const byUrgency = [...goods].sort(
+      (a, b) =>
+        urgencyOf(ledgers, d.to, a.good, d.from).rank -
+          urgencyOf(ledgers, d.to, b.good, d.from).rank ||
+        a.good.localeCompare(b.good)
+    );
+    const dispensable = [...byUrgency].reverse();
 
     // --- an end that isn't yours any more -------------------------------
     const lost = [d.from, d.to].filter((n) => !held.has(norm(n)));
@@ -385,13 +454,24 @@ export function routeBoard(input: RouteBoardInput): RouteBoard {
 
     // --- more goods than slots ------------------------------------------
     for (const s of d.ships)
-      if (s.holds !== undefined && s.goods.length > s.holds)
+      if (s.holds !== undefined && s.goods.length > s.holds) {
+        // Which to drop: the least urgent goods aboard, as many as it is over
+        // by. A good moving nothing goes first whatever it is — dropping that
+        // costs nothing at all.
+        const aboard = dispensable.filter((g) => g.ships.includes(s.name));
+        const cut = [
+          ...aboard.filter((g) => g.tpm !== undefined && g.tpm <= EPS),
+          ...aboard.filter((g) => !(g.tpm !== undefined && g.tpm <= EPS)),
+        ].slice(0, s.goods.length - s.holds);
         notes.push({
           kind: "overloaded",
-          text: `${s.name} carries ${plural(s.goods.length, "good")} but ${
-            s.type
-          } has ${plural(s.holds, "cargo slot")} — a slot holds one good.`,
+          text:
+            `${s.name} carries ${plural(s.goods.length, "good")} but ${
+              s.type
+            } has ${plural(s.holds, "cargo slot")} — a slot holds one good.` +
+            (cut.length ? ` Drop ${list(cut.map(withCat))}.` : ""),
         });
+      }
 
     // --- is there enough hull on this run? (build 135) -------------------
     //
@@ -412,6 +492,17 @@ export function routeBoard(input: RouteBoardInput): RouteBoard {
       // answer — "you need more tonnage" is not something you can act on.
       const best = [...d.ships].sort((a, b) => (b.moves || 0) - (a.moves || 0))[0];
       const more = best?.moves ? Math.ceil(gap / best.moves - EPS) : 0;
+      // What a shortfall actually costs depends on what is on the run. Goods
+      // residents eat hurt the population; a late construction material only
+      // slows building down. Saying which it is stops the board treating a
+      // stalled brick run as an emergency — and stops it burying a real one.
+      const popGoods = byUrgency.filter((g) => g.urgency === "pop");
+      const stake = popGoods.length
+        ? ` ${list(popGoods.map(withCat))} ${popGoods.length === 1 ? "is" : "are"} on it.`
+        : byUrgency.some((g) => g.urgency === "build") &&
+            byUrgency.every((g) => g.urgency !== "pop")
+          ? " Nothing here is a population good, so this is slower building rather than unhappy residents."
+          : "";
       notes.push({
         kind: "short",
         text:
@@ -420,7 +511,8 @@ export function routeBoard(input: RouteBoardInput): RouteBoard {
           } ${round(capacity)} — ${round(gap)} short.` +
           (more
             ? ` ${plural(more, `more ${best.type || "hull"}`, `more ${best.type || "hull"}s`)} would cover it.`
-            : ""),
+            : "") +
+          stake,
       });
     }
 

@@ -673,6 +673,41 @@ is in CLAUDE.md.
   that is correct — with 50 t to a slot the binding constraint in 1800 is
   slots and hulls, not tonnage.
 
+- **Needs first, bricks can wait** (build 137): "it depends on the nature of
+  goods of course, some are needs, where construction material can wait it
+  doesn't affect the population." Right, and it is the missing dimension in
+  every piece of advice the board gives when it has to CHOOSE between goods.
+
+  **No new data in either game.** Both packs already expose `goodCat` through
+  the `Dataset` seam (1800's need/want/lifestyle, 117's four supply bands),
+  and the split that matters falls straight out of it against `isFinal`:
+  `cat` set means residents eat it; `final` with no `cat` is a construction
+  material (Timber, Bricks, Steel Beams, Windows, Sails, Weapons); neither is
+  a chain intermediate (Wood, Coal, Steel). So the ledger gained
+  `LedgerRow.cat`/`catLbl` from a new `Index.goodCat`/`catLabel`, keyed by
+  DISPLAY name like `finals` are, since regional twins agree on it.
+
+  `urgencyOf` ranks pop goods (by the game's own category — a need above a
+  want) over industry over construction. It reads the DESTINATION's row —
+  that is the end that cares — but **falls back to the source's**, because a
+  row created purely by an arrival (`ensureRow` in applyTrade, for a good the
+  far end neither makes nor uses) carries no classification at all, and that
+  is the single most likely shape for a trade run. A good's nature is the
+  good's, not the island's.
+
+  What changed on screen: the **overloaded** note now names which good to drop
+  (least urgent, with anything moving 0 t/min going first — dropping that
+  costs nothing at all), and the **short** note names the population goods at
+  stake, or, when there are none, says the quiet part: "nothing here is a
+  population good, so this is slower building rather than unhappy residents."
+  Construction goods also render a little quieter on the run. A packless game
+  classifies nothing rather than guessing.
+
+  The three findings now chain into one course of action, e.g. on a
+  Brickworth → Ditchwater run: Ditchwater already makes its own Timber · so
+  drop Timber (construction) from the overloaded Schooner · and what the
+  shortfall really threatens is the Bread.
+
 - **M6 — backup & restore + phone polish** (build 108, `/m6-backup`): each
   save exports as a JSON file and imports as a NEW save. The wrapper is
   `{app: "anno-planner", version: 1, game, name, exportedAt, data}` with

@@ -24,7 +24,7 @@
 // one, and that is a fact about the building. Its Coal fuel has no 1800
 // counterpart: a fuel-burning building eats Coal per minute of RUN time whatever
 // it makes, so it is a consumption edge of its own rather than a rate modifier.
-import { GOODS, SILO, SILO_FEED } from "./data";
+import { CATLBL, GOODCAT, GOODS, SILO, SILO_FEED } from "./data";
 import { DATASETS, type Dataset, type DatasetState } from "./dataset";
 import { DEFAULT_STATE, popTargets, type CalcState } from "./engine";
 import { GAMES, GAME_CONTENT, type Game } from "./games";
@@ -66,6 +66,17 @@ interface Index {
   /** Is this good an end product (it has a pop tier: a need, want or
    *  construction material) rather than a chain intermediate? */
   finalGood: (goodId: string) => boolean;
+  /** What residents want this good FOR, by DISPLAY name (build 137) — 1800's
+   *  need/want/lifestyle, 117's four supply bands, lowest any tier assigns.
+   *  Null means no resident eats it, which together with `finalGood` is the
+   *  whole distinction: final and uneaten is a construction material, which
+   *  can wait; uneaten and not final is a chain intermediate.
+   *
+   *  Keyed by name rather than id for the same reason `finals` is — rows merge
+   *  regional twins (wood/wood_nw are both "Wood"), and twins agree on this. */
+  goodCat: (name: string) => number | null;
+  /** That category in words, for saying so out loud. */
+  catLabel: (cat: number) => string;
   /** t/min of feed one fitted silo eats. */
   siloFeedRate: number;
   /** Good every fuel-burning building consumes, or null (1800 has none — its
@@ -78,8 +89,30 @@ interface Index {
 
 type IndexCore = Omit<
   Index,
-  "goodName" | "finalGood" | "siloFeedRate" | "fuelGood" | "fuelPerMin" | "options"
+  | "goodName"
+  | "finalGood"
+  | "goodCat"
+  | "catLabel"
+  | "siloFeedRate"
+  | "fuelGood"
+  | "fuelPerMin"
+  | "options"
 >;
+
+/** name -> lowest category any tier puts the good in, over a whole pack. */
+function catsByName(
+  goods: Record<string, { name: string }>,
+  goodCat: Record<string, number>
+): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const id in goodCat) {
+    const nm = goods[id]?.name;
+    if (!nm) continue;
+    const cur = out.get(nm);
+    out.set(nm, cur === undefined ? goodCat[id] : Math.min(cur, goodCat[id]));
+  }
+  return out;
+}
 
 function emptyIndex(): IndexCore {
   return {
@@ -203,6 +236,8 @@ function build1800(): Index {
     ...ix,
     goodName: (id) => GOODS[id]?.name ?? id,
     finalGood: (id) => !!GOODS[id]?.isFinal,
+    goodCat: ((cats) => (nm: string) => cats.get(nm) ?? null)(catsByName(GOODS, GOODCAT)),
+    catLabel: (c) => CATLBL[c]?.[0] ?? "",
     siloFeedRate: SILO_FEED,
     fuelGood: null,
     fuelPerMin: 0,
@@ -285,6 +320,8 @@ function buildFromDataset(D: Dataset): Index {
     ...ix,
     goodName: (id) => D.goods[id]?.name ?? id,
     finalGood: (id) => !!D.goods[id]?.isFinal,
+    goodCat: ((cats) => (nm: string) => cats.get(nm) ?? null)(catsByName(D.goods, D.goodCat)),
+    catLabel: (c) => D.catLabels[c]?.[0] ?? "",
     siloFeedRate: D.siloFeedRate,
     fuelGood: D.fuelGood,
     fuelPerMin: D.fuelPerMin,
@@ -361,6 +398,10 @@ function buildTaught(game: Game, rows: UserRecipe[]): Index {
     ...ixc,
     goodName: (id) => id,
     finalGood: () => false,
+    // A taught game has no population tables, so nothing can be said about
+    // what a good is FOR — and a guess would be worse than silence.
+    goodCat: () => null,
+    catLabel: () => "",
     siloFeedRate: 0,
     fuelGood: null,
     fuelPerMin: 0,
@@ -481,6 +522,14 @@ export interface LedgerRow {
   // `used`), so net keeps meaning makes − uses.
   imp?: { from: string; tpm: number }[];
   exp?: { to: string; tpm: number }[];
+  // What residents want it for (build 137): 1800's need/want/lifestyle, 117's
+  // supply band — lowest any tier assigns. Absent means no resident eats it,
+  // which is the distinction that matters when a run can't carry everything:
+  // `final` without `cat` is a construction material, and a building that
+  // waits costs you time, not population.
+  cat?: number;
+  /** That category in this game's own words ("need", "want", "basic"…). */
+  catLbl?: string;
   // Bought in from off the map (build 132) — a Docklands contract or any
   // supply that isn't one of the player's own islands. Set by
   // applyExternalTrade from the island's ticked goods: the deficit is
@@ -856,6 +905,12 @@ export function islandLedger(
       const row: LedgerRow = { name, produced: p, used: u, net: p - u };
       if (resUse[name]) row.res = resUse[name];
       if (finals.has(name)) row.final = true;
+      const cat = I.goodCat(name);
+      if (cat !== null) {
+        row.cat = cat;
+        const lbl = I.catLabel(cat);
+        if (lbl) row.catLbl = lbl;
+      }
       if (row.net < -1e-9) row.fix = priceFix(I, name, region, u - p);
       return row;
     });
