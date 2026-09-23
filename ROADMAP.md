@@ -579,6 +579,26 @@ is in CLAUDE.md.
   which double as the site's first favicon. Deliberately no service worker:
   installability no longer needs one and the app is localStorage-first.
 
+- **Inventory rows read as a list** (build 133): "can the inventory show like
+  the ship and island menu do" — the build-81 treatment, applied to the island
+  checklist. A line was carrying up to seven controls at all times (tick, silo
+  counter, ⚡/⛽ counter, ⏸, teach chip, −/＋, ✕); now it is
+  `[✓] 🐑 Sheep Farm ×3 · silos 2/3 · ⏸ · ✎` and the rest waits behind ✎, with
+  ✓ Done to shut it. What stays out is what you reach for **mid-session**: the
+  tick, which is the row's whole job, and ⏸, which you press the moment you
+  switch a building off in game — the same call build 87 made keeping ☠ on a
+  ship row. The modules read as plain words when shut, and only when something
+  is actually fitted, so an ordinary row says nothing rather than showing two
+  empty counters; pressing those words is a second way in. The ⏱ teach chip
+  also stays out, but only in the packless games that have one — there it is
+  the row's whole point and nothing else sits beside it.
+  Two things the test pins. The open row is held as **island + STORED
+  position**, so the A→Z sort — which reorders rows on screen only — can never
+  point it at a different building (the lesson build 82 learnt on the fleet),
+  and ✕ clears it rather than leaving the next building open in its place. One
+  row at a time across the whole card, and not persisted: an open row is
+  something you are in the middle of, not a setting.
+
 ## Next (order confirmed with the user Aug 2026 — M7 → M10 (Anno 117
 ## switcher) → M8 → M9, M6 slots anywhere as a low-risk session; 117 goes
 ## before M8/M9 so residents + trade routes land per-game, not 1800-shaped)

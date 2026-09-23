@@ -208,6 +208,12 @@ button.trchip:hover{color:var(--ink);border-color:var(--ink)}
    and the ▶ resume button carries the accent so it's findable. */
 .questrow.off{border-style:dashed;background:var(--panel2)}
 .questrow.off .qmain>span{opacity:.55;font-style:italic;text-decoration:none}
+/* Compact inventory rows (build 133). Shut, a line's modules are plain words
+   the same weight as a ship's job; open, the counters come back. */
+.invmods{background:0 0;border:0;padding:0;font:inherit;font-size:12px;color:var(--muted);white-space:nowrap;cursor:pointer}
+.invmods:hover{color:var(--gold)}
+.questrow.invopen{border-left-width:3px}
+.questrow .shipdone{font-size:11px}
 .qoff{font-size:12px}
 .qoff.on{color:var(--gold2);opacity:1}
 .questrow.waiting{border-style:dashed;background:var(--panel2);flex-wrap:wrap}

@@ -1107,6 +1107,13 @@ export function TrackerView({
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 0);
   };
+  // Which inventory row has its controls out (build 133), by island and
+  // STORED position — so the A–Z sort, which reorders the rows on screen only,
+  // can never point it at a different building. One row at a time across the
+  // whole card, the way the fleet does it: the point is that the list reads as
+  // a list. Not persisted — an open row is a thing you're in the middle of,
+  // not a setting.
+  const [editItem, setEditItem] = useState<{ isle: string; i: number } | null>(null);
   // Tucked checklists (build 98) — same shape as the fold above, its own key:
   // the island stays open, only its item rows collapse, leaving the ledger.
   const [isleTuck, setIsleTuck] = useState<Record<string, boolean>>({});
@@ -2141,63 +2148,85 @@ export function TrackerView({
                         .map((c, i) => ({ c, i }))
                         .sort((a, b) => a.c.t.localeCompare(b.c.t))
                     : items.map((c, i) => ({ c, i }))
-                  ).map(({ c, i }) => (
-                    <div
-                      className={
-                        "plitem questrow" + (c.done ? (c.off ? " off" : "") : " gap")
-                      }
-                      key={`${i}:${c.t}`}
-                    >
-                      <label className="qmain" title="Press to toggle">
-                        <input
-                          type="checkbox"
-                          checked={c.done}
-                          onChange={(e) => toggleIslandCheck(name, i, e.target.checked)}
-                        />
-                        <span style={{ flex: 1 }}>
-                          <GoodIcon name={iconGoodName(c.t, game)} game={game} />
-                          {c.t}
-                          {(c.n || 1) > 1 && <b> ×{c.n}</b>}
-                        </span>
-                      </label>
-                      {siloCapable(c.t, game) &&
-                        (() => {
-                          const nb = c.n || 1;
-                          const sc = Math.min(c.s || 0, nb);
-                          return (
-                            <ModChip
-                              n={nb}
-                              count={sc}
-                              unit="silo"
-                              one="silo"
-                              many="silos"
-                              title={
-                                nb === 1
-                                  ? sc > 0
-                                    ? "Silo fitted — output doubled, eats feed. Press to remove."
-                                    : "No silo yet — press once you bolt one on (output ×2, eats feed)."
-                                  : `${sc} of the ${nb} farms have a silo — one module max per farm, and a line can be part-silo'd. Silo'd farms make ×2 and eat feed.`
-                              }
-                              onSet={(v) => setIslandSilo(name, i, v)}
-                            />
-                          );
-                        })()}
-                      {/* Power is per-world: ⚡ electricity on Old World
-                          goods (Cape Trelawney counts via the alias), ⛽
-                          New World Rising fuel stations on New World goods
-                          — the same ×2 in the ledger. An island with no
-                          region set still gets the chip (names merge across
-                          worlds, so we can't tell which one it is). */}
-                      {(() => {
-                        const pk = powerKind(c.t, game);
-                        if (!pk) return null;
-                        if (region && chipRegion !== (pk === "elec" ? "ow" : "nw"))
-                          return null;
-                        const sym = pk === "elec" ? "⚡" : "⛽";
-                        const plant = pk === "elec" ? "power plant" : "fuel station";
-                        const nb = c.n || 1;
-                        const ec = Math.min(c.e || 0, nb);
-                        return (
+                  ).map(({ c, i }) => {
+                    // Compact rows (build 133) — the treatment build 81 gave a
+                    // ship. An inventory line is read far more often than it is
+                    // changed, and it was carrying up to seven controls at all
+                    // times. What stays out is what you reach for mid-session:
+                    // the tick, and ⏸ for a building you just switched off.
+                    // The rest waits behind ✎.
+                    const open = editItem?.isle === name && editItem.i === i;
+                    const nb = c.n || 1;
+                    const sc = Math.min(c.s || 0, nb);
+                    const silos = siloCapable(c.t, game);
+                    // Power is per-world: ⚡ electricity on Old World goods
+                    // (Cape Trelawney counts via the alias), ⛽ New World
+                    // Rising fuel stations on New World ones — the same ×2 in
+                    // the ledger. An island with no region set still gets the
+                    // chip (names merge across worlds, so we can't tell which
+                    // one it is).
+                    const pk = powerKind(c.t, game);
+                    const powered =
+                      !!pk && (!region || chipRegion === (pk === "elec" ? "ow" : "nw"));
+                    const ec = Math.min(c.e || 0, nb);
+                    const sym = pk === "elec" ? "⚡" : "⛽";
+                    const plant = pk === "elec" ? "power plant" : "fuel station";
+                    // What's bolted on, in words — and only what is actually
+                    // fitted, so a plain row says nothing rather than showing
+                    // two empty counters.
+                    const mods: string[] = [];
+                    if (silos && sc > 0) mods.push(nb === 1 ? "silo" : `silos ${sc}/${nb}`);
+                    if (powered && ec > 0) mods.push(nb === 1 ? sym : `${sym} ${ec}/${nb}`);
+                    return (
+                      <div
+                        className={
+                          "plitem questrow" +
+                          (c.done ? (c.off ? " off" : "") : " gap") +
+                          (open ? " invopen" : "")
+                        }
+                        key={`${i}:${c.t}`}
+                      >
+                        <label className="qmain" title="Press to toggle">
+                          <input
+                            type="checkbox"
+                            checked={c.done}
+                            onChange={(e) => toggleIslandCheck(name, i, e.target.checked)}
+                          />
+                          <span style={{ flex: 1 }}>
+                            <GoodIcon name={iconGoodName(c.t, game)} game={game} />
+                            {c.t}
+                            {(c.n || 1) > 1 && <b> ×{c.n}</b>}
+                          </span>
+                        </label>
+                        {/* Shut, the modules read as plain words — and pressing
+                            them is a second way into the counters. */}
+                        {!open && mods.length > 0 && (
+                          <button
+                            className="invmods"
+                            title={`${c.t} — press to change what it has fitted`}
+                            onClick={() => setEditItem({ isle: name, i })}
+                          >
+                            {mods.join(" · ")}
+                          </button>
+                        )}
+                        {open && silos && (
+                          <ModChip
+                            n={nb}
+                            count={sc}
+                            unit="silo"
+                            one="silo"
+                            many="silos"
+                            title={
+                              nb === 1
+                                ? sc > 0
+                                  ? "Silo fitted — output doubled, eats feed. Press to remove."
+                                  : "No silo yet — press once you bolt one on (output ×2, eats feed)."
+                                : `${sc} of the ${nb} farms have a silo — one module max per farm, and a line can be part-silo'd. Silo'd farms make ×2 and eat feed.`
+                            }
+                            onSet={(v) => setIslandSilo(name, i, v)}
+                          />
+                        )}
+                        {open && powered && (
                           <ModChip
                             n={nb}
                             count={ec}
@@ -2213,63 +2242,89 @@ export function TrackerView({
                             }
                             onSet={(v) => setIslandElec(name, i, v)}
                           />
-                        );
-                      })()}
-                      {/* ⏸ pause (build 129): built but switched off in-game —
-                          the ledger skips the line, freeing its inputs for
-                          something else. Only a built row can pause. */}
-                      {c.done && (
-                        <button
-                          className={"plx qoff" + (c.off ? " on" : "")}
-                          title={
-                            c.off
-                              ? `${c.t} is switched off — making and using nothing. Press to start it up.`
-                              : `Running. Press when you switch it off in game — it stays built, but leaves the ledger.`
-                          }
-                          onClick={() => setIslandOff(name, i, !c.off)}
-                        >
-                          {c.off ? "▶" : "⏸"}
-                        </button>
-                      )}
-                      {/* Teach the ledger this building's numbers (M13) —
-                          only in a game with no data pack, where every item
-                          would otherwise stay free text forever. */}
-                      {!DATASETS[game].hasCalc && (
-                        <TeachChip
-                          itemName={c.t}
-                          recipe={
-                            (data.userRecipes || []).find(
-                              (r) => r.building.toLowerCase() === c.t.trim().toLowerCase()
-                            ) ?? null
-                          }
-                          onSave={saveUserRecipe}
-                          onRemove={() => removeUserRecipe(c.t)}
-                        />
-                      )}
-                      <button
-                        className="plx qmove"
-                        title="One fewer"
-                        disabled={(c.n || 1) <= 1}
-                        onClick={() => bumpIslandCheck(name, i, -1)}
-                      >
-                        −
-                      </button>
-                      <button
-                        className="plx qmove"
-                        title="One more"
-                        onClick={() => bumpIslandCheck(name, i, 1)}
-                      >
-                        ＋
-                      </button>
-                      <button
-                        className="plx"
-                        title="Remove item"
-                        onClick={() => removeIslandCheck(name, i)}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
+                        )}
+                        {/* ⏸ pause (build 129): built but switched off in-game
+                            — the ledger skips the line, freeing its inputs for
+                            something else. Only a built row can pause, and it
+                            stays on the shut row because you press it the
+                            moment you do it in game. */}
+                        {c.done && (
+                          <button
+                            className={"plx qoff" + (c.off ? " on" : "")}
+                            title={
+                              c.off
+                                ? `${c.t} is switched off — making and using nothing. Press to start it up.`
+                                : `Running. Press when you switch it off in game — it stays built, but leaves the ledger.`
+                            }
+                            onClick={() => setIslandOff(name, i, !c.off)}
+                          >
+                            {c.off ? "▶" : "⏸"}
+                          </button>
+                        )}
+                        {/* Teach the ledger this building's numbers (M13) —
+                            only in a game with no data pack, where every item
+                            would otherwise stay free text forever. It stays on
+                            the shut row: in those games it is the row's whole
+                            point, and there are no module chips beside it. */}
+                        {!DATASETS[game].hasCalc && (
+                          <TeachChip
+                            itemName={c.t}
+                            recipe={
+                              (data.userRecipes || []).find(
+                                (r) => r.building.toLowerCase() === c.t.trim().toLowerCase()
+                              ) ?? null
+                            }
+                            onSave={saveUserRecipe}
+                            onRemove={() => removeUserRecipe(c.t)}
+                          />
+                        )}
+                        {open ? (
+                          <>
+                            <button
+                              className="plx qmove"
+                              title="One fewer"
+                              disabled={(c.n || 1) <= 1}
+                              onClick={() => bumpIslandCheck(name, i, -1)}
+                            >
+                              −
+                            </button>
+                            <button
+                              className="plx qmove"
+                              title="One more"
+                              onClick={() => bumpIslandCheck(name, i, 1)}
+                            >
+                              ＋
+                            </button>
+                            <button
+                              className="linkbtn shipdone"
+                              title="Done — back to the list"
+                              onClick={() => setEditItem(null)}
+                            >
+                              ✓ Done
+                            </button>
+                            <button
+                              className="plx"
+                              title="Remove item"
+                              onClick={() => {
+                                removeIslandCheck(name, i);
+                                setEditItem(null);
+                              }}
+                            >
+                              ✕
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            className="plx"
+                            title={`Change ${c.t} — count, modules, remove`}
+                            onClick={() => setEditItem({ isle: name, i })}
+                          >
+                            ✎
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
                     </>
                   )}
                   {/* 👥 residents stay OUTSIDE the fold like the ledger they

@@ -586,6 +586,155 @@ check(
   localStorage.getItem("anno_island_trade")
 );
 
+// --- compact inventory rows (build 133) --------------------------------------
+// An inventory line was carrying up to seven controls at all times. Now it is
+// one line until you ask for the rest, the way a ship row has been since build
+// 81 — and what stays out is what you reach for mid-session: the tick, and ⏸.
+// Crown Falls' Bakery ×2 can be electrified and can't take a silo; the Sheep
+// Farm added below is the other way round, so between them they cover both
+// counters.
+const btnIn = (row, txt) =>
+  [...row.querySelectorAll("button")].find((b) => b.textContent.trim() === txt);
+const pencil = (row) => btnIn(row, "✎");
+// The count −/＋ are .qmove. The module chip carries its OWN ＋ and it comes
+// first in the row, so matching on the character alone reaches the wrong one.
+const countUp = (row) => row.querySelector('.qmove[title="One more"]');
+const doneIn = (row) => row.querySelector(".shipdone");
+const bakery = () => rowOf("Crown Falls", "Bakery");
+
+check("a shut row shows no module counters", !bakery().querySelector(".schip"));
+check("…no count buttons", !bakery().querySelector(".qmove"), String(bakery().querySelectorAll(".qmove").length));
+check("…and no remove", !btnIn(bakery(), "✕"));
+check(
+  "nothing fitted, so it says nothing rather than showing empty counters",
+  !bakery().querySelector(".invmods"),
+  bakery().querySelector(".invmods")?.textContent
+);
+check("but the tick is still one press away", !!bakery().querySelector("input[type=checkbox]"));
+check("and so is the ⏸", !!bakery().querySelector(".qoff"));
+check("with a ✎ for the rest", !!pencil(bakery()));
+
+// Ticking still works straight off the shut row — it's the row's whole job.
+await tick(bakery().querySelector("input[type=checkbox]"));
+check(
+  "unticking from the shut row still works",
+  JSON.parse(localStorage.getItem("anno_island_checks"))["Crown Falls"].find(
+    (c) => c.t === "Bakery"
+  ).done === false
+);
+await tick(bakery().querySelector("input[type=checkbox]"));
+check("…and back", bakery().querySelector("input[type=checkbox]").checked === true);
+
+// ✎ brings the controls out.
+await fire(pencil(bakery()));
+check("✎ opens the counters", !!bakery().querySelector(".schip"), bakery().textContent);
+check("…and the −/＋ count buttons", bakery().querySelectorAll(".qmove").length === 2);
+check("…and the remove", !!btnIn(bakery(), "✕"));
+check("…with a ✓ Done to shut it", !!doneIn(bakery()));
+check("the ✎ is gone while it's open", !pencil(bakery()));
+check(
+  "a Bakery gets ⚡ and no silo — farms take silos, factories take power",
+  bakery().querySelectorAll(".schip").length === 1 &&
+    /⚡/.test(bakery().querySelector(".schip").textContent),
+  bakery().querySelector(".schip")?.textContent
+);
+
+// One row open at a time, like the fleet's.
+await fire(pencil(rowOf("Crown Falls", "Sawmill")));
+check(
+  "opening another row shuts the first",
+  !bakery().querySelector(".schip") && !!rowOf("Crown Falls", "Sawmill").querySelector(".schip")
+);
+await fire(doneIn(rowOf("Crown Falls", "Sawmill")));
+check("✓ Done shuts it again", !rowOf("Crown Falls", "Sawmill").querySelector(".schip"));
+
+// Power one of the two bakeries, and read it back as words.
+await fire(pencil(bakery()));
+await fire(bakery().querySelector('.schip button[aria-label="One powered building more"]'));
+await fire(doneIn(bakery()));
+check(
+  "shut again, what's fitted reads as plain words",
+  bakery().querySelector(".invmods")?.textContent.trim() === "⚡ 1/2",
+  bakery().querySelector(".invmods")?.textContent
+);
+check(
+  "and it's the way back in",
+  (await fire(bakery().querySelector(".invmods")), !!bakery().querySelector(".schip"))
+);
+await fire(doneIn(bakery()));
+
+// A silo'd farm is the other counter. Add one through the real add row.
+const addBldg = () =>
+  [...blockFor("Crown Falls").querySelectorAll(".plrow input")].find((el) =>
+    (el.placeholder || "").startsWith("Add building")
+  );
+await setValue(addBldg(), "Sheep Farm");
+await act(async () => {
+  addBldg().dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+});
+const sheep = () => rowOf("Crown Falls", "Sheep Farm");
+check("the farm is listed", !!sheep(), blockFor("Crown Falls").textContent);
+await fire(pencil(sheep()));
+// Two more farms, then two of the three silo'd.
+await fire(countUp(sheep()));
+await fire(countUp(sheep()));
+await fire(sheep().querySelector('.schip button[aria-label="One silo more"]'));
+await fire(sheep().querySelector('.schip button[aria-label="One silo more"]'));
+await fire(doneIn(sheep()));
+check(
+  "a part-silo'd farm reads as words too",
+  sheep().querySelector(".invmods")?.textContent.trim() === "silos 2/3",
+  sheep().querySelector(".invmods")?.textContent
+);
+check(
+  "a farm gets a silo and no ⚡",
+  (await fire(pencil(sheep())),
+  sheep().querySelectorAll(".schip").length === 1 &&
+    /silo/.test(sheep().querySelector(".schip").textContent)),
+  sheep().querySelector(".schip")?.textContent
+);
+await fire(doneIn(sheep()));
+
+// The A→Z sort reorders the rows on screen only, so the open row has to keep
+// pointing at the building you pressed — the lesson build 82 learnt on the
+// fleet. Sheep Farm was added last but sorts to the end anyway, so use the
+// Bakery, which sorts FIRST while it was added first too — Sawmill is the one
+// that moves.
+await fire(pencil(sheep()));
+const azBtn = [...$(".card")[0].querySelectorAll(".linkbtn")].find(
+  (b) => b.textContent.trim() === "A→Z"
+);
+await fire(azBtn);
+check(
+  "after sorting, the open row is still the Sheep Farm",
+  !!sheep().querySelector(".schip") && !bakery().querySelector(".schip"),
+  [...blockFor("Crown Falls").querySelectorAll(".questrow")]
+    .map((r) => r.textContent.slice(0, 18))
+    .join(" | ")
+);
+// …and editing it still reaches the right building.
+await fire(countUp(sheep()));
+check(
+  "and ＋ lands on that building, not the one now in its old place",
+  JSON.parse(localStorage.getItem("anno_island_checks"))["Crown Falls"].find(
+    (c) => c.t === "Sheep Farm"
+  ).n === 4,
+  localStorage.getItem("anno_island_checks")
+);
+await fire(doneIn(sheep()));
+await fire(azBtn);
+
+// Removing the row from the open state clears it rather than leaving the next
+// building open in its place.
+await fire(pencil(sheep()));
+await fire(btnIn(sheep(), "✕"));
+check("✕ removes the item", !sheep(), blockFor("Crown Falls").textContent);
+check(
+  "…and leaves no row open behind it",
+  !blockFor("Crown Falls").querySelector(".questrow .schip"),
+  blockFor("Crown Falls").querySelector(".questrow .schip")?.textContent
+);
+
 let bad = 0;
 for (const x of results) {
   console.log(`${x.ok ? "ok  " : "FAIL"} - ${x.name}${x.ok || !x.detail ? "" : "  << " + x.detail}`);
