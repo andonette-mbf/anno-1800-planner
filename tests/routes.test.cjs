@@ -45,6 +45,10 @@ const R = require("./build/routes.js");
 const OW = 1;
 const TRADE = "Trade route";
 const HOLDS = { Schooner: 2, Clipper: 4, "Cargo Ship": 6, Gunboat: 1 };
+// Gold a minute, from the same wiki table. Per cargo slot that is 7.5 for a
+// Schooner against 43.8 for a Clipper — which is the whole reason the
+// consolidation keeps the cheapest capable hull and not the biggest.
+const UPKEEP = { Schooner: 15, Clipper: 175, "Cargo Ship": 500, Gunboat: 25 };
 const near = (a, b) => Math.abs(a - b) < 1e-6;
 
 /** Build the islands' ledgers exactly as TrackerView does: each island's own
@@ -66,7 +70,15 @@ function settle(isles, flows) {
 }
 
 /** The board, with the fleet's own defaults filled in. */
-function board({ isles, links = [], ships = [], islands, holds = HOLDS, slotTons = 50 }) {
+function board({
+  isles,
+  links = [],
+  ships = [],
+  islands,
+  holds = HOLDS,
+  slotTons = 50,
+  upkeeps = UPKEEP,
+}) {
   const flows = [
     ...links,
     ...ships.flatMap((s) =>
@@ -82,6 +94,7 @@ function board({ isles, links = [], ships = [], islands, holds = HOLDS, slotTons
     ledgers: settle(isles, flows),
     holds,
     slotTons,
+    upkeeps,
     tradeJob: TRADE,
     gone: ["Destroyed", "Decommissioned"],
   });
@@ -155,8 +168,8 @@ const hasKind = (leg, k) => !!leg && leg.notes.some((n) => n.kind === k);
 // --- two hulls on one good, and the idea that follows -----------------------
 //
 // Both ships run Woodhaven → Millport. Between them they carry Wood and
-// Timber — 2 distinct goods — and the Pelican is a Clipper with 4 slots, so
-// one hull covers the lot and the Kestrel is free.
+// Timber — 2 distinct goods — and BOTH hulls can hold two (Schooner 2 slots,
+// Clipper 4), so one of them is spare. Which one is the build-136 question.
 {
   const b = board({
     isles: {
@@ -171,15 +184,22 @@ const hasKind = (leg, k) => !!leg && leg.notes.some((n) => n.kind === k);
   const leg = legOf(b, "Woodhaven", "Millport");
   if (!hasKind(leg, "duplicate")) fail(`two hulls on Wood is a duplicate: ${JSON.stringify(kinds(leg))}`);
   const merge = leg && leg.notes.find((n) => n.kind === "merge");
-  if (!merge) fail(`2 goods into a 4-slot Clipper is a merge idea: ${JSON.stringify(kinds(leg))}`);
+  if (!merge) fail(`2 goods into one hull is a merge idea: ${JSON.stringify(kinds(leg))}`);
   else {
     if (!merge.idea) fail("a merge is an idea, not a fault");
-    if (!merge.text.includes("Pelican") || !merge.text.includes("Kestrel"))
-      fail(`the idea should name the keeper and the freed hull: ${merge.text}`);
+    // Build 136 — the hull it keeps is the CHEAPEST that can do the job, not
+    // the biggest. Both carry the 2 goods (Schooner 2 slots, Clipper 4), so
+    // the 15-gold Kestrel stays and the 175-gold Pelican is freed. Keeping
+    // the Clipper would have saved the 15 and spent the 175.
+    if (!/^Kestrel \(Schooner\) alone covers/.test(merge.text))
+      fail(`the cheap hull that can do the job is the one to keep: ${merge.text}`);
+    if (!merge.text.includes("frees Pelican")) fail(`and the dear one is freed: ${merge.text}`);
+    if (!merge.text.includes("saving 175 gold a minute"))
+      fail(`the saving is the point, so it should be named: ${merge.text}`);
   }
   if (b.ideas !== 1) fail(`one idea here, got ${b.ideas}`);
   if (b.issues < 1) fail("the duplicate is still an issue");
-  ok("duplicate + merge — two hulls on one good, and the Clipper that holds both");
+  ok("duplicate + merge — two hulls on one good, and the cheap one that keeps it");
 }
 {
   // The same two ships, but between them they carry 3 goods and the biggest
@@ -193,6 +213,69 @@ const hasKind = (leg, k) => !!leg && leg.notes.some((n) => n.kind === k);
   });
   if (b.ideas) fail(`3 goods do not fit a 2-slot Schooner — no merge: ${b.ideas}`);
   ok("merge — not suggested when the goods don't fit the biggest hold");
+}
+
+{
+  // A Schooner that CAN'T do the job is not a saving. Three goods need three
+  // slots, so the 2-slot Kestrel is out and the Clipper is kept after all —
+  // the cheap hull only wins when it is actually capable.
+  const b = board({
+    isles: {
+      Woodhaven: ["Lumberjack's Hut", "Lumberjack's Hut", "Sawmill", "Sheep Farm"],
+      Millport: ["Framework Knitters"],
+    },
+    ships: [
+      { name: "Pelican", type: "Clipper", doing: TRADE, from: "Woodhaven", to: "Millport", cargo: ["Wood", "Timber", "Wool"] },
+      { name: "Kestrel", type: "Schooner", doing: TRADE, from: "Woodhaven", to: "Millport", cargo: ["Wood"] },
+    ],
+  });
+  const leg = legOf(b, "Woodhaven", "Millport");
+  const merge = leg && leg.notes.find((n) => n.kind === "merge");
+  if (!merge) fail(`3 goods still fit the Clipper: ${JSON.stringify(kinds(leg))}`);
+  else if (!merge.text.startsWith("Pelican"))
+    fail(`a Schooner can't hold 3 goods, so the Clipper is kept: ${merge.text}`);
+  ok("merge — the cheap hull only wins when it can actually hold the run");
+}
+{
+  // Nor is it a saving if it can't shift the tonnage. Both hulls are timed:
+  // the Kestrel laps in 60 min (2 x 50 / 60 = 1.67 t/min) and the run has to
+  // shift 4 t/min of Wood, so the cheap hull would block it. The Pelican laps
+  // in 5 (40 t/min) and is kept despite costing more.
+  const b = board({
+    isles: { Woodhaven: ["Lumberjack's Hut"], Millport: ["Sawmill"] },
+    links: [{ good: "Wood", from: "Woodhaven", to: "Millport" }],
+    ships: [
+      { name: "Pelican", type: "Clipper", doing: TRADE, from: "Woodhaven", to: "Millport", cargo: ["Wood"], rt: 5 },
+      { name: "Kestrel", type: "Schooner", doing: TRADE, from: "Woodhaven", to: "Millport", cargo: ["Wood"], rt: 60 },
+    ],
+  });
+  const leg = legOf(b, "Woodhaven", "Millport");
+  const merge = leg && leg.notes.find((n) => n.kind === "merge");
+  if (!merge) fail(`the Pelican alone covers it: ${JSON.stringify(kinds(leg))}`);
+  else if (!merge.text.startsWith("Pelican"))
+    fail(`a hull that can't shift the tonnage is no saving: ${merge.text}`);
+  ok("merge — a cheap hull that can't shift the tonnage is not a saving");
+}
+{
+  // With no upkeep table (every game but 1800 today) it falls back to the old
+  // rule — keep the biggest hold — and claims no saving it can't price.
+  const b = board({
+    isles: {
+      Woodhaven: ["Lumberjack's Hut", "Lumberjack's Hut", "Sawmill"],
+      Millport: ["Framework Knitters"],
+    },
+    ships: [
+      { name: "Pelican", type: "Clipper", doing: TRADE, from: "Woodhaven", to: "Millport", cargo: ["Wood", "Timber"] },
+      { name: "Kestrel", type: "Schooner", doing: TRADE, from: "Woodhaven", to: "Millport", cargo: ["Wood"] },
+    ],
+    upkeeps: null,
+  });
+  const leg = legOf(b, "Woodhaven", "Millport");
+  const merge = leg && leg.notes.find((n) => n.kind === "merge");
+  if (!merge || !merge.text.startsWith("Pelican"))
+    fail(`without prices, the biggest hold is kept: ${merge && merge.text}`);
+  if (merge.text.includes("saving")) fail(`and no saving is claimed: ${merge.text}`);
+  ok("merge — a game with no upkeep table keeps the biggest hull and prices nothing");
 }
 
 // --- more goods than slots --------------------------------------------------

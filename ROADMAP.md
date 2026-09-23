@@ -642,6 +642,37 @@ is in CLAUDE.md.
   its keep by telling you which runs can be merged, and the short verdict
   fires on the long ones.
 
+- **Keep the cheap hull** (build 136): "guessing that schooners do in fact come
+  in handy due to their cheapness." They do, and it caught a real flaw in the
+  consolidation idea shipped hours earlier.
+
+  Per cargo slot, from the same wiki table as `shipHolds`: **Schooner 7.5 gold
+  a minute, Clipper 43.8, Cargo Ship 83.3 — and 0.5 influence per slot for all
+  three.** So two Schooners match one Clipper on slots AND on influence, at 30
+  gold against 175. A big hull buys speed and a smaller ship count, not
+  efficiency; the Schooner is the value hull and stays useful all game.
+
+  Build 134's merge idea kept the BIGGEST hold, which is exactly backwards —
+  "keep the Clipper, free the Schooner" saves 15 a minute and spends 175. It
+  now keeps the **cheapest hull that can actually do the job**, which is
+  strictly better on both axes rather than a trade-off: still one hull per run
+  (fewer things to track was the whole point of the board), just a cheaper
+  one. "Can do the job" is deliberately two tests — enough slots for the
+  distinct goods, and, **only when every hull on the run is timed**, enough
+  tonnage. A cheap hull that would block the run is not a saving, and an
+  untimed run can't be judged on tonnage at all.
+
+  `GameContent.shipUpkeep` is gold/min as a positive cost. A game without one
+  (every game but 1800 today) falls back to keeping the biggest hold, and a
+  saving is quoted only when every hull involved has a price — a figure that
+  quietly omitted the untyped ship would be a lie. The old test passed under
+  both rules because it only checked that both names appeared; it now pins
+  which hull is kept.
+
+  **Worth remembering:** the board's other advice is still slot-shaped, and
+  that is correct — with 50 t to a slot the binding constraint in 1800 is
+  slots and hulls, not tonnage.
+
 - **M6 — backup & restore + phone polish** (build 108, `/m6-backup`): each
   save exports as a JSON file and imports as a NEW save. The wrapper is
   `{app: "anno-planner", version: 1, game, name, exportedAt, data}` with

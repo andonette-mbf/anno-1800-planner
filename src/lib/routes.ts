@@ -74,6 +74,8 @@ export interface RouteShipRef {
   holds?: number;
   /** Minutes for one lap of the run, as timed in game (build 135). */
   rt?: number;
+  /** Gold a minute it costs to keep, when the game knows the hull (build 136). */
+  upkeep?: number;
   /** What it can actually shift, t/min — `holds × slotTons ÷ rt`. Needs both
    *  a known hull and a lap time, so it's absent until the run is timed. */
   moves?: number;
@@ -134,6 +136,9 @@ export interface RouteBoardInput {
   /** Tons one cargo slot holds — `GameContent.slotTons`. Without it (or
    *  without `holds`) a run can't be sized, and no capacity is worked out. */
   slotTons?: number;
+  /** Upkeep by ship type — `GameContent.shipUpkeep`. Decides WHICH hull a
+   *  consolidation keeps; without it the biggest hold is kept instead. */
+  upkeeps?: Record<string, number>;
   /** The `doing` value that means "this is a trader". */
   tradeJob: string;
   /** Statuses that take a ship off the fleet — a sunk trader isn't a route
@@ -217,6 +222,9 @@ const list = (xs: string[]) =>
  *  the sort of half-finished thing this board exists to surface. */
 export function routeBoard(input: RouteBoardInput): RouteBoard {
   const { links = [], ships = [], islands = [], ledgers = {}, tradeJob, slotTons } = input;
+  const upkeeps = new Map(
+    Object.entries(input.upkeeps || {}).map(([k, v]) => [norm(k), v] as const)
+  );
   const gone = new Set((input.gone || []).map(norm));
   const holds = new Map(Object.entries(input.holds || {}).map(([k, v]) => [norm(k), v]));
   const held = new Map(islands.map((n) => [norm(n), n]));
@@ -294,6 +302,7 @@ export function routeBoard(input: RouteBoardInput): RouteBoard {
       ...(hold === undefined ? {} : { holds: hold }),
       ...(rt === undefined ? {} : { rt }),
       ...(moves === undefined ? {} : { moves }),
+      ...(upkeeps.has(norm(s.type)) ? { upkeep: upkeeps.get(norm(s.type)) } : {}),
       idx,
     });
     for (const g of cargo) addGood(d, g, s.name);
@@ -416,23 +425,59 @@ export function routeBoard(input: RouteBoardInput): RouteBoard {
     }
 
     // --- IDEA: one hull could do the lot --------------------------------
-    // Only when the numbers say so. Distinct goods across every ship on the
-    // leg, against the biggest hold among them: if they fit, the rest of the
-    // hulls are free for something else.
+    //
+    // Still one hull per run — fewer things to keep track of is the whole
+    // point of this board. What changed in build 136 is WHICH one it keeps.
+    //
+    // It used to keep the biggest hold, which is backwards: per cargo slot a
+    // Schooner costs 7.5 gold and a Clipper 43.8, for the same influence per
+    // slot either way. So "keep the Clipper, free the Schooner" saved 15 gold
+    // a minute while spending 175 — it freed the cheap hull. Now it keeps the
+    // CHEAPEST hull that can actually do the job, which is strictly better on
+    // both counts: same single hull, less gold.
+    //
+    // "Can actually do the job" is two tests, not one. Slots: a cargo slot
+    // holds one good, so it needs at least as many as the run has goods. And
+    // tonnage, WHEN the run is timed — a cheap small hull that can't shift
+    // what the run has to shift is not a saving, it's a blocked run.
     if (d.ships.length > 1) {
       const all = new Set<string>();
-      for (const s of d.ships) for (const g of s.goods) all.add(norm(g));
-      const best = d.ships
-        .filter((s) => s.holds !== undefined)
-        .sort((a, b) => b.holds! - a.holds! || a.name.localeCompare(b.name))[0];
-      if (best && all.size <= best.holds! && all.size > 0) {
-        const freed = d.ships.filter((s) => s.name !== best.name).map((s) => s.name);
+      for (const sh of d.ships) for (const g of sh.goods) all.add(norm(g));
+      const sized = !untimed.length && needed > EPS;
+      const capable = d.ships.filter(
+        (sh) =>
+          sh.holds !== undefined &&
+          all.size > 0 &&
+          all.size <= sh.holds &&
+          // Only hold it to the tonnage when the tonnage is actually known.
+          (!sized || (sh.moves ?? 0) + EPS >= needed)
+      );
+      // Cheapest first; a hull with no upkeep figure can't be compared, so it
+      // sorts last and never displaces one that can be. Ties fall back to the
+      // old rule (bigger hold), then the name, so this stays deterministic.
+      const keep = capable.sort(
+        (a, b) =>
+          (a.upkeep ?? Infinity) - (b.upkeep ?? Infinity) ||
+          (b.holds || 0) - (a.holds || 0) ||
+          a.name.localeCompare(b.name)
+      )[0];
+      if (keep) {
+        const freed = d.ships.filter((sh) => sh.name !== keep.name);
+        // Only claim a saving when every hull involved has a figure — a
+        // number that quietly omits the untyped ship would be a lie.
+        const known = keep.upkeep !== undefined && freed.every((sh) => sh.upkeep !== undefined);
+        const saved = known
+          ? freed.reduce((a, sh) => a + (sh.upkeep as number), 0)
+          : 0;
         notes.push({
           kind: "merge",
           idea: true,
-          text: `${best.name} alone holds all ${plural(all.size, "good")} on this run — that frees ${list(
-            freed
-          )}.`,
+          text:
+            `${keep.name}${keep.type ? ` (${keep.type})` : ""} alone covers all ${plural(
+              all.size,
+              "good"
+            )} on this run — that frees ${list(freed.map((sh) => sh.name))}` +
+            (saved > 0 ? `, saving ${round(saved)} gold a minute.` : "."),
         });
       }
     }

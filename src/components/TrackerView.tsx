@@ -1055,6 +1055,7 @@ export function TrackerView({
     ledgers: allLedgers,
     holds: GAME_CONTENT[game].shipHolds,
     slotTons: GAME_CONTENT[game].slotTons,
+    upkeeps: GAME_CONTENT[game].shipUpkeep,
     tradeJob: TRADE_JOB,
     gone: [DESTROYED, DECOMMISSIONED],
   });

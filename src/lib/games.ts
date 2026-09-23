@@ -100,6 +100,16 @@ export interface GameContent {
    *  the wiki's flat 50 t per slot. Absent alongside `shipHolds` means the
    *  game can't do the capacity maths, and the board simply doesn't offer it. */
   slotTons?: number;
+  /** Upkeep per ship type, gold a minute as a POSITIVE cost (build 136).
+   *  Same wiki table and rev as `shipHolds`.
+   *
+   *  Here because the cheapest hull that can do a job is not the biggest one,
+   *  and the board was advising the opposite. Per cargo slot a Schooner costs
+   *  7.5 gold and a Clipper 43.8 — for the SAME influence per slot (0.5 each)
+   *  — so two Schooners match a Clipper on slots and influence at 30 gold
+   *  against 175. A big hull buys speed and a smaller fleet, not efficiency.
+   *  A type that isn't listed simply can't have a saving claimed for it. */
+  shipUpkeep?: Record<string, number>;
 }
 
 const ANNO1800: GameContent = {
@@ -226,6 +236,29 @@ const ANNO1800: GameContent = {
   // goods" — Anno 1800 Wiki, Ships. The Oil Tanker is the game's one
   // exception and isn't a hull anyone runs a mixed route with.
   slotTons: 50,
+  shipUpkeep: {
+    Schooner: 15,
+    Clipper: 175,
+    "Cargo Ship": 500,
+    "Great Eastern": 1000,
+    "World-Class Reefer": 750,
+    // Free to run: the Flagship and the Salvager cost nothing at all, which
+    // makes them the cheapest hull on any run they can actually cover.
+    Flagship: 0,
+    Salvager: 0,
+    Gunboat: 25,
+    Frigate: 100,
+    "Ship-of-the-Line": 250,
+    "Ship-of-the-line": 250,
+    Monitor: 300,
+    "Battle Cruiser": 850,
+    Boreas: 1200,
+    Harpy: 775,
+    Manticore: 900,
+    Hermes: 1200,
+    Pegasus: 1500,
+    Zephyr: 1800,
+  },
 };
 
 // 117's regions are the two sessions, and the dataset stores them as a bitmask
