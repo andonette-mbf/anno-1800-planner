@@ -557,6 +557,68 @@ is in CLAUDE.md.
   the row). The roadmap's manual-routes fallback was already satisfied by
   builds 96–100.
 
+- **The route board** (build 134): "can we have a trade route optimiser? I tend
+  to get lost with all my trade routes and ships." Scope confirmed in-session
+  — the board plus consolidation suggestions, on the Ships tab, with the real
+  capacity maths (hulls needed per leg) deliberately NOT built: it needs a
+  round-trip time only the player can supply, and hold sizes for 117 we have
+  no source for. See "still open" below.
+
+  The diagnosis was that the optimising half already existed (M9's 🧭 strip)
+  and the *map* didn't. Links lived as chips on ledger rows in the Islands
+  card, ship routes lived on ship rows in the Ships card, and the merged view
+  existed only inside `applyTrade` for a moment before being thrown away. So
+  `routeBoard` in `src/lib/routes.ts` is that merged view, kept: one run per
+  line, its goods with the t/min actually moving, the hull carrying them, and
+  the findings. Pure and stateless like `suggestTrades` — no new stored state
+  anywhere, and it reads the POST-`applyTrade` ledgers so its numbers ARE the
+  island rows' `imp`/`exp` rather than a second opinion that could drift.
+
+  Findings, counted apart as issues (⚠) and ideas (💡): a linked good with no
+  hull; two hulls on one good; a good sitting on a run at 0 t/min; a
+  destination that now makes enough of its own; an end that isn't on your
+  island list; more goods than the hull has cargo slots; a trader that never
+  said what or where; idle hulls beside an uncarried run — and the idea, two
+  ships on one leg whose combined cargo fits in one of them ("frees Kestrel").
+  Runs sort faults → ideas → fine, and the fine ones fold away (build 43's
+  rule) once anything needs attention.
+
+  **The two false positives it was built to avoid**, both pinned by test,
+  because either would have made the board cry wolf: `applyTrade`
+  deliberately dumps a spare surplus on an island with no tracked consumer
+  (its own docs' cotton-to-Cape-Trelawney case), so "makes its own" fires only
+  when the destination's LOCAL production is above zero and already covers its
+  local use, and never for an island that re-exports (a relay, not a dead
+  end); and a good the source doesn't produce has no `exp` at all, which is no
+  figure rather than a zero, so it isn't reported as stuck.
+
+  **Hold sizes** are a new `GameContent.shipHolds` — hand-typed like
+  `shipTypes` (no pack carries ships) from the Anno 1800 Wiki's Ships
+  properties table, rev 27275. The rule that makes a slot count mean anything
+  is on the wiki's Ships page: one cargo slot holds up to 50 t of ONE good, so
+  N goods need N slots. A type that isn't in the table gets NO check rather
+  than a guessed one — plain "Airship" is six hulls from 4 to 8 slots, so it
+  is absent deliberately. 117 has no `shipHolds` and simply gets no hold
+  check; everything else on the board works there unchanged.
+
+  Tapping a hull on the board opens its row in the manifest below (`focus` /
+  `onFocused` on `FleetCard`; refs keyed by STORED position, since build 82's
+  rule is that the display order is never the stored one, and the status
+  filter is cleared first or the row it scrolls to isn't rendered).
+  `npm run test:routes` hand-derives every case off real `islandLedger` +
+  `applyTrade` output; `test:fleet` drives the card in jsdom and proves the
+  tap-to-open.
+
+  **Still open — the capacity half (slice C), if wanted.** "Do I have enough
+  ships for this run?" needs a leg's round-trip time, which no data source has
+  and only the player can measure once, plus hold sizes for any game beyond
+  1800. With both, a leg's real throughput is `slots × 50 ÷ round-trip
+  minutes` against what the ledger says it needs — "this run is two hulls
+  short", "one Clipper covers it three times over". The board is the
+  groundwork for it: the legs, the hulls and the required t/min are all
+  already computed. It was left out on purpose because it is the only part
+  that asks the user to type something in.
+
 - **M6 — backup & restore + phone polish** (build 108, `/m6-backup`): each
   save exports as a JSON file and imports as a NEW save. The wrapper is
   `{app: "anno-planner", version: 1, game, name, exportedAt, data}` with

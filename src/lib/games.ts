@@ -83,6 +83,18 @@ export interface GameContent {
    *  common ones, and the field is always free text. Empty is fine: 117's
    *  ships aren't in any data we've extracted, so it types its own. */
   shipTypes: string[];
+  /** Cargo slots per ship type, for the route board's hold check (build 133).
+   *  One slot holds up to 50 t of ONE good, so a route carrying N different
+   *  goods needs N slots — that rule is what makes the number useful, and it
+   *  is why the check counts goods rather than tonnage.
+   *
+   *  Hand-copied like `shipTypes` (no pack carries ships) from the Anno 1800
+   *  Wiki's "Ships properties" table, rev 27275. Keys are matched
+   *  case-insensitively against the ship's free-typed type, so the spelling
+   *  here only has to match what people actually type. A type that isn't
+   *  listed — "Airship", which is six different hulls from 4 to 8 slots, or
+   *  anything free-typed — simply gets no check rather than a guessed one. */
+  shipHolds?: Record<string, number>;
 }
 
 const ANNO1800: GameContent = {
@@ -179,6 +191,32 @@ const ANNO1800: GameContent = {
     "Battle Cruiser",
     "Airship",
   ],
+  shipHolds: {
+    // Trade hulls
+    Schooner: 2,
+    Clipper: 4,
+    "Cargo Ship": 6,
+    "Great Eastern": 8,
+    "Extravaganza Steamer": 6,
+    "World-Class Reefer": 6,
+    Salvager: 6,
+    Flagship: 3,
+    // Warships carry cargo too, and people do press them into service
+    Gunboat: 1,
+    Frigate: 3,
+    "Ship-of-the-Line": 3,
+    "Ship-of-the-line": 3,
+    Monitor: 2,
+    "Battle Cruiser": 3,
+    // Airships, which the type list only offers generically — named ones get
+    // their real number, plain "Airship" gets none.
+    Boreas: 4,
+    Harpy: 2,
+    Manticore: 3,
+    Hermes: 3,
+    Pegasus: 5,
+    Zephyr: 8,
+  },
 };
 
 // 117's regions are the two sessions, and the dataset stores them as a bitmask

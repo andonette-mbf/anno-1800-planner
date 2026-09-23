@@ -24,6 +24,7 @@ import {
   userRate,
   type UserRecipe,
 } from "@/lib/ledger";
+import { routeBoard, type RouteBoard } from "@/lib/routes";
 import { planCheck, planSeed } from "@/lib/plancheck";
 import CultureBlock from "./CultureBlock";
 import FertilityBlock from "./FertilityBlock";
@@ -1042,6 +1043,21 @@ export function TrackerView({
   const tradeIdeas = suggestTrades(allLedgers, flows).filter(
     (s) => !effFilter || s.from === effFilter || s.to === effFilter
   );
+  // The route board (build 133) — the same links and ships `flows` was built
+  // from, read back as runs. Off the settled ledgers, so its tonnages ARE the
+  // island rows' import/export chips rather than a second opinion.
+  const routes = routeBoard({
+    links: data.islandLinks || [],
+    ships: data.ships || [],
+    islands,
+    ledgers: allLedgers,
+    holds: GAME_CONTENT[game].shipHolds,
+    tradeJob: TRADE_JOB,
+    gone: [DESTROYED, DECOMMISSIONED],
+  });
+  // Which ship the board asked the manifest to open, by stored position. Reset
+  // once the manifest has taken it, so tapping the same hull twice works.
+  const [focusShip, setFocusShip] = useState<number | null>(null);
   // How many islands are missing something. The per-island block works this out
   // again for its own header; doing it here too keeps the tally at the top of
   // the card honest when every island is folded away.
@@ -2834,7 +2850,17 @@ export function TrackerView({
         </div>
       </div>
       )}
-      {section === "ships" && <FleetCard game={game} savedLabel={savedLabel} />}
+      {section === "ships" && (
+        <>
+          <RouteBoardCard board={routes} game={game} onShip={setFocusShip} />
+          <FleetCard
+            game={game}
+            savedLabel={savedLabel}
+            focus={focusShip}
+            onFocused={() => setFocusShip(null)}
+          />
+        </>
+      )}
     </div>
   );
 }
@@ -2872,6 +2898,127 @@ const CLEAR = "__none";
 
 /** Job menu, keeping whatever is already stored even if it isn't one of ours —
  *  a ship that carried free text from build 75 shouldn't lose it silently. */
+// ------------------------------------------------------- the route board
+//
+// Build 133: "can we have a trade route optimiser? I tend to get lost with all
+// my trade routes and ships." Both halves of the trade story already existed
+// and neither was ever shown whole — ticked links live on ledger rows over on
+// the Islands card, ship routes live on ship rows down below, and the merged
+// picture existed only inside `applyTrade`. This is that picture: one run per
+// line, what's on it, which hull has it, and what's wrong with it.
+//
+// Read-only and stateless, like the 🧭 suggestions strip — `routeBoard` is a
+// pure view of the links, the fleet and the settled ledgers. The one thing it
+// DOES do is hand you the hull: tapping a ship opens its row in the manifest
+// below, because "which ship was that?" is the question that started this.
+function RouteBoardCard({
+  board,
+  game,
+  onShip,
+}: {
+  board: RouteBoard;
+  game: Game;
+  onShip: (idx: number) => void;
+}) {
+  // The runs that are fine fold away once anything needs attention — the
+  // tidy-tracker rule (build 43): a list you scan for problems shouldn't make
+  // you scroll past the things that aren't one.
+  const [showFine, setShowFine] = useState(false);
+  const flagged = board.legs.filter((l) => l.notes.length);
+  const fine = board.legs.filter((l) => !l.notes.length);
+  const shown = flagged.length ? (showFine ? [...flagged, ...fine] : flagged) : fine;
+  const tally = [
+    board.legs.length ? `${board.legs.length} run${board.legs.length === 1 ? "" : "s"}` : "",
+    board.issues ? `${board.issues} to look at` : "",
+    board.ideas ? `${board.ideas} idea${board.ideas === 1 ? "" : "s"}` : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  return (
+    <div className="card">
+      <div className="hd">
+        <h2>🔀 Trade routes</h2>
+        <span className="muted">{tally || "nothing running yet"}</span>
+      </div>
+      <div className="bd doc">
+        {!board.legs.length && !board.loose.length ? (
+          <p className="muted">
+            Every run you have going, in one list. Tick a spare good on an island&rsquo;s ledger to
+            record where it goes, or give a ship below a route — both show up here.
+          </p>
+        ) : (
+          <>
+            {shown.map((l) => (
+              <div
+                className={
+                  "routeleg" +
+                  (l.notes.some((n) => !n.idea) ? " routebad" : l.notes.length ? " routeidea" : "")
+                }
+                key={`${l.from}\u0000${l.to}`}
+              >
+                <p className="routehd">
+                  <b>{l.from}</b> <span className="routearrow">→</span> <b>{l.to}</b>
+                </p>
+                {l.goods.length > 0 && (
+                  <p className="routegoods">
+                    {l.goods.map((g) => (
+                      <span
+                        className={"chip schip cargochip" + (g.ships.length ? "" : " routeloose")}
+                        key={g.good}
+                        title={
+                          g.ships.length
+                            ? `Carried by ${g.ships.join(", ")}`
+                            : "Linked, but no ship on this run is carrying it"
+                        }
+                      >
+                        <GoodIcon name={g.good} game={game} />
+                        {g.good}
+                        {g.tpm !== undefined && <em>{fmt(g.tpm)}</em>}
+                      </span>
+                    ))}
+                  </p>
+                )}
+                {l.ships.length > 0 && (
+                  <p className="routeships">
+                    {l.ships.map((sh) => (
+                      <button
+                        className="chip schip routeship"
+                        key={sh.idx}
+                        title={`Open ${sh.name} in the manifest below${
+                          sh.holds === undefined ? "" : ` — ${sh.type} holds ${sh.holds}`
+                        }`}
+                        onClick={() => onShip(sh.idx)}
+                      >
+                        🚢 {sh.name}
+                        {sh.type && <em>{sh.type}</em>}
+                      </button>
+                    ))}
+                  </p>
+                )}
+                {l.notes.map((n, i) => (
+                  <p className={"routenote" + (n.idea ? " routetip" : "")} key={i}>
+                    {n.idea ? "💡" : "⚠"} {n.text}
+                  </p>
+                ))}
+              </div>
+            ))}
+            {flagged.length > 0 && fine.length > 0 && (
+              <button className="linkbtn foldbtn" onClick={() => setShowFine(!showFine)}>
+                {showFine ? "▾" : "▸"} {fine.length} running fine
+              </button>
+            )}
+            {board.loose.map((n, i) => (
+              <p className="routenote routeloosenote" key={i}>
+                ⚠ {n.text}
+              </p>
+            ))}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function jobOptions(cur?: string): { value: string; label: string }[] {
   const out = SHIP_JOBS.map((j) => ({ value: j, label: j }));
   if (cur && !SHIP_JOBS.includes(cur)) out.unshift({ value: cur, label: cur });
@@ -2944,7 +3091,18 @@ function cmpShips(
 // left. Name is the identity — it's what the game shows you — with the type
 // suggested from the game's common ships and a free-text "doing" for the rest
 // ("Rum: Manola → Crown Falls", "idle at Ditchwater", "expedition").
-function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
+function FleetCard({
+  game,
+  savedLabel,
+  focus,
+  onFocused,
+}: {
+  game: Game;
+  savedLabel: string;
+  /** A stored ship position the route board above asked us to open. */
+  focus?: number | null;
+  onFocused?: () => void;
+}) {
   const { data, addShip, setShip, removeShip } = useCompanion();
   const ships = data.ships || [];
   const islands = data.islands || [];
@@ -2954,6 +3112,10 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
   // build 81 is that the list reads as a list. Adding a ship does NOT open it —
   // the add row already took the two things worth typing.
   const [editing, setEditing] = useState<number | null>(null);
+  // Rows by STORED position, so the route board can point at a hull whatever
+  // the list is sorted or filtered by (build 82's rule: the display order is
+  // never the stored one).
+  const rowRefs = useRef<Record<number, HTMLDivElement | null>>({});
   // How the list is ordered on screen only (build 82). The stored order is
   // never touched, so every row keeps its real position — which is what the
   // edit and remove buttons work on. Remembered across visits, like the island
@@ -2974,6 +3136,25 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
   // fleet, a filter hides most of it, and coming back to a filtered list months
   // later reads as ships having gone missing.
   const [job, setJob] = useState("");
+  // Tapped on a run up in the route board: open that hull and bring it into
+  // view. The status filter is cleared first — the usual reason a flagged ship
+  // isn't on screen is that the list is narrowed to some other status, and
+  // scrolling to a row that isn't rendered does nothing. Cleared afterwards by
+  // `onFocused` so tapping the same hull again works.
+  useEffect(() => {
+    if (focus == null) return;
+    setJob("");
+    setEditing(focus);
+    onFocused?.();
+    // A frame later: the row has to render (and un-filter) before it can be
+    // scrolled to.
+    const t = setTimeout(
+      () => rowRefs.current[focus]?.scrollIntoView({ behavior: "smooth", block: "center" }),
+      0
+    );
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus]);
   const types = GAME_CONTENT[game].shipTypes;
   const regions = GAME_CONTENT[game].regionLabels;
   // The ship-items pack (M11b), or null for a game with no list — 117 gets no
@@ -3125,6 +3306,9 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
                 (isLost(s) ? " shiplost" : "")
               }
               key={`${i}:${s.name}`}
+              ref={(el) => {
+                rowRefs.current[i] = el;
+              }}
             >
               <button
                 className="shipsum"
@@ -3226,7 +3410,13 @@ function FleetCard({ game, savedLabel }: { game: Game; savedLabel: string }) {
               </button>
             </div>
           ) : (
-          <div className="plitem shiprow" key={`${i}:${s.name}`}>
+          <div
+            className="plitem shiprow"
+            key={`${i}:${s.name}`}
+            ref={(el) => {
+              rowRefs.current[i] = el;
+            }}
+          >
             <input
               className="shipname"
               defaultValue={s.name}

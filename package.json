@@ -28,7 +28,8 @@
     "test:islands": "node tests/island-ui.test.mjs",
     "test:fleet": "node tests/fleet-ui.test.mjs",
     "test:quickadd": "node tests/quickadd-ui.test.mjs",
-    "test:ledger": "node tests/ledger.test.cjs"
+    "test:ledger": "node tests/ledger.test.cjs",
+    "test:routes": "node tests/routes.test.cjs"
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",

@@ -89,12 +89,26 @@ const setValue = async (el, v) => {
   });
 };
 const rows = () => $(".shiprow");
-const addRow = () => $(".card")[0].querySelector(".plrow");
+// The manifest is the card with the add row — build 133 put the route board
+// above it, so "the first card" is no longer the fleet.
+const addRow = () => document.querySelector(".plrow");
+// The manifest card, by the thing only it has — never by position, since the
+// route board is a sibling above it now.
+const fleetCard = () => $(".card").find((c) => c.querySelector(".plrow"));
 const stored = () => JSON.parse(localStorage.getItem("anno_ships") || "[]");
+const legs = () => $(".routeleg");
+const notes = (sel = ".routenote") => $(sel).map((n) => n.textContent);
 
 // --- an empty fleet -------------------------------------------------------
-// Ships are their own tab now (build 84), so this view is that card alone.
-check("the ship card is there", $(".card").length === 1, String($(".card").length));
+// Two cards since build 133: the route board, then the manifest.
+check("the ship tab's two cards are there", $(".card").length === 2, String($(".card").length));
+check(
+  "the route board sits above the manifest",
+  $(".card h2")[0].textContent.includes("Trade routes") &&
+    $(".card h2")[1].textContent.includes("Ship Manifest"),
+  $(".card h2").map((h) => h.textContent).join(" | ")
+);
+check("nothing running yet, so no runs are drawn", legs().length === 0, String(legs().length));
 check("no ships yet", rows().length === 0);
 check(
   "the type box offers the game's ships",
@@ -218,6 +232,15 @@ check(
 // Both ends are typed now (build 81) — a route often runs to a neutral
 // trader, not to an island of yours.
 await edit();
+/** Shut the editor on one row, by position in the rendered list. The file's
+ *  `closeEditor` looks for whichever row is open and is defined further down;
+ *  these checks need it before then. */
+const closeEditorAt = async (row) => {
+  const b = [...rows()[row].querySelectorAll("button")].find((x) =>
+    x.textContent.trim().startsWith("\u2713")
+  );
+  if (b) await fire(b);
+};
 const typeInto = async (cls, v) => {
   const box = rows()[0].querySelector(cls);
   box.value = v;
@@ -273,6 +296,52 @@ check(
   JSON.stringify(stored())
 );
 
+// --- the route board above (build 133) ------------------------------------
+// Bessie now runs Ditchwater → Sir Archibald Blake with Rum and Cotton. That
+// is one run, and the far end is a trader rather than an island you hold, so
+// the board should say so rather than listing it as a normal destination.
+await closeEditorAt(0);
+check("the run Bessie is on is drawn", legs().length === 1, String(legs().length));
+check(
+  "it reads from → to",
+  legs()[0].querySelector(".routehd").textContent.replace(/\s+/g, " ").trim() ===
+    "Ditchwater → Sir Archibald Blake",
+  legs()[0].querySelector(".routehd").textContent
+);
+check(
+  // Goods are listed A–Z, not in the order the hold was filled — the board is
+  // scanned, and a stable order is what makes two runs comparable.
+  "both goods are on it A\u2013Z, with their pictures",
+  [...legs()[0].querySelectorAll(".routegoods .cargochip")].map((c) => c.textContent).join("|") ===
+    "Cotton|Rum" && !!legs()[0].querySelector(".routegoods img.gicon"),
+  [...legs()[0].querySelectorAll(".routegoods .cargochip")].map((c) => c.textContent).join("|")
+);
+check(
+  "the hull is named with its type",
+  legs()[0].querySelector(".routeship")?.textContent.includes("Bessie") &&
+    legs()[0].querySelector(".routeship")?.textContent.includes("Clipper"),
+  legs()[0].querySelector(".routeship")?.textContent
+);
+check(
+  "a destination that isn't one of your islands is flagged",
+  notes().some((t) => t.includes("Sir Archibald Blake") && t.includes("island list")),
+  notes().join(" | ")
+);
+check(
+  "2 goods in a 4-slot Clipper is not an overload",
+  !notes().some((t) => t.includes("cargo slot")),
+  notes().join(" | ")
+);
+// The point of the board: tapping the hull opens it in the manifest below.
+check("Bessie's row is closed to start with", !rows()[0].querySelector("input"));
+await fire(legs()[0].querySelector(".routeship"));
+check(
+  "tapping the hull on the board opens its row in the manifest",
+  !!rows()[0].querySelector("input.shipname"),
+  rows()[0].className
+);
+await closeEditorAt(0);
+
 // --- a name you already own ----------------------------------------------
 await setValue(addRow().querySelectorAll("input")[1], "bessie");
 check(
@@ -320,7 +389,7 @@ check(
 );
 
 // --- the tally at the top (build 83) --------------------------------------
-const tally = () => $(".card")[0].querySelector(".fleetsum")?.textContent || "";
+const tally = () => fleetCard().querySelector(".fleetsum")?.textContent || "";
 // Both were added as Clippers — the add row keeps the type between adds.
 check("it counts what you own by type", tally().includes("Clipper ×2"), tally());
 
@@ -337,8 +406,8 @@ t2.value = "Cargo Ship";
 await fire(t2, "focusout");
 await done(1);
 const sortChip = (label) =>
-  $(".card")[0].querySelectorAll(".qfilter .chip")
-    ? [...$(".card")[0].querySelectorAll(".qfilter .chip")].find(
+  fleetCard().querySelectorAll(".qfilter .chip")
+    ? [...fleetCard().querySelectorAll(".qfilter .chip")].find(
         (b) => b.textContent.trim() === label
       )
     : null;
@@ -381,7 +450,7 @@ await fire(sortChip("Added"));
 // --- a ship you lost (build 85) -------------------------------------------
 // Sunk by pirates: it stays on the list as a record, but it isn't part of the
 // fleet any more — off the tally, at the bottom, and claiming nothing.
-const header = () => $(".card")[0].querySelector(".hd .muted")?.textContent || "";
+const header = () => fleetCard().querySelector(".hd .muted")?.textContent || "";
 // Marking a ship lost moves its row to the bottom, so both the picking and the
 // closing have to follow the ship rather than a fixed position.
 const rowIdx = (name) =>
@@ -514,7 +583,7 @@ await pickFrom(0, ".shipdoing", "Patrol");
 await done(0);
 await pickFrom(1, ".shipdoing", "Idle");
 await done(1);
-const rowsFor = () => $(".card")[0].querySelectorAll(".qfilter");
+const rowsFor = () => fleetCard().querySelectorAll(".qfilter");
 const showChip = (label) =>
   [...(rowsFor()[rowsFor().length - 1]?.querySelectorAll(".chip") || [])].find((b) =>
     b.textContent.trim().startsWith(label)
@@ -541,8 +610,8 @@ await done(0);
 check("…and drops out once you close it", rows().length === 0, String(rows().length));
 // Nothing is on patrol any more, so the chips would ordinarily go — they stay
 // while a filter is on, or the only way out of an empty list disappears.
-check("the way back is still there", !!showChip("All") && !!$(".card")[0].querySelector(".linkbtn"));
-await fire($(".card")[0].querySelector(".linkbtn"));
+check("the way back is still there", !!showChip("All") && !!fleetCard().querySelector(".linkbtn"));
+await fire(fleetCard().querySelector(".linkbtn"));
 check("show all brings both back", rows().length === 2, String(rows().length));
 // Both idle now, so there is only one status and nothing to choose between.
 check("the chips go away when every ship is doing the same thing", !showChip("All"));

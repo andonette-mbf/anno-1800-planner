@@ -501,3 +501,29 @@ input,select,.ddbtn{background:var(--bg2)}
 /* Flat actives (build 128): the legacy 145° gold gradient gave every pressed
    chip a lit-from-the-corner bevel. Solid deep gold instead — no shading. */
 .chip.on,.toggle button.on,.logo{background:var(--gold2)}
+
+/* ---------------------------------------------- the route board (build 133)
+   Every trade run in one list, on the Ships tab above the manifest. A run is
+   a stacked block rather than a .plitem row: it carries three lines (where,
+   what, which hull) plus its findings, and .plitem is a single centred flex
+   row. The left border is the state — red for something wrong, gold for a
+   suggestion, plain for a run that's simply fine. */
+.routeleg{border:1px solid var(--line);border-left:3px solid var(--line);background:var(--bg2);padding:9px 12px;margin:8px 0}
+.routeleg.routebad{border-left-color:var(--red)}
+.routeleg.routeidea{border-left-color:var(--gold)}
+.routehd{margin:0 0 5px!important;font-size:13px}
+.routearrow{color:var(--dim);padding:0 2px}
+.routegoods,.routeships{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0!important;align-items:center}
+.routegoods .cargochip{cursor:default}
+/* The t/min riding the leg — the island row's own export figure. */
+.routegoods em{font-style:normal;font-variant-numeric:tabular-nums;color:var(--gold2);font-weight:700}
+/* A good that's linked but in nobody's hold: dashed, like an unfinished thing. */
+.routegoods .routeloose{border-style:dashed;color:var(--red)}
+.routeship{cursor:pointer;font-size:11px;padding:3px 8px}
+.routeship em{font-style:normal;color:var(--dim)}
+.routeship:hover{color:var(--ink);border-color:var(--ink)}
+.routenote{margin:4px 0 0!important;font-size:12px;color:var(--red);line-height:1.4}
+.routenote.routetip{color:var(--muted)}
+.routeloosenote{margin-top:10px!important}
+/* The "N running fine" fold, same shape as the completed-quests toggle. */
+.foldbtn{margin-top:6px}
